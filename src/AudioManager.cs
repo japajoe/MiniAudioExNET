@@ -55,6 +55,8 @@ namespace MiniAudioEx
     public static class AudioManager
     {
         private static IntPtr context;
+        private static uint sampleRate;
+        private static uint channels;
         private static ma_device_data_proc dataProc;
         private static List<AudioSource> sources;
         private static AudioListener listener;
@@ -65,10 +67,20 @@ namespace MiniAudioEx
             get => context;
         }
 
-        public static void Initialize()
+        public static uint SampleRate
         {
-            uint sampleRate = 44100;
-            uint channels = 2;
+            get => sampleRate;
+        }
+
+        public static uint Channels
+        {
+            get => channels;
+        }
+
+        public static void Initialize(uint sampleRate, uint channels)
+        {
+            AudioManager.sampleRate = sampleRate;
+            AudioManager.channels = channels;
 
             dataProc = new ma_device_data_proc(OnDataProcess);
             
