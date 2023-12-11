@@ -227,6 +227,8 @@ namespace MiniAudioEx
            
             if(handle != IntPtr.Zero)
             {
+                callbacks.pUserData = handle;
+                MiniAudio.ma_ex_audio_source_set_callbacks_user_data(handle, handle);
                 AudioManager.Add(this);
             }
         }
@@ -338,7 +340,7 @@ namespace MiniAudioEx
             playbackEnded?.Invoke();
         }
 
-        private unsafe void OnDSP(IntPtr pEngineNode, IntPtr pFramesOut, IntPtr pFramesIn, ulong frameCount, int channels)
+        private unsafe void OnDSP(IntPtr pEngineNode, IntPtr pFramesOut, IntPtr pFramesIn, ulong frameCount, int channels, IntPtr userData)
         {
             if(frameCount > 0 && dsp != null)
             {
@@ -348,7 +350,7 @@ namespace MiniAudioEx
             }
         }
 
-        private unsafe void OnCustomWaveform(IntPtr pWaveform, IntPtr pFramesOut, ulong frameCount, int channels)
+        private unsafe void OnCustomWaveform(IntPtr pWaveform, IntPtr pFramesOut, ulong frameCount, int channels, IntPtr userData)
         {
             if(frameCount > 0 && read != null)
             {

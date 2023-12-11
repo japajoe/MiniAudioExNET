@@ -61,10 +61,10 @@ namespace MiniAudioEx
     public delegate void ma_sound_end_proc(IntPtr pUserData, IntPtr pSound);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ma_engine_node_dsp_proc(IntPtr pEngineNode, IntPtr pFramesOut, IntPtr pFramesIn, ulong frameCount, int channels);
+    public delegate void ma_engine_node_dsp_proc(IntPtr pEngineNode, IntPtr pFramesOut, IntPtr pFramesIn, ulong frameCount, int channels, IntPtr userData);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ma_waveform_custom_proc(IntPtr pWaveform, IntPtr pFramesOut, ulong frameCount, int channels);
+    public delegate void ma_waveform_custom_proc(IntPtr pWaveform, IntPtr pFramesOut, ulong frameCount, int channels, IntPtr userData);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct ma_device
@@ -107,6 +107,7 @@ namespace MiniAudioEx
         public ma_sound_end_proc soundEndedProc;
         public ma_engine_node_dsp_proc dspProc;
         public ma_waveform_custom_proc waveformProc;
+        public IntPtr pUserData;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -266,6 +267,9 @@ namespace MiniAudioEx
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern void ma_ex_audio_source_uninit(IntPtr source);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_ex_audio_source_set_callbacks_user_data(IntPtr source, IntPtr userData);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_ex_audio_source_play(IntPtr source, string filePath, byte streamFromDisk);
