@@ -57,6 +57,7 @@ namespace MiniAudioEx
         private static IntPtr context;
         private static uint sampleRate;
         private static uint channels;
+        private static ma_format format;
         private static ma_device_data_proc dataProc;
         private static List<AudioSource> sources;
         private static AudioListener listener;
@@ -81,13 +82,14 @@ namespace MiniAudioEx
         {
             AudioManager.sampleRate = sampleRate;
             AudioManager.channels = channels;
+            format = ma_format.ma_format_f32;
 
             dataProc = new ma_device_data_proc(OnDataProcess);
             
             ma_ex_context_config config = new ma_ex_context_config();
             config.sampleRate = sampleRate;
             config.channels = channels;
-            config.format = ma_format.ma_format_f32;
+            config.format = format;
             config.dataProc = dataProc;
             
             context = MiniAudio.ma_ex_context_init(ref config);
