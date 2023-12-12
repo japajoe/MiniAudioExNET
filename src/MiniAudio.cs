@@ -351,5 +351,8 @@ namespace MiniAudioEx
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_engine_read_pcm_frames(IntPtr pEngine, IntPtr pFramesOut, ulong frameCount, out ulong pFramesRead);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_engine_set_volume(IntPtr pEngine, float volume);
     }
 }

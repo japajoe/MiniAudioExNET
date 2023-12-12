@@ -49,15 +49,19 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace MiniAudioEx
 {
     public static class AudioManager
     {
         private static IntPtr context;
+        private static IntPtr engine;
+        private static IntPtr device;
         private static uint sampleRate;
         private static uint channels;
         private static ma_format format;
+        private static float masterVolume;
         private static ma_device_data_proc dataProc;
         private static List<AudioSource> sources;
         private static AudioListener listener;
@@ -78,11 +82,26 @@ namespace MiniAudioEx
             get => channels;
         }
 
+        public static float MasterVolume
+        {
+            get => masterVolume;
+            set
+            {
+                masterVolume = value;
+                MiniAudio.ma_engine_set_volume(engine, masterVolume);
+            }
+        }
+
         public static void Initialize(uint sampleRate, uint channels)
         {
             AudioManager.sampleRate = sampleRate;
             AudioManager.channels = channels;
             format = ma_format.ma_format_f32;
+
+            engine = IntPtr.Zero;
+            device = IntPtr.Zero;
+
+            masterVolume = 1.0f;
 
             dataProc = new ma_device_data_proc(OnDataProcess);
             
@@ -96,6 +115,9 @@ namespace MiniAudioEx
 
             if(context != IntPtr.Zero)
             {
+                ma_ex_context m = Marshal.PtrToStructure<ma_ex_context>(context);
+                engine = m.engine;
+                device = m.device;
                 sources = new List<AudioSource>();
                 playbackEndedQueue = new ConcurrentQueue<AudioSource>();
             }
