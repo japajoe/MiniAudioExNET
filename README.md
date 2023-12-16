@@ -1,6 +1,11 @@
 # MiniAudioEx
 A simplified .NET wrapper for MiniAudio. This uses a modified version of MiniAudio, see [this repository](https://github.com/japajoe/miniaudioex).
 
+# Installation
+```
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.0.0
+```
+
 # Features
 - Playback of various audio formats such as WAV/MP3/FLAC.
 - Stream audio from disk or from memory.
