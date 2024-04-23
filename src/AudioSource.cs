@@ -249,7 +249,10 @@ namespace MiniAudioEx
             if(this.clip != clip)
                 this.clip = clip;
 
-            MiniAudio.ma_ex_audio_source_play(handle, clip.FilePath, clip.StreamFromDisk ? (byte)1 : (byte)0);
+            if(clip.Handle != IntPtr.Zero)
+                MiniAudio.ma_ex_audio_source_play_from_memory(handle, clip.Handle, clip.DataSize);
+            else
+                MiniAudio.ma_ex_audio_source_play(handle, clip.FilePath, clip.StreamFromDisk ? (byte)1 : (byte)0);
         }
 
         public void Play()

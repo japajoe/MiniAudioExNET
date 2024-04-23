@@ -275,6 +275,9 @@ namespace MiniAudioEx
         public static extern ma_result ma_ex_audio_source_play(IntPtr source, string filePath, byte streamFromDisk);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_ex_audio_source_play_from_memory(IntPtr source, IntPtr data, ulong dataSize);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_ex_audio_source_play_from_waveform_proc(IntPtr source);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
