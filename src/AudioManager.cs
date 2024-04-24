@@ -29,7 +29,7 @@
 // ===============================================================================
 // ALTERNATIVE 2 - MIT No Attribution
 // ===============================================================================
-// Copyright 2023 W.M.R Jap-A-Joe
+// Copyright 2024 W.M.R Jap-A-Joe
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -64,6 +64,7 @@ namespace MiniAudioEx
         private static float masterVolume;
         private static ma_device_data_proc dataProc;
         private static List<AudioSource> sources;
+        private static List<AudioClip> clips;
         private static AudioListener listener;
         private static ConcurrentQueue<AudioSource> playbackEndedQueue;
 
@@ -119,6 +120,7 @@ namespace MiniAudioEx
                 engine = m.engine;
                 device = m.device;
                 sources = new List<AudioSource>();
+                clips = new List<AudioClip>();
                 playbackEndedQueue = new ConcurrentQueue<AudioSource>();
             }
         }
@@ -134,8 +136,18 @@ namespace MiniAudioEx
 
                 sources.Clear();
 
+                for(int i = 0; i < clips.Count; i++)
+                {
+                    clips[i].Dispose();
+                }
+
+                clips.Clear();
+
                 if(listener != null)
+                {
                     listener.Dispose();
+                    listener = null;
+                }
 
                 MiniAudio.ma_ex_context_uninit(context);
                 context = IntPtr.Zero;
@@ -176,6 +188,46 @@ namespace MiniAudioEx
             {
                 sources[index].Dispose();
                 sources.RemoveAt(index);
+            }
+        }
+
+        public static void Add(AudioClip clip)
+        {
+            if(context == IntPtr.Zero)
+                return;
+
+            int hashcode = clip.GetHashCode();
+
+            for(int i = 0; i < clips.Count; i++)
+            {
+                if(sources[i].GetHashCode() == hashcode)
+                    return;
+            }
+
+            clips.Add(clip);
+        }
+
+        public static void Remove(AudioClip clip)
+        {
+            if(context == IntPtr.Zero)
+                return;
+
+            int index = -1;
+            int hashcode = clip.GetHashCode();
+
+            for(int i = 0; i < sources.Count; i++)
+            {
+                if(clips[i].GetHashCode() == hashcode)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if(index >= 0)
+            {
+                clips[index].Dispose();
+                clips.RemoveAt(index);
             }
         }
 

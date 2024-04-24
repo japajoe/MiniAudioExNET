@@ -29,7 +29,7 @@
 // ===============================================================================
 // ALTERNATIVE 2 - MIT No Attribution
 // ===============================================================================
-// Copyright 2023 W.M.R Jap-A-Joe
+// Copyright 2024 W.M.R Jap-A-Joe
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -51,7 +51,7 @@ using System.Runtime.InteropServices;
 
 namespace MiniAudioEx
 {
-    public sealed class AudioClip
+    public sealed class AudioClip : IDisposable
     {
         private string filePath;
         private byte[] data;
@@ -90,6 +90,7 @@ namespace MiniAudioEx
             this.filePath = filePath;
             this.streamFromDisk = streamFromDisk;
             this.handle = IntPtr.Zero;
+            AudioManager.Add(this);
         }
 
         public AudioClip(byte[] data)
@@ -108,9 +109,11 @@ namespace MiniAudioEx
                         ptr[i] = data[i];
                 }
             }
+            
+            AudioManager.Add(this);
         }
 
-        ~AudioClip()
+        public void Dispose()
         {
             if(handle != IntPtr.Zero)
             {

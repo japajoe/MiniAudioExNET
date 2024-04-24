@@ -3,7 +3,7 @@ A simplified .NET wrapper for MiniAudio. This uses a modified version of MiniAud
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.0.2
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.0.3
 ```
 
 # Features
