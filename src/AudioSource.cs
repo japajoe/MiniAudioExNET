@@ -3,20 +3,35 @@ using System.Collections.Concurrent;
 
 namespace MiniAudioExNET
 {
-    public delegate void AudioLoadEvent(AudioSource source);
-    public delegate void AudioEndEvent(AudioSource source);
+    public delegate void AudioLoadEvent();
+    public delegate void AudioEndEvent();
     public delegate void AudioDSPEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioReadEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
 
     public sealed class AudioSource : IDisposable
     {
+        /// <summary>
+        /// Callback handler for when an AudioClip is loaded using the 'Play(AudioClip clip)' method.
+        /// </summary>
         public event AudioLoadEvent Load;
+        /// <summary>
+        /// Callback handler for when the playback has finished. This does not trigger if the AudioSource is set to Loop.
+        /// </summary>
         public event AudioEndEvent End;
+        /// <summary>
+        /// Callback handler for implementing custom effects.
+        /// </summary>
         public event AudioDSPEvent DSP;
+        /// <summary>
+        /// Callback handler for generating procedural audio when using the 'Play()' method.
+        /// </summary>
+        public event AudioReadEvent Read;
 
         private IntPtr handle;
         private ma_sound_load_proc loadCallback;
         private ma_sound_end_proc endCallback;
         private ma_engine_node_dsp_proc dspCallback;
+        private ma_waveform_proc waveformCallback;
         private ConcurrentQueue<int> endEventQueue;
 
         public IntPtr Handle
@@ -196,12 +211,14 @@ namespace MiniAudioExNET
                 loadCallback = OnLoad;
                 endCallback = OnEnd;
                 dspCallback = OnDSP;
+                waveformCallback = OnWaveform;
 
-                ma_ex_sound_callbacks callbacks = new ma_ex_sound_callbacks();
+                ma_ex_audio_source_callbacks callbacks = new ma_ex_audio_source_callbacks();
                 callbacks.pUserData = handle;
                 callbacks.dspCallback = dspCallback;
                 callbacks.endCallback = endCallback;
                 callbacks.loadCallback = loadCallback;
+                callbacks.waveformCallback = waveformCallback;
 
                 MiniAudioEx.ma_ex_audio_source_set_callbacks(handle, callbacks);
                 
@@ -219,11 +236,18 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Use this method if you registered a method to the Read callback to generate audio.
+        /// </summary>
         public void Play()
         {
             MiniAudioEx.ma_ex_audio_source_play(handle);
         }
 
+        /// <summary>
+        /// Plays an AudioClip by given filepath or encoded data buffer (data must be either WAV/MP3/FLAC).
+        /// </summary>
+        /// <param name="clip">The AudioClip to play.</param>
         public void Play(AudioClip clip)
         {
             if(clip.Handle != IntPtr.Zero)
@@ -232,6 +256,9 @@ namespace MiniAudioExNET
                 MiniAudioEx.ma_ex_audio_source_play_from_file(handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
         }
 
+        /// <summary>
+        /// Stop the AudioSource playback, note that this method does not set the cursor back to 0.
+        /// </summary>
         public void Stop()
         {
             MiniAudioEx.ma_ex_audio_source_stop(handle);
@@ -243,14 +270,14 @@ namespace MiniAudioExNET
             {
                 while(endEventQueue.TryDequeue(out int result))
                 {
-                    End?.Invoke(this);
+                    End?.Invoke();
                 }
             }
         }
 
         private void OnLoad(IntPtr pUserData, IntPtr pSound)
         {
-            Load?.Invoke(this);
+            Load?.Invoke();
         }
 
         private void OnEnd(IntPtr pUserData, IntPtr pSound)
@@ -260,13 +287,23 @@ namespace MiniAudioExNET
             endEventQueue.Enqueue(1);            
         }
         
-        private void OnDSP(IntPtr pUserData, IntPtr pEngineNode, IntPtr pFramesOut, UInt64 frameCount, Int32 channels)
+        private void OnDSP(IntPtr pUserData, IntPtr pEngineNode, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
             unsafe
             {
-                int length = (int)frameCount * channels;
-                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
-                DSP?.Invoke(framesOut, frameCount, channels);
+                UInt64 length = frameCount * channels;
+                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), (int)length);
+                DSP?.Invoke(framesOut, frameCount, (int)channels);
+            }
+        }
+
+        private void OnWaveform(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
+        {
+            unsafe
+            {
+                UInt64 length = frameCount * channels;
+                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), (int)length);
+                Read?.Invoke(framesOut, frameCount, (int)channels);
             }
         }
     }

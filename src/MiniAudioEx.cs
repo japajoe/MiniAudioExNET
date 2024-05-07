@@ -109,11 +109,11 @@ namespace MiniAudioExNET
         public IntPtr pContext;
         public ma_device_type type;
         public UInt32 sampleRate;
-        public Int32 state;               /* The state of the device is variable and can change at any time on any thread. Must be used atomically. */
-        public IntPtr onData;                 /* Set once at initialization time and should not be changed after. */
-        public IntPtr onNotification; /* Set once at initialization time and should not be changed after. */
-        public IntPtr onStop;                        /* DEPRECATED. Use the notification callback instead. Set once at initialization time and should not be changed after. */
-        public IntPtr pUserData;                            /* Application defined data. */
+        public Int32 state;                 /* The state of the device is variable and can change at any time on any thread. Must be used atomically. */
+        public IntPtr onData;               /* Set once at initialization time and should not be changed after. */
+        public IntPtr onNotification;       /* Set once at initialization time and should not be changed after. */
+        public IntPtr onStop;               /* DEPRECATED. Use the notification callback instead. Set once at initialization time and should not be changed after. */
+        public IntPtr pUserData;            /* Application defined data. */
         // More fields here that we don't necessarily need
     }
 
@@ -122,16 +122,16 @@ namespace MiniAudioExNET
     {
         public UInt32 sampleRate;
         public byte channels;
-        public ma_device_data_proc dataCallback;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct ma_ex_sound_callbacks
+    internal struct ma_ex_audio_source_callbacks
     {
         public IntPtr pUserData;
         public ma_sound_end_proc endCallback;
         public ma_sound_load_proc loadCallback;
         public ma_engine_node_dsp_proc dspCallback;
+        public ma_waveform_proc waveformCallback;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -150,16 +150,16 @@ namespace MiniAudioExNET
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void ma_device_data_proc(ref ma_device pDevice, IntPtr pOutput, IntPtr pInput, uint frameCount);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void ma_sound_load_proc(IntPtr pUserData, IntPtr pSound);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void ma_sound_end_proc(IntPtr pUserData, IntPtr pSound);
     
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void ma_engine_node_dsp_proc(IntPtr pUserData, IntPtr pEngineNode, IntPtr pFramesOut, UInt64 frameCount, Int32 channels);
+    internal delegate void ma_engine_node_dsp_proc(IntPtr pUserData, IntPtr pEngineNode, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void ma_waveform_proc(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels);
 
     public struct Vector3f
     {
@@ -188,7 +188,7 @@ namespace MiniAudioExNET
         private const string LIB_MINIAUDIO_EX = "miniaudioex";
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ma_ex_context_config ma_ex_context_config_init(UInt32 sampleRate, byte channels, ma_device_data_proc dataCallback);
+        internal static extern ma_ex_context_config ma_ex_context_config_init(UInt32 sampleRate, byte channels);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr ma_ex_context_init(ref ma_ex_context_config config);
@@ -197,13 +197,19 @@ namespace MiniAudioExNET
         internal static extern void ma_ex_context_uninit(IntPtr context);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void ma_ex_context_set_master_volume(IntPtr context, float volume);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern float ma_ex_context_get_master_volume(IntPtr context);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr ma_ex_audio_source_init(IntPtr context);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void ma_ex_audio_source_uninit(IntPtr source);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void ma_ex_audio_source_set_callbacks(IntPtr source, ma_ex_sound_callbacks callbacks);
+        internal static extern void ma_ex_audio_source_set_callbacks(IntPtr source, ma_ex_audio_source_callbacks callbacks);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ma_result ma_ex_audio_source_play(IntPtr source);
@@ -340,10 +346,6 @@ namespace MiniAudioExNET
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void ma_ex_audio_listener_get_cone(IntPtr listener, out float innerAngleInRadians, out float outerAngleInRadians, out float outerGain);
 
-        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ma_result ma_engine_read_pcm_frames(IntPtr pEngine, IntPtr pFramesOut, ulong frameCount, out ulong pFramesRead);
-
-        private static ma_device_data_proc dataProc;
         private static IntPtr audioContext;
         private static List<AudioSource> audioSources = new List<AudioSource>();
         private static List<AudioClip> audioClips = new List<AudioClip>();
@@ -357,14 +359,24 @@ namespace MiniAudioExNET
             }
         }
 
+        public static float MasterVolume
+        {
+            get
+            {
+                return ma_ex_context_get_master_volume(audioContext);
+            }
+            set
+            {
+                ma_ex_context_set_master_volume(audioContext, value);
+            }
+        }
+
         public static void Initialize(UInt32 sampleRate, UInt32 channels)
         {
             if(audioContext != IntPtr.Zero)
                 return;
 
-            dataProc = OnDataProc;
-
-            ma_ex_context_config contextConfig = MiniAudioEx.ma_ex_context_config_init(sampleRate, (byte)channels, dataProc);
+            ma_ex_context_config contextConfig = MiniAudioEx.ma_ex_context_config_init(sampleRate, (byte)channels);
             audioContext = MiniAudioEx.ma_ex_context_init(ref contextConfig);
         }
 
@@ -509,11 +521,6 @@ namespace MiniAudioExNET
                 audioListeners[index].Dispose();
                 audioListeners.RemoveAt(index);
             }
-        }
-
-        private static void OnDataProc(ref ma_device pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
-        {
-            ma_engine_read_pcm_frames(pDevice.pUserData, pOutput, frameCount, out _);
         }
     }
 }
