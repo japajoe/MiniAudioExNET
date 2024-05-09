@@ -1,4 +1,4 @@
-# MiniAudioEx
+# MiniAudioExNET
 A .NET wrapper for MiniAudioEx. MiniAudioEx is a a modified version of MiniAudio, see [this repository](https://github.com/japajoe/miniaudioex). The goal of MiniAudioEx is to make it easy to add audio playback to .NET applications. I've tried several libraries in the past and none of them could offer all of the things I was looking for:
 
 - Easy to set up and interact with.
