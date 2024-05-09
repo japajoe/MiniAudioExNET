@@ -30,12 +30,12 @@ namespace MiniAudioExNET
             MiniAudioEx.Deinitialize();
         }
 
-        private static void OnAudioLoad(AudioSource source)
+        private static void OnAudioLoad()
         {
             Console.WriteLine("Audio loaded");
         }
 
-        private static void OnAudioEnd(AudioSource source)
+        private static void OnAudioEnd()
         {
             Console.WriteLine("Audio ended");
         }
