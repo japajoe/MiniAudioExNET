@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net7.0;netstandard2.1</TargetFrameworks>    
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>JAJ.Packages.MiniAudioEx</PackageId>
     <Version>1.1.0</Version>
@@ -20,11 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="examples/**" />
-    <Compile Remove="examples/**" />
-    <EmbeddedResource Remove="examples/**" />
-    <None Remove="examples/**" />
-      <None Include="README.md" Pack="true" PackagePath="/"/>
+    <None Include="README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
 
   <ItemGroup>
