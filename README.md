@@ -27,6 +27,7 @@ dotnet add package JAJ.Packages.MiniAudioEx --version 1.1.0
 - Reuse audio clips. If you have loaded an AudioClip from memory, then the library allocates memory that the garbage collector doesn't free. All memory is freed after calling MiniAudioEx.Deinitialize. It is perfectly fine to reuse audio clips across multiple audio sources, so you don't have to load multiple clips with the same sound. A good strategy is to store your audio clips in an array or a list for the lifetime of your application.
 - Call MiniAudioEx.Update from your main thread loop. The only reason this method exists is because the `End` callback of an audio source originates from an audio thread, and we want to move this notification to the main thread which requires polling. The advantage this brings is that you can safely call API functions from within the `End` callback. An example use of the End callback is scheduling the next clip to be played.
 - The `DSP` and `Read` event run on a separate thread as well. You should not call any MiniAudioEx API functions from these callbacks.
+- Currently only a single audio listener is supported.
 
 # Example 1 (Playing from file)
 ```cs
