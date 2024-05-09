@@ -88,6 +88,7 @@ namespace MiniAudioExExample
             AudioSource source = new AudioSource();
 
             AudioClip clip = new AudioClip();
+            source.Loop = true;
             source.Play();
             
             while(true)
