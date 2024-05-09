@@ -1,32 +1,43 @@
-using System;
+﻿using System;
 using System.Threading;
-using MiniAudioEx;
 
-namespace MiniAudioExDemo
+namespace MiniAudioExNET
 {
     class Program
     {
         static void Main(string[] args)
         {
             Console.CancelKeyPress += OnCancelKeyPress;
+
+            MiniAudioEx.Initialize(48000, 2);
             
-            AudioManager.Initialize(44100, 2);
-
             AudioSource source = new AudioSource();
-            AudioClip clip = new AudioClip("some_music.mp3");
-            source.Play(clip);
+            source.End += OnAudioEnd;
+            source.Load += OnAudioLoad;
 
-            //If your program has a main loop, you should call AudioManager.Update from there
+            AudioClip clip = new AudioClip("some_audio.mp3", true);
+            source.Play(clip);
+            
             while(true)
             {
-                AudioManager.Update();
+                MiniAudioEx.Update();
                 Thread.Sleep(10);
-            }
+            }            
         }
 
         private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            AudioManager.Deinitialize();
+            MiniAudioEx.Deinitialize();
+        }
+
+        private static void OnAudioLoad(AudioSource source)
+        {
+            Console.WriteLine("Audio loaded");
+        }
+
+        private static void OnAudioEnd(AudioSource source)
+        {
+            Console.WriteLine("Audio ended");
         }
     }
 }
