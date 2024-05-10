@@ -5,7 +5,7 @@ namespace MiniAudioExNET
 {
     public delegate void AudioLoadEvent();
     public delegate void AudioEndEvent();
-    public delegate void AudioDSPEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioProcessEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
     public delegate void AudioReadEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
 
     public sealed class AudioSource : IDisposable
@@ -21,7 +21,7 @@ namespace MiniAudioExNET
         /// <summary>
         /// Callback handler for implementing custom effects.
         /// </summary>
-        public event AudioDSPEvent DSP;
+        public event AudioProcessEvent Process;
         /// <summary>
         /// Callback handler for generating procedural audio when using the 'Play()' method.
         /// </summary>
@@ -30,7 +30,7 @@ namespace MiniAudioExNET
         private IntPtr handle;
         private ma_sound_load_proc loadCallback;
         private ma_sound_end_proc endCallback;
-        private ma_engine_node_dsp_proc dspCallback;
+        private ma_sound_process_proc processCallback;
         private ma_waveform_proc waveformCallback;
         private ConcurrentQueue<int> endEventQueue;
 
@@ -210,12 +210,12 @@ namespace MiniAudioExNET
             {
                 loadCallback = OnLoad;
                 endCallback = OnEnd;
-                dspCallback = OnDSP;
+                processCallback = OnProcess;
                 waveformCallback = OnWaveform;
 
                 ma_ex_audio_source_callbacks callbacks = new ma_ex_audio_source_callbacks();
                 callbacks.pUserData = handle;
-                callbacks.dspCallback = dspCallback;
+                callbacks.processCallback = processCallback;
                 callbacks.endCallback = endCallback;
                 callbacks.loadCallback = loadCallback;
                 callbacks.waveformCallback = waveformCallback;
@@ -287,13 +287,13 @@ namespace MiniAudioExNET
             endEventQueue.Enqueue(1);            
         }
         
-        private void OnDSP(IntPtr pUserData, IntPtr pEngineNode, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
+        private void OnProcess(IntPtr pUserData, IntPtr pSound, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
             unsafe
             {
                 UInt64 length = frameCount * channels;
                 Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), (int)length);
-                DSP?.Invoke(framesOut, frameCount, (int)channels);
+                Process?.Invoke(framesOut, frameCount, (int)channels);
             }
         }
 

@@ -130,7 +130,7 @@ namespace MiniAudioExNET
         public IntPtr pUserData;
         public ma_sound_end_proc endCallback;
         public ma_sound_load_proc loadCallback;
-        public ma_engine_node_dsp_proc dspCallback;
+        public ma_sound_process_proc processCallback;
         public ma_waveform_proc waveformCallback;
     }
 
@@ -156,7 +156,7 @@ namespace MiniAudioExNET
     internal delegate void ma_sound_end_proc(IntPtr pUserData, IntPtr pSound);
     
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void ma_engine_node_dsp_proc(IntPtr pUserData, IntPtr pEngineNode, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels);
+    internal delegate void ma_sound_process_proc(IntPtr pUserData, IntPtr pSound, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void ma_waveform_proc(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels);
