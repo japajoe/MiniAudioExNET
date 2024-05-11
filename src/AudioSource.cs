@@ -226,7 +226,7 @@ namespace MiniAudioExNET
             }
         }
 
-        public void Dispose()
+        internal void Destroy()
         {
             if(handle != IntPtr.Zero)
             {
@@ -234,6 +234,11 @@ namespace MiniAudioExNET
                 handle = IntPtr.Zero;
                 endEventQueue.Clear();
             }
+        }
+
+        public void Dispose()
+        {
+            MiniAudioEx.Remove(this);
         }
 
         /// <summary>

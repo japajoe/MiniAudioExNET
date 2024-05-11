@@ -92,13 +92,18 @@ namespace MiniAudioExNET
             }
         }
 
-        public void Dispose()
+        internal void Destroy()
         {
             if(handle != IntPtr.Zero)
             {
                 MiniAudioEx.ma_ex_audio_listener_uninit(handle);
                 handle = IntPtr.Zero;
             }
+        }
+
+        public void Dispose()
+        {
+            MiniAudioEx.Remove(this);
         }
     }
 }

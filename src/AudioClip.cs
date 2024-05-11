@@ -65,13 +65,19 @@ namespace MiniAudioExNET
             
         }
 
-        public void Dispose()
+        internal void Destroy()
         {
             if(handle != IntPtr.Zero)
             {
                 Marshal.FreeHGlobal(handle);
                 handle = IntPtr.Zero;
             }
+        }
+
+        public void Dispose()
+        {
+            Console.WriteLine("Disposing");
+            MiniAudioEx.Remove(this);
         }
     }
 }

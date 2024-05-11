@@ -104,22 +104,16 @@ namespace MiniAudioExNET
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct ma_device
+    internal struct ma_ex_device_info
     {
-        public IntPtr pContext;
-        public ma_device_type type;
-        public UInt32 sampleRate;
-        public Int32 state;                 /* The state of the device is variable and can change at any time on any thread. Must be used atomically. */
-        public IntPtr onData;               /* Set once at initialization time and should not be changed after. */
-        public IntPtr onNotification;       /* Set once at initialization time and should not be changed after. */
-        public IntPtr onStop;               /* DEPRECATED. Use the notification callback instead. Set once at initialization time and should not be changed after. */
-        public IntPtr pUserData;            /* Application defined data. */
-        // More fields here that we don't necessarily need
+        public IntPtr pName;
+        public UInt32 index;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct ma_ex_context_config
     {
+        public ma_ex_device_info deviceInfo;
         public UInt32 sampleRate;
         public byte channels;
     }
@@ -183,12 +177,50 @@ namespace MiniAudioExNET
         Exponential
     }
 
+    public sealed class DeviceInfo
+    {
+        private string name;
+        private UInt32 index;
+
+        public string Name
+        {
+            get
+            {
+                return name;
+            }
+        }
+
+        public UInt32 Index
+        {
+            get
+            {
+                return index;
+            }
+        }
+
+        public DeviceInfo(IntPtr pName, UInt32 index)
+        {
+            if(pName != IntPtr.Zero)
+                name = Marshal.PtrToStringAnsi(pName);
+            else
+                name = string.Empty;
+
+            this.index = index;
+        }
+    }
+
     public static class MiniAudioEx
     {
         private const string LIB_MINIAUDIO_EX = "miniaudioex";
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ma_ex_context_config ma_ex_context_config_init(UInt32 sampleRate, byte channels);
+        internal static extern IntPtr ma_ex_playback_devices_get(out UInt32 count);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void ma_ex_playback_devices_free(IntPtr pDeviceInfo, UInt32 count);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ma_ex_context_config ma_ex_context_config_init(UInt32 sampleRate, byte channels, ref ma_ex_device_info pDeviceInfo);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr ma_ex_context_init(ref ma_ex_context_config config);
@@ -371,13 +403,18 @@ namespace MiniAudioExNET
             }
         }
 
-        public static void Initialize(UInt32 sampleRate, UInt32 channels)
+        public static void Initialize(UInt32 sampleRate, UInt32 channels, DeviceInfo deviceInfo = null)
         {
             if(audioContext != IntPtr.Zero)
                 return;
 
-            ma_ex_context_config contextConfig = MiniAudioEx.ma_ex_context_config_init(sampleRate, (byte)channels);
-            audioContext = MiniAudioEx.ma_ex_context_init(ref contextConfig);
+            ma_ex_device_info pDeviceInfo = new ma_ex_device_info();
+            pDeviceInfo.index = deviceInfo == null ? 0 : deviceInfo.Index;
+            pDeviceInfo.pName = IntPtr.Zero;
+
+            ma_ex_context_config contextConfig = ma_ex_context_config_init(sampleRate, (byte)channels, ref pDeviceInfo);
+
+            audioContext = ma_ex_context_init(ref contextConfig);
         }
 
         public static void Deinitialize()
@@ -386,21 +423,21 @@ namespace MiniAudioExNET
                 return;
 
             for(int i = 0; i < audioSources.Count; i++)
-                audioSources[i].Dispose();
+                audioSources[i].Destroy();
 
             audioSources.Clear();
 
             for(int i = 0; i < audioClips.Count; i++)
-                audioClips[i].Dispose();
+                audioClips[i].Destroy();
             
             audioClips.Clear();
 
             for(int i = 0; i < audioListeners.Count; i++)
-                audioListeners[i].Dispose();
+                audioListeners[i].Destroy();
 
             audioListeners.Clear();
 
-            MiniAudioEx.ma_ex_context_uninit(audioContext);
+            ma_ex_context_uninit(audioContext);
             audioContext = IntPtr.Zero;
         }
 
@@ -413,6 +450,27 @@ namespace MiniAudioExNET
             {
                 audioSources[i].Update();
             }
+        }
+
+        public static DeviceInfo[] GetDevices()
+        {
+            IntPtr pDevices = ma_ex_playback_devices_get(out UInt32 count);
+
+            if(pDevices == IntPtr.Zero || count == 0)
+                return null;
+            
+            DeviceInfo[] devices = new DeviceInfo[count];
+
+            for (UInt32 i = 0; i < count; i++)
+            {
+                IntPtr elementPtr = IntPtr.Add(pDevices, (int)i * Marshal.SizeOf<ma_ex_device_info>());
+                ma_ex_device_info deviceInfo = Marshal.PtrToStructure<ma_ex_device_info>(elementPtr);
+                devices[i] = new DeviceInfo(deviceInfo.pName, deviceInfo.index);
+            }
+
+            ma_ex_playback_devices_free(pDevices, count);
+            
+            return devices;
         }
 
         internal static void Add(AudioSource source)
@@ -472,7 +530,7 @@ namespace MiniAudioExNET
 
             if(found)
             {
-                audioSources[index].Dispose();
+                audioSources[index].Destroy();
                 audioSources.RemoveAt(index);
             }
         }
@@ -495,7 +553,7 @@ namespace MiniAudioExNET
 
             if(found)
             {
-                audioClips[index].Dispose();
+                audioClips[index].Destroy();
                 audioClips.RemoveAt(index);
             }
         }
@@ -518,7 +576,7 @@ namespace MiniAudioExNET
 
             if(found)
             {
-                audioListeners[index].Dispose();
+                audioListeners[index].Destroy();
                 audioListeners.RemoveAt(index);
             }
         }
