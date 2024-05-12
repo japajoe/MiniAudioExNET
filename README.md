@@ -19,13 +19,14 @@ MiniAudio was designed to work on every major platform, however I do not have a 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.3.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.4.0
 ```
 
 # General gotchas
 - Reuse audio clips. If you have loaded an AudioClip from memory, then the library allocates memory that the garbage collector doesn't free. All memory is freed after calling MiniAudioEx.Deinitialize. It is perfectly fine to reuse audio clips across multiple audio sources, so you don't have to load multiple clips with the same sound. A good strategy is to store your audio clips in an array or a list for the lifetime of your application.
 - Call MiniAudioEx.Update from your main thread loop. The only reason this method exists is because the `End` callback of an audio source originates from an audio thread, and we want to move this notification to the main thread which requires polling. The advantage this brings is that you can safely call API functions from within the `End` callback. An example use of the End callback is scheduling the next clip to be played.
 - The `Process` and `Read` event run on a separate thread as well. You should not call any MiniAudioEx API functions from these callbacks.
+- When using the `Process` and `Read` events in netstandard 2.0, it is important to know that the size/length of the buffer you receive in the callbacks might not necessarily be the size of the actual data. Since netstandard 2.0 does not have the Span<T> type, a workaround has been applied that tries to be efficient with memory allocations for these buffers. To get the actual size (or number of elements) of the data you simply multiply the number of frames with the number of channels that the callback gives you. If you write more data than is available, the excess data is simply ignored.
 
 # Example 1 (Playing from file)
 ```cs

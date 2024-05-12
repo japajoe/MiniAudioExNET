@@ -18,11 +18,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_listener_get_spatialization(handle) > 0;
+                return Library.ma_ex_audio_listener_get_spatialization(handle) > 0;
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_listener_set_spatialization(handle, value ? (uint)1 : 0);
+                Library.ma_ex_audio_listener_set_spatialization(handle, value ? (uint)1 : 0);
             }
         }
 
@@ -31,12 +31,12 @@ namespace MiniAudioExNET
             get
             {
                 float x, y, z;
-                MiniAudioEx.ma_ex_audio_listener_get_position(handle, out x, out y, out z);
+                Library.ma_ex_audio_listener_get_position(handle, out x, out y, out z);
                 return new Vector3f(x, y, z);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_listener_set_position(handle, value.x, value.y, value.z);
+                Library.ma_ex_audio_listener_set_position(handle, value.x, value.y, value.z);
             }
         }
 
@@ -45,12 +45,12 @@ namespace MiniAudioExNET
             get
             {
                 float x, y, z;
-                MiniAudioEx.ma_ex_audio_listener_get_direction(handle, out x, out y, out z);
+                Library.ma_ex_audio_listener_get_direction(handle, out x, out y, out z);
                 return new Vector3f(x, y, z);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_listener_set_direction(handle, value.x, value.y, value.z);
+                Library.ma_ex_audio_listener_set_direction(handle, value.x, value.y, value.z);
             }
         }
 
@@ -59,12 +59,12 @@ namespace MiniAudioExNET
             get
             {
                 float x, y, z;
-                MiniAudioEx.ma_ex_audio_listener_get_velocity(handle, out x, out y, out z);
+                Library.ma_ex_audio_listener_get_velocity(handle, out x, out y, out z);
                 return new Vector3f(x, y, z);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_listener_set_velocity(handle, value.x, value.y, value.z);
+                Library.ma_ex_audio_listener_set_velocity(handle, value.x, value.y, value.z);
             }
         }
 
@@ -73,18 +73,18 @@ namespace MiniAudioExNET
             get
             {
                 float x, y, z;
-                MiniAudioEx.ma_ex_audio_listener_get_world_up(handle, out x, out y, out z);
+                Library.ma_ex_audio_listener_get_world_up(handle, out x, out y, out z);
                 return new Vector3f(x, y, z);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_listener_set_world_up(handle, value.x, value.y, value.z);
+                Library.ma_ex_audio_listener_set_world_up(handle, value.x, value.y, value.z);
             }
         }
 
         public AudioListener()
         {
-            handle = MiniAudioEx.ma_ex_audio_listener_init(MiniAudioEx.AudioContext);
+            handle = Library.ma_ex_audio_listener_init(MiniAudioEx.AudioContext);
 
             if(handle != IntPtr.Zero)
             {
@@ -96,7 +96,7 @@ namespace MiniAudioExNET
         {
             if(handle != IntPtr.Zero)
             {
-                MiniAudioEx.ma_ex_audio_listener_uninit(handle);
+                Library.ma_ex_audio_listener_uninit(handle);
                 handle = IntPtr.Zero;
             }
         }

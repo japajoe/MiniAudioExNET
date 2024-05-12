@@ -1,12 +1,22 @@
 using System;
 using System.Collections.Concurrent;
+#if NETSTANDARD2_0
+using System.Runtime.InteropServices;
+#endif
 
 namespace MiniAudioExNET
 {
     public delegate void AudioLoadEvent();
     public delegate void AudioEndEvent();
+
+    //netstandard 2.0 needs some workaround since it does not have the Span<T> type
+#if NETSTANDARD2_0
+    public delegate void AudioProcessEvent(float[] framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioReadEvent(float[] framesOut, UInt64 frameCount, Int32 channels);
+#else
     public delegate void AudioProcessEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
     public delegate void AudioReadEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+#endif
 
     public sealed class AudioSource : IDisposable
     {
@@ -33,6 +43,10 @@ namespace MiniAudioExNET
         private ma_sound_process_proc processCallback;
         private ma_waveform_proc waveformCallback;
         private ConcurrentQueue<int> endEventQueue;
+#if NETSTANDARD2_0
+        private float[] processBuffer;
+        private float[] readBuffer;
+#endif
 
         public IntPtr Handle
         {
@@ -46,11 +60,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_pcm_position(handle);
+                return Library.ma_ex_audio_source_get_pcm_position(handle);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_pcm_position(handle, value);
+                Library.ma_ex_audio_source_set_pcm_position(handle, value);
             }
         }
 
@@ -58,7 +72,7 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_pcm_length(handle);
+                return Library.ma_ex_audio_source_get_pcm_length(handle);
             }
         }
 
@@ -66,11 +80,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_volume(handle);
+                return Library.ma_ex_audio_source_get_volume(handle);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_volume(handle, value);
+                Library.ma_ex_audio_source_set_volume(handle, value);
             }
         }
 
@@ -78,11 +92,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_pitch(handle);
+                return Library.ma_ex_audio_source_get_pitch(handle);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_pitch(handle, value);
+                Library.ma_ex_audio_source_set_pitch(handle, value);
             }
         }
 
@@ -90,11 +104,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_loop(handle) > 0;
+                return Library.ma_ex_audio_source_get_loop(handle) > 0;
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_loop(handle, value ? (uint)1 : 0);
+                Library.ma_ex_audio_source_set_loop(handle, value ? (uint)1 : 0);
             }
         }
 
@@ -102,11 +116,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_spatialization(handle) > 0;
+                return Library.ma_ex_audio_source_get_spatialization(handle) > 0;
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_spatialization(handle, value ? (uint)1 : 0);
+                Library.ma_ex_audio_source_set_spatialization(handle, value ? (uint)1 : 0);
             }
         }
 
@@ -114,11 +128,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_doppler_factor(handle);
+                return Library.ma_ex_audio_source_get_doppler_factor(handle);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_doppler_factor(handle, value);
+                Library.ma_ex_audio_source_set_doppler_factor(handle, value);
             }
         }
 
@@ -126,11 +140,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_min_distance(handle);
+                return Library.ma_ex_audio_source_get_min_distance(handle);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_min_distance(handle, value);
+                Library.ma_ex_audio_source_set_min_distance(handle, value);
             }
         }
 
@@ -138,11 +152,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return MiniAudioEx.ma_ex_audio_source_get_max_distance(handle);
+                return Library.ma_ex_audio_source_get_max_distance(handle);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_max_distance(handle, value);
+                Library.ma_ex_audio_source_set_max_distance(handle, value);
             }
         }
 
@@ -150,11 +164,11 @@ namespace MiniAudioExNET
         {
             get
             {
-                return (AttenuationModel)MiniAudioEx.ma_ex_audio_source_get_attenuation_model(handle);
+                return (AttenuationModel)Library.ma_ex_audio_source_get_attenuation_model(handle);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_attenuation_model(handle, (ma_attenuation_model)value);
+                Library.ma_ex_audio_source_set_attenuation_model(handle, (ma_attenuation_model)value);
             }
         }
 
@@ -163,12 +177,12 @@ namespace MiniAudioExNET
             get
             {
                 float x, y, z;
-                MiniAudioEx.ma_ex_audio_source_get_position(handle, out x, out y, out z);
+                Library.ma_ex_audio_source_get_position(handle, out x, out y, out z);
                 return new Vector3f(x, y, z);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_position(handle, value.x, value.y, value.z);
+                Library.ma_ex_audio_source_set_position(handle, value.x, value.y, value.z);
             }
         }
 
@@ -177,12 +191,12 @@ namespace MiniAudioExNET
             get
             {
                 float x, y, z;
-                MiniAudioEx.ma_ex_audio_source_get_direction(handle, out x, out y, out z);
+                Library.ma_ex_audio_source_get_direction(handle, out x, out y, out z);
                 return new Vector3f(x, y, z);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_direction(handle, value.x, value.y, value.z);
+                Library.ma_ex_audio_source_set_direction(handle, value.x, value.y, value.z);
             }
         }
 
@@ -191,12 +205,12 @@ namespace MiniAudioExNET
             get
             {
                 float x, y, z;
-                MiniAudioEx.ma_ex_audio_source_get_velocity(handle, out x, out y, out z);
+                Library.ma_ex_audio_source_get_velocity(handle, out x, out y, out z);
                 return new Vector3f(x, y, z);
             }
             set
             {
-                MiniAudioEx.ma_ex_audio_source_set_velocity(handle, value.x, value.y, value.z);
+                Library.ma_ex_audio_source_set_velocity(handle, value.x, value.y, value.z);
             }
         }
 
@@ -204,7 +218,7 @@ namespace MiniAudioExNET
         {
             endEventQueue = new ConcurrentQueue<int>();
 
-            handle = MiniAudioEx.ma_ex_audio_source_init(MiniAudioEx.AudioContext);
+            handle = Library.ma_ex_audio_source_init(MiniAudioEx.AudioContext);
 
             if(handle != IntPtr.Zero)
             {
@@ -220,7 +234,7 @@ namespace MiniAudioExNET
                 callbacks.loadCallback = loadCallback;
                 callbacks.waveformCallback = waveformCallback;
 
-                MiniAudioEx.ma_ex_audio_source_set_callbacks(handle, callbacks);
+                Library.ma_ex_audio_source_set_callbacks(handle, callbacks);
                 
                 MiniAudioEx.Add(this);
             }
@@ -230,9 +244,14 @@ namespace MiniAudioExNET
         {
             if(handle != IntPtr.Zero)
             {
-                MiniAudioEx.ma_ex_audio_source_uninit(handle);
+                Library.ma_ex_audio_source_uninit(handle);
                 handle = IntPtr.Zero;
-                endEventQueue.Clear();
+
+                //Clear the queue (netstandard2.0 does not have a Clear method for ConcurrentQueue)
+                while(endEventQueue.Count > 0)
+                {
+                    endEventQueue.TryDequeue(out _);
+                }
             }
         }
 
@@ -246,7 +265,7 @@ namespace MiniAudioExNET
         /// </summary>
         public void Play()
         {
-            MiniAudioEx.ma_ex_audio_source_play(handle);
+            Library.ma_ex_audio_source_play(handle);
         }
 
         /// <summary>
@@ -256,9 +275,9 @@ namespace MiniAudioExNET
         public void Play(AudioClip clip)
         {
             if(clip.Handle != IntPtr.Zero)
-                MiniAudioEx.ma_ex_audio_source_play_from_memory(handle, clip.Handle, clip.DataSize);
+                Library.ma_ex_audio_source_play_from_memory(handle, clip.Handle, clip.DataSize);
             else
-                MiniAudioEx.ma_ex_audio_source_play_from_file(handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                Library.ma_ex_audio_source_play_from_file(handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
         }
 
         /// <summary>
@@ -266,7 +285,7 @@ namespace MiniAudioExNET
         /// </summary>
         public void Stop()
         {
-            MiniAudioEx.ma_ex_audio_source_stop(handle);
+            Library.ma_ex_audio_source_stop(handle);
         }
 
         internal void Update()
@@ -294,22 +313,40 @@ namespace MiniAudioExNET
         
         private void OnProcess(IntPtr pUserData, IntPtr pSound, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
+            int length = (int)(frameCount * channels);
+
+#if NETSTANDARD2_0
+            if(processBuffer?.Length < length)
+                processBuffer = new float[length];
+            Array.Clear(processBuffer, 0, processBuffer.Length);
+            Process?.Invoke(processBuffer, frameCount, (int)channels);
+            Marshal.Copy(processBuffer, 0, pFramesOut, length);
+#else
             unsafe
             {
-                UInt64 length = frameCount * channels;
-                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), (int)length);
+                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
                 Process?.Invoke(framesOut, frameCount, (int)channels);
             }
+#endif
         }
 
         private void OnWaveform(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
+            int length = (int)(frameCount * channels);
+
+#if NETSTANDARD2_0
+            if(readBuffer?.Length < length)
+                readBuffer = new float[length];
+            Array.Clear(readBuffer, 0, processBuffer.Length);
+            Read?.Invoke(readBuffer, frameCount, (int)channels);
+            Marshal.Copy(readBuffer, 0, pFramesOut, length);
+#else
             unsafe
             {
-                UInt64 length = frameCount * channels;
-                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), (int)length);
+                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
                 Read?.Invoke(framesOut, frameCount, (int)channels);
             }
+#endif
         }
     }
 }
