@@ -319,7 +319,7 @@ namespace MiniAudioExNET
             if(processBuffer?.Length < length)
                 processBuffer = new float[length];
             Array.Clear(processBuffer, 0, processBuffer.Length);
-            Marshal.Copy(pFramesOut, readBuffer, 0, length);
+            Marshal.Copy(pFramesOut, processBuffer, 0, length);
             Process?.Invoke(processBuffer, frameCount, (int)channels);
             Marshal.Copy(processBuffer, 0, pFramesOut, length);
 #else
