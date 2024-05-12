@@ -166,3 +166,63 @@ namespace MiniAudioExExample
     }
 }
 ```
+# Example 4 (Playing from playlist)
+```cs
+using System;
+using System.Threading;
+using System.Collections.Generic;
+using MiniAudioExNET;
+
+namespace MiniAudioExExample
+{
+    class Program
+    {
+        static readonly uint SAMPLE_RATE = 44100;
+        static readonly uint CHANNELS = 2;
+        static AudioSource source;
+        static List<AudioClip> audioClips;
+        static int currentClip = 0;
+
+        static void Main(string[] args)
+        {
+            Console.CancelKeyPress += OnCancelKeyPress;
+
+            MiniAudioEx.Initialize(SAMPLE_RATE, CHANNELS);
+
+            audioClips = new List<AudioClip>();            
+            audioClips.Add(new AudioClip("track_1.mp3"));
+            audioClips.Add(new AudioClip("track_2.mp3"));
+            audioClips.Add(new AudioClip("track_3.mp3"));
+            audioClips.Add(new AudioClip("track_4.mp3"));
+            audioClips.Add(new AudioClip("track_5.mp3"));
+
+            source = new AudioSource();
+            
+            //End callback will not trigger if source has Loop set to true
+            //Will also not trigger if you don't call MiniAudioEx.Update
+            source.End += OnPlaybackEnded;
+
+            source.Play(audioClips[currentClip]);
+            
+            while(true)
+            {
+                MiniAudioEx.Update();
+                Thread.Sleep(10);
+            }
+        }
+
+        static void OnPlaybackEnded()
+        {
+            currentClip++;
+            if(currentClip >= audioClips.Count)
+                currentClip = 0;
+            source.Play(audioClips[currentClip]);
+        }
+
+        static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            MiniAudioEx.Deinitialize();
+        }
+    }
+}
+```
