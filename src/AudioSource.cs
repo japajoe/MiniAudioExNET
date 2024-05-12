@@ -319,6 +319,7 @@ namespace MiniAudioExNET
             if(processBuffer?.Length < length)
                 processBuffer = new float[length];
             Array.Clear(processBuffer, 0, processBuffer.Length);
+            Marshal.Copy(pFramesOut, readBuffer, 0, length);
             Process?.Invoke(processBuffer, frameCount, (int)channels);
             Marshal.Copy(processBuffer, 0, pFramesOut, length);
 #else
@@ -332,12 +333,13 @@ namespace MiniAudioExNET
 
         private void OnWaveform(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
-            int length = (int)(frameCount * channels);
+            int length = (int)(frameCount * channels);            
 
 #if NETSTANDARD2_0
             if(readBuffer?.Length < length)
                 readBuffer = new float[length];
-            Array.Clear(readBuffer, 0, processBuffer.Length);
+            Array.Clear(readBuffer, 0, readBuffer.Length);
+            Marshal.Copy(pFramesOut, readBuffer, 0, length);
             Read?.Invoke(readBuffer, frameCount, (int)channels);
             Marshal.Copy(readBuffer, 0, pFramesOut, length);
 #else
