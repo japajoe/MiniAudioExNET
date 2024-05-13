@@ -1,20 +1,17 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+#if NETSTANDARD2_0
+using MiniAudioExNET.Compatibility;
+#endif
 
 namespace MiniAudioExNET
 {
     public delegate void AudioLoadEvent();
     public delegate void AudioEndEvent();
 
-    //netstandard 2.0 needs some workaround since it does not have the Span<T> type
-#if NETSTANDARD2_0
-    public delegate void AudioProcessEvent(float[] framesOut, UInt64 frameCount, Int32 channels);
-    public delegate void AudioReadEvent(float[] framesOut, UInt64 frameCount, Int32 channels);
-#else
     public delegate void AudioProcessEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
     public delegate void AudioReadEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
-#endif
 
     /// <summary>
     /// This class is used to play audio.
@@ -47,10 +44,6 @@ namespace MiniAudioExNET
         private ConcurrentQueue<int> endEventQueue;
         private ThreadSafeQueue<IAudioEffect> effects;
         private ThreadSafeQueue<IAudioGenerator> generators;
-#if NETSTANDARD2_0
-        private float[] processBuffer;
-        private float[] readBuffer;
-#endif
 
         /// <summary>
         /// A handle to the native ma_audio_source instance.
@@ -293,10 +286,7 @@ namespace MiniAudioExNET
                 endEventQueue = new ConcurrentQueue<int>();
                 effects = new ThreadSafeQueue<IAudioEffect>();
                 generators = new ThreadSafeQueue<IAudioGenerator>();
-#if NETSTANDARD2_0
-                processBuffer = new float[1024];
-                readBuffer = new float[1024];
-#endif
+
                 loadCallback = OnLoad;
                 endCallback = OnEnd;
                 processCallback = OnProcess;
@@ -425,21 +415,6 @@ namespace MiniAudioExNET
         {
             int length = (int)(frameCount * channels);
 
-#if NETSTANDARD2_0
-            if(processBuffer.Length < length)
-                processBuffer = new float[length];
-
-            Array.Clear(processBuffer, 0, processBuffer.Length);
-            System.Runtime.InteropServices.Marshal.Copy(pFramesOut, processBuffer, 0, length);
-
-            for(int i = 0; i < effects.Count; i++)
-            {
-                effects[i].OnProcess(processBuffer, frameCount, (int)channels);
-            }
-
-            Process?.Invoke(processBuffer, frameCount, (int)channels);
-            System.Runtime.InteropServices.Marshal.Copy(processBuffer, 0, pFramesOut, length);
-#else
             unsafe
             {
                 Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
@@ -451,7 +426,6 @@ namespace MiniAudioExNET
 
                 Process?.Invoke(framesOut, frameCount, (int)channels);
             }
-#endif
 
             effects.Flush();
         }
@@ -460,21 +434,6 @@ namespace MiniAudioExNET
         {
             int length = (int)(frameCount * channels);            
 
-#if NETSTANDARD2_0
-            if(readBuffer.Length < length)
-                readBuffer = new float[length];
-
-            Array.Clear(readBuffer, 0, readBuffer.Length);
-            System.Runtime.InteropServices.Marshal.Copy(pFramesOut, readBuffer, 0, length);
-
-            for(int i = 0; i < generators.Count; i++)
-            {
-                generators[i].OnGenerate(readBuffer, frameCount, (int)channels);
-            }
-
-            Read?.Invoke(readBuffer, frameCount, (int)channels);
-            System.Runtime.InteropServices.Marshal.Copy(readBuffer, 0, pFramesOut, length);
-#else
             unsafe
             {
                 Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
@@ -486,7 +445,6 @@ namespace MiniAudioExNET
 
                 Read?.Invoke(framesOut, frameCount, (int)channels);
             }
-#endif
 
             generators.Flush();
         }
@@ -494,20 +452,12 @@ namespace MiniAudioExNET
 
     public interface IAudioEffect
     {
-#if NETSTANDARD2_0
-        void OnProcess(float[] framesOut, UInt64 frameCount, Int32 channels);
-#else
         void OnProcess(Span<float> framesOut, UInt64 frameCount, Int32 channels);
-#endif
     }
 
     public interface IAudioGenerator
     {
-#if NETSTANDARD2_0
-        void OnGenerate(float[] framesOut, UInt64 frameCount, Int32 channels);
-#else
         void OnGenerate(Span<float> framesOut, UInt64 frameCount, Int32 channels);
-#endif
     }
 
     public sealed class ThreadSafeQueue<T>
