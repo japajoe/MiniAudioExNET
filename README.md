@@ -13,13 +13,14 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 - Stream audio from disk or from memory.
 - Callbacks for effects processing and generating audio.
 - Spatial properties like doppler effect, pitching, distance attenuation and panning.
+- Wave tables for audio generation.
 
 # Platforms
 MiniAudio was designed to work on every major platform, however I do not have a Mac so I can not build a library for Mac OS. As a result only Windows and Linux libraries are currently available.
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.5.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.5.1
 ```
 
 # General gotchas

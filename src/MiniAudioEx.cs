@@ -29,11 +29,11 @@ namespace MiniAudioExNET
         /// Gets the chosen sample rate.
         /// </summary>
         /// <value></value>
-        public static UInt32 SampleRate
+        public static Int32 SampleRate
         {
             get
             {
-                return sampleRate;
+                return (int)sampleRate;
             }
         }
 

@@ -275,6 +275,14 @@ namespace MiniAudioExNET
             }
         }
 
+        public bool IsPlaying
+        {
+            get
+            {
+                return Library.ma_ex_audio_source_get_is_playing(handle) > 0;
+            }
+        }
+
         public AudioSource()
         {
             handle = Library.ma_ex_audio_source_init(MiniAudioEx.AudioContext);
@@ -285,7 +293,10 @@ namespace MiniAudioExNET
                 endEventQueue = new ConcurrentQueue<int>();
                 effects = new ThreadSafeQueue<IAudioEffect>();
                 generators = new ThreadSafeQueue<IAudioGenerator>();
-
+#if NETSTANDARD2_0
+                processBuffer = new float[1024];
+                readBuffer = new float[1024];
+#endif
                 loadCallback = OnLoad;
                 endCallback = OnEnd;
                 processCallback = OnProcess;
@@ -415,7 +426,7 @@ namespace MiniAudioExNET
             int length = (int)(frameCount * channels);
 
 #if NETSTANDARD2_0
-            if(processBuffer?.Length < length)
+            if(processBuffer.Length < length)
                 processBuffer = new float[length];
 
             Array.Clear(processBuffer, 0, processBuffer.Length);
@@ -450,7 +461,7 @@ namespace MiniAudioExNET
             int length = (int)(frameCount * channels);            
 
 #if NETSTANDARD2_0
-            if(readBuffer?.Length < length)
+            if(readBuffer.Length < length)
                 readBuffer = new float[length];
 
             Array.Clear(readBuffer, 0, readBuffer.Length);
