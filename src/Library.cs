@@ -15,14 +15,6 @@ namespace MiniAudioExNET
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_waveform_proc(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels);
 
-    public enum ma_device_type
-    {
-        ma_device_type_playback = 1,
-        ma_device_type_capture  = 2,
-        ma_device_type_duplex   = ma_device_type_playback | ma_device_type_capture, /* 3 */
-        ma_device_type_loopback = 4
-    }
-
     public enum ma_result
     {
         MA_SUCCESS                        =  0,
@@ -160,11 +152,247 @@ namespace MiniAudioExNET
         public float y;
         public float z;
 
+        /// <summary>
+        /// Gets the length of the vector.
+        /// </summary>
+        public float Length
+        {
+            get
+            {
+                return (float)Math.Sqrt(x * x + y * y + z * z);
+            }
+        }
+
+        /// <summary>
+        /// Gets the squared length of the vector.
+        /// </summary>
+        public float LengthSquared
+        {
+            get
+            {
+                return x * x + y * y + z * z;
+            }
+        }
+
+        /// <summary>
+        /// Returns a vector with components set to zero.
+        /// </summary>
+        public static Vector3f Zero
+        {
+            get
+            {
+                return new Vector3f(0, 0, 0);
+            }
+        }
+
+        /// <summary>
+        /// Returns a vector with all components set to one.
+        /// </summary>
+        public static Vector3f One
+        {
+            get
+            {
+                return new Vector3f(1, 1, 1);
+            }
+        }
+
+        /// <summary>
+        /// Gets the unit vector along the X-axis.
+        /// </summary>
+        public static Vector3f UnitX
+        {
+            get
+            {
+                return new Vector3f(1, 0, 0);
+            }
+        }
+
+        /// <summary>
+        /// Gets the unit vector along the Y-axis.
+        /// </summary>
+        public static Vector3f UnitY
+        {
+            get
+            {
+                return new Vector3f(0, 1, 0);
+            }
+        }
+
+        /// <summary>
+        /// Gets the unit vector along the Z-axis.
+        /// </summary>
+        public static Vector3f UnitZ
+        {
+            get
+            {
+                return new Vector3f(0, 0, 1);
+            }
+        }
+
+        /// <summary>
+        /// Constructs a new Vector3f with the specified components.
+        /// </summary>
         public Vector3f(float x, float y, float z)
         {
             this.x = x;
             this.y = y;
             this.z = z;
+        }
+
+        /// <summary>
+        /// Normalizes this vector.
+        /// </summary>
+        public void Normalize()
+        {
+            float scale = 1.0f / Length;
+            x *= scale;
+            y *= scale;
+            z *= scale;
+        }
+
+        /// <summary>
+        /// Returns the normalized vector of the input vector.
+        /// </summary>
+        public static Vector3f Normalize(Vector3f v)
+        {
+            float scale = 1.0f / v.Length;
+            v.x = v.x *= scale;
+            v.y = v.y *= scale;
+            v.z = v.z *= scale;
+            return v;
+        }        
+
+        /// <summary>
+        /// Calculates the distance between two vectors.
+        /// </summary>
+        public static float Distance(Vector3f a, Vector3f b)
+        {
+            float dx = b.x - a.x;
+            float dy = b.y - a.y;
+            float dz = b.z - a.z;
+            return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        }
+
+        /// <summary>
+        /// Calculates the squared distance between two vectors.
+        /// </summary>
+        public static float DistanceSquared(Vector3f a, Vector3f b)
+        {
+            float dx = b.x - a.x;
+            float dy = b.y - a.y;
+            float dz = b.z - a.z;
+            return dx * dx + dy * dy + dz * dz;
+        }
+
+        /// <summary>
+        /// Calculates the dot product of two vectors.
+        /// </summary>
+        public static float Dot(Vector3f a, Vector3f b)
+        {
+            return a.x * b.x + a.y * b.y + a.z * b.z;
+        }
+
+        /// <summary>
+        /// Calculates the cross product of two vectors.
+        /// </summary>
+        public static Vector3f Cross(Vector3f a, Vector3f b)
+        {
+            float x = a.y * b.z - a.z * b.y;
+            float y = a.z * b.x - a.x * b.z;
+            float z = a.x * b.y - a.y * b.x;
+            return new Vector3f(x, y, z);
+        }
+
+        /// <summary>
+        /// Performs linear interpolation between two vectors.
+        /// </summary>
+        public static Vector3f Lerp(Vector3f a, Vector3f b, float t)
+        {
+            float x = a.x + (b.x - a.x) * t;
+            float y = a.y + (b.y - a.y) * t;
+            float z = a.z + (b.z - a.z) * t;
+            return new Vector3f(x, y, z);
+        }
+
+        // Helper method for clamping values between min and max.
+        private static float Clamp(float n, float min, float max)
+        {
+            return Math.Max(Math.Min(n, max), min);
+        }
+
+        /// <summary>
+        /// Calculates the angle between two vectors in radians.
+        /// </summary>
+        public static float Angle(Vector3f a, Vector3f b)
+        {
+            float temp = Dot(a, b);
+            return (float)Math.Acos(Clamp(temp / (a.Length * b.Length), -1.0f, 1.0f));
+        }
+
+        public static Vector3f operator +(Vector3f a, Vector3f b)
+        {
+            return new Vector3f(a.x + b.x, a.y + b.y, a.z + b.z);
+        }
+
+        public static Vector3f operator -(Vector3f a, Vector3f b)
+        {
+            return new Vector3f(a.x - b.x, a.y - b.y, a.z - b.z);
+        }
+
+        public static Vector3f operator -(Vector3f a)
+        {
+            return new Vector3f(-a.x, -a.y, -a.z);
+        }
+
+        public static Vector3f operator *(Vector3f a, float scalar)
+        {
+            return new Vector3f(a.x * scalar, a.y * scalar, a.z * scalar);
+        }
+
+        public static Vector3f operator *(float scalar, Vector3f a)
+        {
+            return a * scalar;
+        }
+
+        public static Vector3f operator /(Vector3f a, float scalar)
+        {
+            a.x /= scalar;
+            a.y /= scalar;
+            a.z /= scalar;
+            return a;
+        }
+
+        public static bool operator ==(Vector3f a, Vector3f b)
+        {
+            return a.x == b.x && a.y == b.y && a.z == b.z;
+        }
+
+        public static bool operator !=(Vector3f a, Vector3f b)
+        {
+            return !(a == b);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Vector3f))
+                return false;
+
+            Vector3f other = (Vector3f)obj;
+            return this == other;
+        }
+
+        public override string ToString()
+        {
+            return "(" + x + "," + y + "," + z + ")";
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 42;
+            hash = hash ^ x.GetHashCode();
+            hash = hash ^ y.GetHashCode();
+            hash = hash ^ z.GetHashCode();
+            return hash;
         }
     }
 

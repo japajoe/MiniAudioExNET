@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Concurrent;
-#if NETSTANDARD2_0
-using System.Runtime.InteropServices;
-#endif
+using System.Collections.Generic;
 
 namespace MiniAudioExNET
 {
@@ -18,6 +16,9 @@ namespace MiniAudioExNET
     public delegate void AudioReadEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
 #endif
 
+    /// <summary>
+    /// This class is used to play audio.
+    /// </summary>
     public sealed class AudioSource : IDisposable
     {
         /// <summary>
@@ -38,16 +39,23 @@ namespace MiniAudioExNET
         public event AudioReadEvent Read;
 
         private IntPtr handle;
+        private Vector3f previousPosition;
         private ma_sound_load_proc loadCallback;
         private ma_sound_end_proc endCallback;
         private ma_sound_process_proc processCallback;
         private ma_waveform_proc waveformCallback;
         private ConcurrentQueue<int> endEventQueue;
+        private ThreadSafeQueue<IAudioEffect> effects;
+        private ThreadSafeQueue<IAudioGenerator> generators;
 #if NETSTANDARD2_0
         private float[] processBuffer;
         private float[] readBuffer;
 #endif
 
+        /// <summary>
+        /// A handle to the native ma_audio_source instance.
+        /// </summary>
+        /// <value></value>
         public IntPtr Handle
         {
             get
@@ -56,6 +64,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The current position of the playback cursor in PCM samples.
+        /// </summary>
+        /// <value></value>
         public UInt64 Cursor
         {
             get
@@ -68,6 +80,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The length of the playing audio clip in PCM samples.
+        /// </summary>
+        /// <value></value>
         public UInt64 Length
         {
             get
@@ -76,6 +92,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Controls the volume of the sound.
+        /// </summary>
+        /// <value></value>
         public float Volume
         {
             get
@@ -88,6 +108,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Controls the pitch of the sound.
+        /// </summary>
+        /// <value></value>
         public float Pitch
         {
             get
@@ -100,6 +124,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Controls whether the audio should loop. If true, then the End event will not be called. If the Play() overload is used, this property has no effect because the audio will loop regardless.
+        /// </summary>
+        /// <value></value>
         public bool Loop
         {
             get
@@ -112,6 +140,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Toggle to true to enable spatial audio
+        /// </summary>
+        /// <value></value>
         public bool Spatial
         {
             get
@@ -124,6 +156,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Represents the intensity or strength of the simulated Doppler effect applied to the audio if Spatial is set to true.
+        /// </summary>
+        /// <value></value>
         public float DopplerFactor
         {
             get
@@ -136,6 +172,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Represents the distance from the audio source at which the volume of the audio starts to attenuate. Sounds closer to or within this minimum distance are heard at full volume without any attenuation applied.
+        /// </summary>
+        /// <value></value>
         public float MinDistance
         {
             get
@@ -148,6 +188,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Represents the distance from the audio source beyond which the audio is no longer audible or significantly attenuated. Sounds beyond this maximum distance are either inaudible or heard at greatly reduced volume.
+        /// </summary>
+        /// <value></value>
         public float MaxDistance
         {
             get
@@ -160,6 +204,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Defines the mathematical model used to simulate the attenuation of sound over distance.
+        /// </summary>
+        /// <value></value>
         public AttenuationModel AttenuationModel
         {
             get
@@ -172,6 +220,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The position of the source, used for calculating spatial sound.
+        /// </summary>
+        /// <value></value>
         public Vector3f Position
         {
             get
@@ -182,10 +234,15 @@ namespace MiniAudioExNET
             }
             set
             {
+                Library.ma_ex_audio_source_get_position(handle, out previousPosition.x, out previousPosition.y, out previousPosition.z);
                 Library.ma_ex_audio_source_set_position(handle, value.x, value.y, value.z);
             }
         }
 
+        /// <summary>
+        /// The direction of the source, used for calculation spatial sound.
+        /// </summary>
+        /// <value></value>
         public Vector3f Direction
         {
             get
@@ -200,6 +257,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The velocity of the source, used for calculating spatial sound.
+        /// </summary>
+        /// <value></value>
         public Vector3f Velocity
         {
             get
@@ -216,12 +277,15 @@ namespace MiniAudioExNET
 
         public AudioSource()
         {
-            endEventQueue = new ConcurrentQueue<int>();
-
             handle = Library.ma_ex_audio_source_init(MiniAudioEx.AudioContext);
 
             if(handle != IntPtr.Zero)
             {
+                previousPosition = new Vector3f(0, 0, 0);
+                endEventQueue = new ConcurrentQueue<int>();
+                effects = new ThreadSafeQueue<IAudioEffect>();
+                generators = new ThreadSafeQueue<IAudioGenerator>();
+
                 loadCallback = OnLoad;
                 endCallback = OnEnd;
                 processCallback = OnProcess;
@@ -247,11 +311,12 @@ namespace MiniAudioExNET
                 Library.ma_ex_audio_source_uninit(handle);
                 handle = IntPtr.Zero;
 
-                //Clear the queue (netstandard2.0 does not have a Clear method for ConcurrentQueue)
+                //Clear the queues (netstandard2.0 does not have a Clear method for ConcurrentQueue)
                 while(endEventQueue.Count > 0)
-                {
                     endEventQueue.TryDequeue(out _);
-                }
+                
+                effects.Clear();
+                generators.Clear();
             }
         }
 
@@ -299,6 +364,40 @@ namespace MiniAudioExNET
             }
         }
 
+        public void AddEffect(IAudioEffect effect)
+        {
+            effects.Add(effect);
+        }
+
+        public void RemoveEffect(IAudioEffect effect)
+        {
+            effects.Remove(effect);
+        }
+
+        public void AddGenerator(IAudioGenerator generator)
+        {
+            generators.Add(generator);
+        }
+
+        public void RemoveGenerator(IAudioGenerator generator)
+        {
+            generators.Remove(generator);
+        }
+
+        /// <summary>
+        /// Calculates the velocity based on the current position and the previous position.
+        /// </summary>
+        /// <returns></returns>
+        public Vector3f GetCalculatedVelocity()
+        {
+            float deltaTime = MiniAudioEx.DeltaTime;
+            Vector3f currentPosition = Position;
+            float dx = currentPosition.x - previousPosition.x;
+            float dy = currentPosition.y - previousPosition.y;
+            float dz = currentPosition.z - previousPosition.z;
+            return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
+        }
+
         private void OnLoad(IntPtr pUserData, IntPtr pSound)
         {
             Load?.Invoke();
@@ -318,17 +417,32 @@ namespace MiniAudioExNET
 #if NETSTANDARD2_0
             if(processBuffer?.Length < length)
                 processBuffer = new float[length];
+
             Array.Clear(processBuffer, 0, processBuffer.Length);
-            Marshal.Copy(pFramesOut, processBuffer, 0, length);
+            System.Runtime.InteropServices.Marshal.Copy(pFramesOut, processBuffer, 0, length);
+
+            for(int i = 0; i < effects.Count; i++)
+            {
+                effects[i].OnProcess(processBuffer, frameCount, (int)channels);
+            }
+
             Process?.Invoke(processBuffer, frameCount, (int)channels);
-            Marshal.Copy(processBuffer, 0, pFramesOut, length);
+            System.Runtime.InteropServices.Marshal.Copy(processBuffer, 0, pFramesOut, length);
 #else
             unsafe
             {
                 Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
+
+                for(int i = 0; i < effects.Count; i++)
+                {
+                    effects[i].OnProcess(framesOut, frameCount, (int)channels);
+                }
+
                 Process?.Invoke(framesOut, frameCount, (int)channels);
             }
 #endif
+
+            effects.Flush();
         }
 
         private void OnWaveform(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
@@ -338,17 +452,126 @@ namespace MiniAudioExNET
 #if NETSTANDARD2_0
             if(readBuffer?.Length < length)
                 readBuffer = new float[length];
+
             Array.Clear(readBuffer, 0, readBuffer.Length);
-            Marshal.Copy(pFramesOut, readBuffer, 0, length);
+            System.Runtime.InteropServices.Marshal.Copy(pFramesOut, readBuffer, 0, length);
+
+            for(int i = 0; i < generators.Count; i++)
+            {
+                generators[i].OnGenerate(readBuffer, frameCount, (int)channels);
+            }
+
             Read?.Invoke(readBuffer, frameCount, (int)channels);
-            Marshal.Copy(readBuffer, 0, pFramesOut, length);
+            System.Runtime.InteropServices.Marshal.Copy(readBuffer, 0, pFramesOut, length);
 #else
             unsafe
             {
                 Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
+
+                for(int i = 0; i < generators.Count; i++)
+                {
+                    generators[i].OnGenerate(framesOut, frameCount, (int)channels);
+                }
+
                 Read?.Invoke(framesOut, frameCount, (int)channels);
             }
 #endif
+
+            generators.Flush();
+        }
+    }
+
+    public interface IAudioEffect
+    {
+#if NETSTANDARD2_0
+        void OnProcess(float[] framesOut, UInt64 frameCount, Int32 channels);
+#else
+        void OnProcess(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+#endif
+    }
+
+    public interface IAudioGenerator
+    {
+#if NETSTANDARD2_0
+        void OnGenerate(float[] framesOut, UInt64 frameCount, Int32 channels);
+#else
+        void OnGenerate(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+#endif
+    }
+
+    public sealed class ThreadSafeQueue<T>
+    {
+        private ConcurrentQueue<T> addQueue;
+        private ConcurrentQueue<T> removeQueue;
+        private List<T> items;
+
+        public int Count
+        {
+            get
+            {
+                return items.Count;
+            }
+        }
+
+        public T this[int index]
+        {
+            get
+            {
+                if (index < 0 || index >= items.Count)
+                    throw new IndexOutOfRangeException();
+                return items[index];
+            }
+            set
+            {
+                if (index < 0 || index >= items.Count)
+                    throw new IndexOutOfRangeException();
+                items[index] = value;
+            }
+        }
+
+        public ThreadSafeQueue()
+        {
+            this.addQueue = new ConcurrentQueue<T>();
+            this.removeQueue = new ConcurrentQueue<T>();
+            this.items = new List<T>();
+        }
+
+        public void Clear()
+        {
+            while(addQueue.Count > 0)
+                addQueue.TryDequeue(out _);
+            while(removeQueue.Count > 0)
+                removeQueue.TryDequeue(out _);
+            items.Clear();
+        }
+
+        public void Add(T item)
+        {
+            addQueue.Enqueue(item);
+        }
+
+        public void Remove(T item)
+        {
+            removeQueue.Enqueue(item);
+        }
+
+        public void Flush()
+        {
+            if(addQueue.Count > 0)
+            {
+                while(addQueue.TryDequeue(out T item))
+                {
+                    items.Add(item);
+                }
+            }
+
+            if(removeQueue.Count > 0)
+            {
+                while(removeQueue.TryDequeue(out T item))
+                {
+                    items.Remove(item);
+                }
+            }
         }
     }
 }

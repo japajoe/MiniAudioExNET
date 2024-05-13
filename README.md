@@ -19,16 +19,17 @@ MiniAudio was designed to work on every major platform, however I do not have a 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.4.2
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.5.0
 ```
 
 # General gotchas
 - Reuse audio clips. If you have loaded an AudioClip from memory, then the library allocates memory that the garbage collector doesn't free. All memory is freed after calling MiniAudioEx.Deinitialize. It is perfectly fine to reuse audio clips across multiple audio sources, so you don't have to load multiple clips with the same sound. A good strategy is to store your audio clips in an array or a list for the lifetime of your application.
-- Call MiniAudioEx.Update from your main thread loop. The only reason this method exists is because the `End` callback of an audio source originates from an audio thread, and we want to move this notification to the main thread which requires polling. The advantage this brings is that you can safely call API functions from within the `End` callback. An example use of the End callback is scheduling the next clip to be played.
+- Call MiniAudioEx.Update from your main thread loop. This method calculates a delta time, and is responsible for moving messages from the audio thread to the main thread. If not called (regularly), the `End` callback will never be able to run.
 - The `Process` and `Read` event run on a separate thread as well. You should not call any MiniAudioEx API functions from these callbacks.
 - When using the `Process` and `Read` events in netstandard 2.0, it is important to know that the size/length of the buffer you receive in the callbacks might not necessarily be the size of the actual data. Since netstandard 2.0 does not have the Span<T> type, a workaround has been applied that tries to be efficient with memory allocations for these buffers. To get the actual size (or number of elements) of the data you simply multiply the number of frames with the number of channels that the callback gives you. If you write more data than is available, the excess data is simply ignored.
 
-# Example 1 (Playing from file)
+# Example 1
+Playing audio from a file on disk.
 ```cs
 using System;
 using System.Threading;
@@ -49,7 +50,7 @@ namespace MiniAudioExExample
             
             AudioSource source = new AudioSource();
 
-            AudioClip clip = new AudioClip("some_audio.mp3", true);
+            AudioClip clip = new AudioClip("some_audio.mp3");
             source.Play(clip);
             
             while(true)
@@ -66,7 +67,8 @@ namespace MiniAudioExExample
     }
 }
 ```
-# Example 2 (Procedural audio)
+# Example 2
+An example of how to procedurally generate sound with the `Read` callback.
 ```cs
 using System;
 using System.Threading;
@@ -86,9 +88,7 @@ namespace MiniAudioExExample
             MiniAudioEx.Initialize(SAMPLE_RATE, CHANNELS);
             
             AudioSource source = new AudioSource();
-
-            AudioClip clip = new AudioClip();
-            source.Loop = true;
+            source.Read += OnAudioRead;
             source.Play();
             
             while(true)
@@ -122,7 +122,8 @@ namespace MiniAudioExExample
     }
 }
 ```
-# Example 3 (Spatial audio)
+# Example 3
+A minimal example of spatial audio.
 ```cs
 using System;
 using System.Threading;
@@ -166,7 +167,8 @@ namespace MiniAudioExExample
     }
 }
 ```
-# Example 4 (Playing from playlist)
+# Example 4
+This shows how you can use the `End` callback to play audio from a playlist.
 ```cs
 using System;
 using System.Threading;
@@ -222,6 +224,118 @@ namespace MiniAudioExExample
         static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             MiniAudioEx.Deinitialize();
+        }
+    }
+}
+```
+# Example 5
+A more advanced example of generating a sine wave, applying a tremolo effect to it, and have it play in 3D space.
+```csharp
+using System;
+using System.Threading;
+using MiniAudioExNET;
+
+namespace MiniAudioExExample
+{
+    class Program
+    {
+        static readonly uint SAMPLE_RATE = 44100;
+        static readonly uint CHANNELS = 2;
+
+        static void Main(string[] args)
+        {
+            Console.CancelKeyPress += OnCancelKeyPress;
+
+            MiniAudioEx.Initialize(SAMPLE_RATE, CHANNELS);
+
+            AudioListener listener = new AudioListener();
+            listener.Position = new Vector3f(0, 0, 0);
+            
+            AudioSource source = new AudioSource();
+
+            var sineGenerator = new SineGenerator(440);
+            var tremoloEffect = new TremoloEffect(8);
+
+            source.AddGenerator(sineGenerator);
+            source.AddEffect(tremoloEffect);
+            source.DopplerFactor = 0.1f;
+            source.Position = new Vector3f(0, 0, 0);
+            source.MinDistance = 1.0f;
+            source.MaxDistance = 200.0f;
+            source.AttenuationModel = AttenuationModel.Exponential;
+            //Simply set Spatial to false to disable any 3D effects on the source
+            source.Spatial = true;
+            source.Play();
+
+            double timer = 0;
+            
+            while(true)
+            {
+                MiniAudioEx.Update();
+
+                float direction = (float)Math.Sin(timer * 0.5);
+                source.Position = new Vector3f(100, 0, 0) * direction;
+                source.Velocity = source.GetCalculatedVelocity();
+
+                timer += MiniAudioEx.DeltaTime;
+
+                Thread.Sleep(10);
+            }            
+        }
+
+        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            MiniAudioEx.Deinitialize();
+        }
+    }
+
+    public class TremoloEffect : IAudioEffect
+    {
+        private long tickTimer;
+        private float frequency;
+
+        public TremoloEffect(float frequency)
+        {
+            this.frequency = frequency;
+            tickTimer = 0;
+        }
+
+        public void OnProcess(Span<float> framesOut, ulong frameCount, int channels)
+        {
+            float sample = 0;
+            for(int i = 0; i < framesOut.Length; i+=channels)
+            {
+                sample = (float)Math.Sin(2 * Math.PI * frequency * tickTimer / MiniAudioEx.SampleRate);
+                framesOut[i] *= sample;
+                if(channels == 2)
+                    framesOut[i+1] *= sample;
+                tickTimer++;
+            }
+        }
+    }
+
+    public class SineGenerator : IAudioGenerator
+    {
+        private long tickTimer;
+        private float frequency;
+
+        public SineGenerator(float frequency)
+        {
+            this.frequency = frequency;
+            tickTimer = 0;
+        }
+
+        public void OnGenerate(Span<float> framesOut, ulong frameCount, int channels)
+        {
+            float sample = 0;
+            for(int i = 0; i < framesOut.Length; i+=channels)
+            {
+                sample = (float)Math.Sin(2 * Math.PI * frequency * tickTimer / MiniAudioEx.SampleRate);
+                framesOut[i] = sample;
+                if(channels == 2)
+                    framesOut[i+1] = sample;
+                tickTimer++;
+            }
         }
     }
 }

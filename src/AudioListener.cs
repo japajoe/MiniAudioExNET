@@ -2,10 +2,18 @@ using System;
 
 namespace MiniAudioExNET
 {
+    /// <summary>
+    /// This class represents a point in the 3D space where audio is perceived or heard.
+    /// </summary>
     public sealed class AudioListener : IDisposable
     {
         private IntPtr handle;
+        private Vector3f previousPosition;
 
+        /// <summary>
+        /// A handle to the native ma_audio_listener instance.
+        /// </summary>
+        /// <value></value>
         public IntPtr Handle
         {
             get
@@ -14,6 +22,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// If true, then spatialization is enabled for this listener.
+        /// </summary>
+        /// <value></value>
         public bool Enabled
         {
             get
@@ -26,6 +38,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The position of the listener.
+        /// </summary>
+        /// <value></value>
         public Vector3f Position
         {
             get
@@ -36,10 +52,15 @@ namespace MiniAudioExNET
             }
             set
             {
+                Library.ma_ex_audio_listener_get_position(handle, out previousPosition.x, out previousPosition.y, out previousPosition.z);
                 Library.ma_ex_audio_listener_set_position(handle, value.x, value.y, value.z);
             }
         }
 
+        /// <summary>
+        /// The direction that the listener is facing.
+        /// </summary>
+        /// <value></value>
         public Vector3f Direction
         {
             get
@@ -54,6 +75,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The velocity of the listener.
+        /// </summary>
+        /// <value></value>
         public Vector3f Velocity
         {
             get
@@ -68,6 +93,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The up direction of the world. By default this is 0,1,0.
+        /// </summary>
+        /// <value></value>
         public Vector3f WorldUp
         {
             get
@@ -88,6 +117,7 @@ namespace MiniAudioExNET
 
             if(handle != IntPtr.Zero)
             {
+                previousPosition = new Vector3f(0, 0, 0);
                 MiniAudioEx.Add(this);
             }
         }
@@ -99,6 +129,20 @@ namespace MiniAudioExNET
                 Library.ma_ex_audio_listener_uninit(handle);
                 handle = IntPtr.Zero;
             }
+        }
+
+        /// <summary>
+        /// Calculates the velocity based on the current position and the previous position.
+        /// </summary>
+        /// <returns></returns>
+        public Vector3f GetCalculatedVelocity()
+        {
+            float deltaTime = MiniAudioEx.DeltaTime;
+            Vector3f currentPosition = Position;
+            float dx = currentPosition.x - previousPosition.x;
+            float dy = currentPosition.y - previousPosition.y;
+            float dz = currentPosition.z - previousPosition.z;
+            return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
         }
 
         public void Dispose()

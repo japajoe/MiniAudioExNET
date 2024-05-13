@@ -4,6 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace MiniAudioExNET
 {
+    /// <summary>
+    /// This class is responsible for managing the audio context.
+    /// </summary>
     public static class MiniAudioEx
     {
         private static IntPtr audioContext;
@@ -11,6 +14,8 @@ namespace MiniAudioExNET
         private static List<AudioClip> audioClips = new List<AudioClip>();
         private static List<AudioListener> audioListeners = new List<AudioListener>();
         private static UInt32 sampleRate;
+        private static DateTime lastUpdateTime;
+        private static float deltaTime;
 
         internal static IntPtr AudioContext
         {
@@ -20,6 +25,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Gets the chosen sample rate.
+        /// </summary>
+        /// <value></value>
         public static UInt32 SampleRate
         {
             get
@@ -28,6 +37,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Controls the master volume.
+        /// </summary>
+        /// <value></value>
         public static float MasterVolume
         {
             get
@@ -40,6 +53,24 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// The elapsed time since last call to 'Update'.
+        /// </summary>
+        /// <value></value>
+        public static float DeltaTime
+        {
+            get
+            {
+                return deltaTime;
+            }
+        }
+
+        /// <summary>
+        /// Initializes MiniAudioEx. Call this once at the start of your application. The 'deviceInfo' parameter can be left null.
+        /// </summary>
+        /// <param name="sampleRate"></param>
+        /// <param name="channels"></param>
+        /// <param name="deviceInfo"></param>
         public static void Initialize(UInt32 sampleRate, UInt32 channels, DeviceInfo deviceInfo = null)
         {
             if(audioContext != IntPtr.Zero)
@@ -54,8 +85,13 @@ namespace MiniAudioExNET
             ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, ref pDeviceInfo);
 
             audioContext = Library.ma_ex_context_init(ref contextConfig);
+
+            lastUpdateTime = DateTime.Now;
         }
 
+        /// <summary>
+        /// Deinitializes MiniAudioEx. Call this before closing the application.
+        /// </summary>
         public static void Deinitialize()
         {
             if(audioContext == IntPtr.Zero)
@@ -80,17 +116,30 @@ namespace MiniAudioExNET
             audioContext = IntPtr.Zero;
         }
 
+        /// <summary>
+        /// Used to calculate delta time and move messages from the audio thread to the main thread. Call this method from within your main thread loop.
+        /// </summary>
         public static void Update()
         {
             if(audioContext == IntPtr.Zero)
                 return;
 
+            DateTime currentTime = DateTime.Now;
+            TimeSpan dt = currentTime - lastUpdateTime;
+            deltaTime = (float)dt.TotalSeconds;
+
             for(int i = 0; i < audioSources.Count; i++)
             {
                 audioSources[i].Update();
             }
+
+            lastUpdateTime = currentTime;
         }
 
+        /// <summary>
+        /// Gets an array of available playback devices.
+        /// </summary>
+        /// <returns></returns>
         public static DeviceInfo[] GetDevices()
         {
             IntPtr pDevices = Library.ma_ex_playback_devices_get(out UInt32 count);
