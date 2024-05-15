@@ -366,7 +366,9 @@ namespace MiniAudioExExample
             var generator = new FMGenerator(WaveType.Sine, 110.0f, 1.0f);
             generator.AddModulator(WaveType.Sine, 55, 1.0f);
             generator.AddModulator(WaveType.Sine, 22, 0.5f);
+            
             source.AddGenerator(generator);
+            
             source.Play();
 
             while(true)
