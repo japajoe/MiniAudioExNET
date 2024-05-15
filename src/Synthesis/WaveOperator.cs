@@ -46,81 +46,72 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-using System.Collections.Generic;
-using MiniAudioExNET.Compatibility;
-
 namespace MiniAudioExNET.Synthesis
 {
-    class FMGenerator : IAudioGenerator
+    public class WaveOperator
     {
-        private WaveModulator carrier;
-        private List<WaveModulator> modulators;
-        private Oscillator oscillator;
+        private float frequency;
+        private float amplitude;
+        private float phase;
+        private float phaseIncrement;
+        private readonly float TAU = (float)(2 * System.Math.PI);
 
-        public WaveModulator Carrier
+        public float Frequency
         {
             get
             {
-                return carrier;
+                return frequency;
+            }
+            set
+            {
+                frequency = value;
+                SetPhaseIncrement();
             }
         }
 
-        public int Count
+        public float Amplitude
         {
             get
             {
-                return modulators.Count;
+                return amplitude;
+            }
+            set
+            {
+                amplitude = value;
             }
         }
 
-        public WaveModulator this[int index]
+        public float Phase
         {
             get
             {
-                if ((uint)index >= (uint)modulators.Count)
-                    new System.IndexOutOfRangeException();
-                return modulators[index];
+                return phase;
             }
-        }
-
-        public FMGenerator(WaveType type, float frequency, float amplitude)
-        {
-            carrier = new WaveModulator(type, frequency, amplitude);
-            modulators = new List<WaveModulator>();
-            oscillator = new Oscillator(WaveType.Sine);
-        }
-
-        public void AddModulator(WaveType type, float frequency, float depth)
-        {
-            modulators.Add(new WaveModulator(type, frequency, depth));
-        }
-
-        public void OnGenerate(Span<float> framesOut, ulong frameCount, int channels)
-        {
-            float sample = 0;
-
-            for(int i = 0; i < framesOut.Length; i+=channels)
+            set
             {
-                sample = GetModulatedSample();
-
-                for(int j = 0; j < channels; j++)
-                {
-                    framesOut[i+j] = sample;
-                }
+                phase = value;
             }
         }
 
-        private float GetModulatedSample()
+        public float PhaseIncrement
         {
-            float modulationSum = 0.0f;
-
-            for (int i = 0; i < modulators.Count; i++)
+            get
             {
-                modulationSum += modulators[i].GetValue();
+                return phaseIncrement;
             }
+        }
 
-            return carrier.GetModulatedValue(modulationSum);
+        public WaveOperator(float frequency, float amplitude)
+        {
+            this.frequency = frequency;
+            this.amplitude = amplitude;
+            this.phase = 0;
+            SetPhaseIncrement();
+        }
+
+        private void SetPhaseIncrement()
+        {
+            phaseIncrement = TAU * frequency / MiniAudioEx.SampleRate;
         }
     }
 }

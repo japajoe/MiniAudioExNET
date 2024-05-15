@@ -92,7 +92,7 @@ namespace MiniAudioExNET
         private ThreadSafeQueue<IAudioGenerator> generators;
 
         /// <summary>
-        /// A handle to the native ma_audio_source instance.
+        /// Gets a handle to the native ma_audio_source instance.
         /// </summary>
         /// <value></value>
         public IntPtr Handle
@@ -104,7 +104,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// The current position of the playback cursor in PCM samples.
+        /// Gets or sets the current position of the playback cursor in PCM samples.
         /// </summary>
         /// <value></value>
         public UInt64 Cursor
@@ -120,7 +120,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// The length of the playing audio clip in PCM samples.
+        /// Gets the length of the playing audio clip in PCM samples.
         /// </summary>
         /// <value></value>
         public UInt64 Length
@@ -132,7 +132,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Controls the volume of the sound.
+        /// Gets or sets the volume of the sound.
         /// </summary>
         /// <value></value>
         public float Volume
@@ -148,7 +148,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Controls the pitch of the sound.
+        /// Gets or sets the pitch of the sound.
         /// </summary>
         /// <value></value>
         public float Pitch
@@ -164,7 +164,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Controls whether the audio should loop. If true, then the End event will not be called. If the Play() overload is used, this property has no effect because the audio will loop regardless.
+        /// Gets or sets whether the audio should loop. If true, then the 'End' event will not be called. If the Play() overload is used, this property has no effect because the audio will loop regardless.
         /// </summary>
         /// <value></value>
         public bool Loop
@@ -180,7 +180,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Toggle to true to enable spatial audio
+        /// Gets or sets whether this source has spatial audio enabled or not.
         /// </summary>
         /// <value></value>
         public bool Spatial
@@ -196,7 +196,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Represents the intensity or strength of the simulated Doppler effect applied to the audio if Spatial is set to true.
+        /// Gets or sets the intensity or strength of the simulated Doppler effect applied to the audio if Spatial is set to true.
         /// </summary>
         /// <value></value>
         public float DopplerFactor
@@ -212,7 +212,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Represents the distance from the audio source at which the volume of the audio starts to attenuate. Sounds closer to or within this minimum distance are heard at full volume without any attenuation applied.
+        /// Gets or sets the distance from the audio source at which the volume of the audio starts to attenuate. Sounds closer to or within this minimum distance are heard at full volume without any attenuation applied.
         /// </summary>
         /// <value></value>
         public float MinDistance
@@ -228,7 +228,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Represents the distance from the audio source beyond which the audio is no longer audible or significantly attenuated. Sounds beyond this maximum distance are either inaudible or heard at greatly reduced volume.
+        /// Gets or sets the distance from the audio source beyond which the audio is no longer audible or significantly attenuated. Sounds beyond this maximum distance are either inaudible or heard at greatly reduced volume.
         /// </summary>
         /// <value></value>
         public float MaxDistance
@@ -244,7 +244,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// Defines the mathematical model used to simulate the attenuation of sound over distance.
+        /// Gets or sets the mathematical model used to simulate the attenuation of sound over distance.
         /// </summary>
         /// <value></value>
         public AttenuationModel AttenuationModel
@@ -260,7 +260,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// The position of the source, used for calculating spatial sound.
+        /// Gets or sets the position of the source, used for calculating spatial sound.
         /// </summary>
         /// <value></value>
         public Vector3f Position
@@ -279,7 +279,7 @@ namespace MiniAudioExNET
         }
 
         /// <summary>
-        /// The direction of the source, used for calculation spatial sound.
+        /// Gets or sets the direction of the source, used for calculation spatial sound.
         /// </summary>
         /// <value></value>
         public Vector3f Direction
@@ -314,6 +314,10 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// Indicates whether the source is playing audio or not.
+        /// </summary>
+        /// <value></value>
         public bool IsPlaying
         {
             get
@@ -411,24 +415,98 @@ namespace MiniAudioExNET
             }
         }
 
+        /// <summary>
+        /// A thread safe method to add an IAudioEffect.
+        /// </summary>
+        /// <param name="effect"></param>
         public void AddEffect(IAudioEffect effect)
         {
             effects.Add(effect);
         }
 
+        /// <summary>
+        /// A thread safe method to remove an IAudioEffect.
+        /// </summary>
+        /// <param name="effect"></param>
         public void RemoveEffect(IAudioEffect effect)
         {
             effects.Remove(effect);
         }
 
+        /// <summary>
+        /// A thread safe method to remove an IAudioEffect by its index.
+        /// </summary>
+        /// <param name="effect"></param>
+        public void RemoveEffect(int index)
+        {
+            if(index >= 0 && index < effects.Count)
+            {
+                var target = effects[index];
+                effects.Remove(target);
+            }
+        }
+
+        /// <summary>
+        /// A thread safe method to remove all IAudioEffect instances.
+        /// </summary>
+        public void RemoveEffects()
+        {
+            List<IAudioEffect> targets = new List<IAudioEffect>();
+            for(int i = 0; i < effects.Count; i++)
+            {
+                targets.Add(effects[i]);
+            }
+            if(targets.Count > 0)
+            {
+                effects.Remove(targets);
+            }
+        }
+
+        /// <summary>
+        /// A thread safe method to add an IAudioGenerator.
+        /// </summary>
+        /// <param name="effect"></param>
         public void AddGenerator(IAudioGenerator generator)
         {
             generators.Add(generator);
         }
 
+        /// <summary>
+        /// A thread safe method to remove an IAudioGenerator.
+        /// </summary>
+        /// <param name="effect"></param>
         public void RemoveGenerator(IAudioGenerator generator)
         {
             generators.Remove(generator);
+        }
+
+        /// <summary>
+        /// A thread safe method to remove an IAudioGenerator by its index.
+        /// </summary>
+        /// <param name="effect"></param>
+        public void RemoveGenerator(int index)
+        {
+            if(index >= 0 && index < generators.Count)
+            {
+                var target = generators[index];
+                generators.Remove(target);
+            }
+        }
+
+        /// <summary>
+        /// A thread safe method to remove all IAudioGenerator instances.
+        /// </summary>
+        public void RemoveGenerators()
+        {
+            List<IAudioGenerator> targets = new List<IAudioGenerator>();
+            for(int i = 0; i < generators.Count; i++)
+            {
+                targets.Add(generators[i]);
+            }
+            if(targets.Count > 0)
+            {
+                generators.Remove(targets);
+            }
         }
 
         /// <summary>
@@ -445,11 +523,21 @@ namespace MiniAudioExNET
             return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
         }
 
+        /// <summary>
+        /// Called whenever audio is loaded using the 'Play' method.
+        /// </summary>
+        /// <param name="pUserData"></param>
+        /// <param name="pSound"></param>
         private void OnLoad(IntPtr pUserData, IntPtr pSound)
         {
             Load?.Invoke();
         }
 
+        /// <summary>
+        /// Called whenever audio has finished playing. This does not trigger when 'Loop' is true.
+        /// </summary>
+        /// <param name="pUserData"></param>
+        /// <param name="pSound"></param>
         private void OnEnd(IntPtr pUserData, IntPtr pSound)
         {
             //This callback is called from another thread so we move the message to a queue that the main thread can safely access
@@ -457,6 +545,14 @@ namespace MiniAudioExNET
             endEventQueue.Enqueue(1);            
         }
         
+        /// <summary>
+        /// Called whenever the audio buffer of this source is filled with data.
+        /// </summary>
+        /// <param name="pUserData"></param>
+        /// <param name="pSound"></param>
+        /// <param name="pFramesOut"></param>
+        /// <param name="frameCount"></param>
+        /// <param name="channels"></param>
         private void OnProcess(IntPtr pUserData, IntPtr pSound, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
             int length = (int)(frameCount * channels);
@@ -476,6 +572,13 @@ namespace MiniAudioExNET
             effects.Flush();
         }
 
+        /// <summary>
+        /// Called whenever the buffer of this source needs data. This is only called whenever the 'Play' method without parameters is called.
+        /// </summary>
+        /// <param name="pUserData"></param>
+        /// <param name="pFramesOut"></param>
+        /// <param name="frameCount"></param>
+        /// <param name="channels"></param>
         private void OnWaveform(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
             int length = (int)(frameCount * channels);            
@@ -496,11 +599,17 @@ namespace MiniAudioExNET
         }
     }
 
+    /// <summary>
+    /// An interface for implementing audio effects. These effects can be added to an AudioSource by using the AddEffect method.
+    /// </summary>
     public interface IAudioEffect
     {
         void OnProcess(Span<float> framesOut, UInt64 frameCount, Int32 channels);
     }
 
+    /// <summary>
+    /// An interface for implementing audio generators. These generators can be added to an AudioSource by using the AddGenerator method.
+    /// </summary>
     public interface IAudioGenerator
     {
         void OnGenerate(Span<float> framesOut, UInt64 frameCount, Int32 channels);
@@ -560,6 +669,14 @@ namespace MiniAudioExNET
         public void Remove(T item)
         {
             removeQueue.Enqueue(item);
+        }
+
+        public void Remove(List<T> items)
+        {
+            for(int i = 0; i < items.Count; i++)
+            {
+                removeQueue.Enqueue(items[i]);
+            }
         }
 
         public void Flush()

@@ -50,125 +50,90 @@ using System;
 
 namespace MiniAudioExNET.Synthesis
 {
-    public interface IWavetable
+    public enum WaveType
     {
-        float GetValue(float phase);
+        Saw,
+        Sine,
+        Square,
+        Triangle
     }
 
-    public sealed class Wavetable
+    public class Oscillator
     {
-        private readonly float[] data;
-        private readonly int length;
-        private int index;
+        private delegate float WaveFunction(float phase);
+        private WaveFunction waveFunction;
+        private WaveType type;
+        private readonly float TAU = (float)(2 * Math.PI);
 
-        public Wavetable(IWavetable calculator, int length)
+        public WaveType Type
         {
-            this.data = new float[length];
-            this.length = length;
-
-            for (int i = 0; i < length; i++)
+            get
             {
-                data[i] = calculator.GetValue((float)i / length);
-            }            
+                return type;
+            }
+            set
+            {
+                type = value;
+                SetWaveType();
+            }
         }
 
-        public Wavetable(float[] data)
+        public Oscillator(WaveType type)
         {
-            this.data = data;
-            this.length = data.Length;
+            this.type = type;
+            SetWaveType();
         }
 
-        public float GetValue(long time, float frequency, float sampleRate)
-        {
-            return GetValue(frequency, (float)time, sampleRate);
-        }
-
-        public float GetValue(float phase, float frequency)
-        {
-            index = (int)(phase * length);
-            float t = phase * length - index;
-
-            int i1 = index % length;
-            int i2 = (index+1) % length;
-
-            if(i1 < 0 || i2 < 0)
-                return 0.0f;
-
-            float value1 = data[i1];
-            float value2 = data[i2];
-            return Interpolate(value1, value2, t);
-        }
-
+        /// <summary>
+        /// Phase must be between 0 and 2 * PI
+        /// </summary>
+        /// <param name="phase"></param>
+        /// <returns></returns>
         public float GetValue(float phase)
         {
-            phase = phase / (float)(2 * Math.PI); // Convert to the range from 0 to 1
-
-            index = (int)(phase * length);
-            float t = phase * length - index;
-
-            int i1 = index % length;
-            int i2 = (index+1) % length;
-
-            if(i1 < 0 || i2 < 0)
-                return 0.0f;
-
-            float value1 = data[i1];
-            float value2 = data[i2];
-            return Interpolate(value1, value2, t);
+            return waveFunction(phase);
         }
 
-        private float GetValue(float frequency, float time, float sampleRate)
+        private void SetWaveType()
         {
-            float phase = time * frequency / sampleRate;
-            index = (int)(phase * length);
-            float t = phase * length - index;
-
-            int i1 = index % length;
-            int i2 = (index+1) % length;
-
-            if(i1 < 0 || i2 < 0)
-                return 0.0f;
-
-            float value1 = data[i1];
-            float value2 = data[i2];
-            return Interpolate(value1, value2, t);
+            switch(type)
+            {
+                case WaveType.Saw:
+                    waveFunction = GetSawSample;
+                    break;
+                case WaveType.Sine:
+                    waveFunction = GetSineSample;
+                    break;
+                case WaveType.Square:
+                    waveFunction = GetSquareSample;
+                    break;
+                case WaveType.Triangle:
+                    waveFunction = GetTriangleSample;
+                    break;
+            }
         }
 
-        private float Interpolate(float value1, float value2, float t)
+        private float GetSawSample(float phase) 
         {
-            return value1 + (value2 - value1) * t;
+            phase = phase / TAU;
+            return 2 * phase - 1;
         }
-    }
 
-    public sealed class SawCalculator : IWavetable
-    {
-        public float GetValue(float phase)
+        private float GetSineSample(float phase) 
         {
-            return 2 * (phase - 0.5f);
+            return (float)Math.Sin(phase);
         }
-    }
 
-    public sealed class SineCalculator : IWavetable
-    {
-        public float GetValue(float phase)
+        private float GetSquareSample(float phase) 
         {
-            return (float)System.Math.Sin(2 * Math.PI * phase);
+            return (float)Math.Sign(Math.Sin(phase));
         }
-    }
 
-    public sealed class SquareCalculator : IWavetable
-    {
-        public float GetValue(float phase)
+        private float GetTriangleSample(float phase) 
         {
-            return (float)Math.Sign(System.Math.Sin(2 * Math.PI * phase));
+            phase = phase / TAU;
+            return (float)(2 * Math.Abs(2 * (phase - 0.5)) - 1);
         }
-    }
 
-    public sealed class TriangleCalculator : IWavetable
-    {
-        public float GetValue(float phase)
-        {
-            return 2 * (float)Math.Abs(2 * (phase - 0.5)) - 1;
-        }
     }
 }
