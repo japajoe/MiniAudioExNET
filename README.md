@@ -350,7 +350,7 @@ using MiniAudioExNET.Synthesis;
 
 namespace MiniAudioExExample
 {
-    class Example
+    class Program
     {
         static readonly uint SAMPLE_RATE = 44100;
         static readonly uint CHANNELS = 2;
