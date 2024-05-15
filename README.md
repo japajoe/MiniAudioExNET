@@ -340,3 +340,64 @@ namespace MiniAudioExExample
     }
 }
 ```
+# Example 6
+An example of FM synthesis.
+```csharp
+using System;
+using System.Threading;
+using MiniAudioExNET;
+using MiniAudioExNET.Synthesis;
+
+namespace MiniAudioExExample
+{
+    class Example
+    {
+        static readonly uint SAMPLE_RATE = 44100;
+        static readonly uint CHANNELS = 2;
+
+        static void Main(string[] args)
+        {
+            Console.CancelKeyPress += OnCancelKeyPress;
+
+            MiniAudioEx.Initialize(SAMPLE_RATE, CHANNELS);
+            
+            AudioSource source = new AudioSource();
+
+            var generator = new FMGenerator(WaveType.Sine, 110.0f, 1.0f);
+            generator.AddModulator(WaveType.Sine, 55, 1.0f);
+            generator.AddModulator(WaveType.Sine, 22, 0.5f);
+            source.AddGenerator(generator);
+            source.Play();
+
+            while(true)
+            {
+                MiniAudioEx.Update();
+
+                if (Console.KeyAvailable)
+                {
+                    ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+
+                    if (keyInfo.Key == ConsoleKey.UpArrow)
+                    {
+                        if(generator.Carrier.Operator.Frequency < 2000.0f)
+                            generator.Carrier.Operator.Frequency += 1.0f;
+                    }
+
+                    if (keyInfo.Key == ConsoleKey.DownArrow)
+                    {
+                        if(generator.Carrier.Operator.Frequency > 20.0f)
+                            generator.Carrier.Operator.Frequency -= 1.0f;
+                    }
+                }                
+
+                Thread.Sleep(10);
+            }            
+        }
+
+        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            MiniAudioEx.Deinitialize();
+        }
+    }
+}
+```
