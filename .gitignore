@@ -4,3 +4,6 @@
 /src/Program.cs
 /src/Program.cs.txt
 audio.mp3
+pack.sh
+run.sh
+MiniAudioExNETTesting.csproj

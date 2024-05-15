@@ -4,7 +4,7 @@
     <TargetFrameworks>net7.0;netstandard2.0;netstandard2.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>JAJ.Packages.MiniAudioEx</PackageId>
-    <Version>1.5.2</Version>
+    <Version>1.5.3</Version>
     <Authors>W.M.R Jap-A-Joe</Authors>
     <PackageTags>MiniAudio Audio DSP</PackageTags>
     <Description>
@@ -19,16 +19,12 @@
     <Copyright>Copyright $([System.DateTime]::Now.Year) W.M.R Jap-A-Joe</Copyright>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-      <DefineConstants>NETSTANDARD2_0</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="runtimes\**" PackagePath="runtimes" Visible="false" />
+    <Content Include="runtimes/**" PackagePath="runtimes" Visible="false" />
   </ItemGroup>
 
 </Project>
