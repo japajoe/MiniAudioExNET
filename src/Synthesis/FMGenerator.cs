@@ -54,11 +54,10 @@ namespace MiniAudioExNET.Synthesis
 {
     class FMGenerator : IAudioGenerator
     {
-        private WaveModulator carrier;
-        private List<WaveModulator> modulators;
-        private Oscillator oscillator;
+        private Oscillator carrier;
+        private List<Oscillator> operators;
 
-        public WaveModulator Carrier
+        public Oscillator Carrier
         {
             get
             {
@@ -66,34 +65,49 @@ namespace MiniAudioExNET.Synthesis
             }
         }
 
+        /// <summary>
+        /// Gets the number of operators.
+        /// </summary>
+        /// <value></value>
         public int Count
         {
             get
             {
-                return modulators.Count;
+                return operators.Count;
             }
         }
 
-        public WaveModulator this[int index]
+        public Oscillator this[int index]
         {
             get
             {
-                if ((uint)index >= (uint)modulators.Count)
+                if ((uint)index >= (uint)operators.Count)
                     new System.IndexOutOfRangeException();
-                return modulators[index];
+                return operators[index];
             }
         }
 
         public FMGenerator(WaveType type, float frequency, float amplitude)
         {
-            carrier = new WaveModulator(type, frequency, amplitude);
-            modulators = new List<WaveModulator>();
-            oscillator = new Oscillator(WaveType.Sine);
+            carrier = new Oscillator(type, frequency, amplitude);
+            operators = new List<Oscillator>();
+        }
+        
+        /// <summary>
+        /// /// Resets the phase.
+        /// </summary>
+        public void Reset()
+        {
+            carrier.Reset();
+            for(int i = 0; i < operators.Count; i++)
+            {
+                operators[i].Reset();
+            }
         }
 
-        public void AddModulator(WaveType type, float frequency, float depth)
+        public void AddOperator(WaveType type, float frequency, float depth)
         {
-            modulators.Add(new WaveModulator(type, frequency, depth));
+            operators.Add(new Oscillator(type, frequency, depth));
         }
 
         public void OnGenerate(Span<float> framesOut, ulong frameCount, int channels)
@@ -115,9 +129,9 @@ namespace MiniAudioExNET.Synthesis
         {
             float modulationSum = 0.0f;
 
-            for (int i = 0; i < modulators.Count; i++)
+            for (int i = 0; i < operators.Count; i++)
             {
-                modulationSum += modulators[i].GetValue();
+                modulationSum += operators[i].GetValue();
             }
 
             return carrier.GetModulatedValue(modulationSum);

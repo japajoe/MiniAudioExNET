@@ -20,13 +20,14 @@ MiniAudio was designed to work on every major platform, however I do not have a 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.5.4
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.6.0
 ```
 
 # General gotchas
 - Reuse audio clips. If you have loaded an AudioClip from memory, then the library allocates memory that the garbage collector doesn't free. All memory is freed after calling MiniAudioEx.Deinitialize. It is perfectly fine to reuse audio clips across multiple audio sources, so you don't have to load multiple clips with the same sound. A good strategy is to store your audio clips in an array or a list for the lifetime of your application.
 - Call MiniAudioEx.Update from your main thread loop. This method calculates a delta time, and is responsible for moving messages from the audio thread to the main thread. If not called (regularly), the `End` callback will never be able to run.
 - The `Process` and `Read` event run on a separate thread as well. You should not call any MiniAudioEx API functions from these callbacks.
+- It can happen that I change things over the course of time. The examples always reflect the use of the API as of the latest available Nuget package so please refer to them if things are different.
 
 # Example 1
 Playing audio from a file on disk.
@@ -364,8 +365,8 @@ namespace MiniAudioExExample
             AudioSource source = new AudioSource();
 
             var generator = new FMGenerator(WaveType.Sine, 110.0f, 1.0f);
-            generator.AddModulator(WaveType.Sine, 55, 1.0f);
-            generator.AddModulator(WaveType.Sine, 22, 0.5f);
+            generator.AddOperator(WaveType.Sine, 55, 1.0f);
+            generator.AddOperator(WaveType.Sine, 22, 0.5f);
             
             source.AddGenerator(generator);
             
@@ -381,14 +382,14 @@ namespace MiniAudioExExample
 
                     if (keyInfo.Key == ConsoleKey.UpArrow)
                     {
-                        if(generator.Carrier.Operator.Frequency < 2000.0f)
-                            generator.Carrier.Operator.Frequency += 1.0f;
+                        if(generator.Carrier.Frequency < 2000.0f)
+                            generator.Carrier.Frequency += 1.0f;
                     }
 
                     if (keyInfo.Key == ConsoleKey.DownArrow)
                     {
-                        if(generator.Carrier.Operator.Frequency > 20.0f)
-                            generator.Carrier.Operator.Frequency -= 1.0f;
+                        if(generator.Carrier.Frequency > 20.0f)
+                            generator.Carrier.Frequency -= 1.0f;
                     }
                 }                
 

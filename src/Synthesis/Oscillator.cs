@@ -63,6 +63,10 @@ namespace MiniAudioExNET.Synthesis
         private delegate float WaveFunction(float phase);
         private WaveFunction waveFunction;
         private WaveType type;
+        private float frequency;
+        private float amplitude;
+        private float phase;
+        private float phaseIncrement;
         private readonly float TAU = (float)(2 * Math.PI);
 
         public WaveType Type
@@ -74,27 +78,97 @@ namespace MiniAudioExNET.Synthesis
             set
             {
                 type = value;
-                SetWaveType();
+                SetWaveFunction();
             }
         }
 
-        public Oscillator(WaveType type)
+        public float Frequency
+        {
+            get
+            {
+                return frequency;
+            }
+            set
+            {
+                frequency = value;
+                SetPhaseIncrement();
+            }
+        }
+
+        public float Amplitude
+        {
+            get
+            {
+                return amplitude;
+            }
+            set
+            {
+                amplitude = value;
+            }
+        }
+
+        public float Phase
+        {
+            get
+            {
+                return phase;
+            }
+            set
+            {
+                phase = value;
+            }
+        }
+
+        public Oscillator(WaveType type, float frequency, float amplitude)
         {
             this.type = type;
-            SetWaveType();
+            this.phase = 0.0f;
+            this.frequency = frequency;
+            this.amplitude = amplitude;
+            SetPhaseIncrement();
+            SetWaveFunction();
         }
 
         /// <summary>
-        /// Phase must be between 0 and 2 * PI
+        /// Resets the phase.
         /// </summary>
-        /// <param name="phase"></param>
+        public void Reset()
+        {
+            phase = 0;
+        }
+
+        public float GetValue()
+        {
+            float result = waveFunction(phase);
+            phase += phaseIncrement;
+            phase %= TAU;
+            return result;
+        }
+
+        /// <summary>
+        /// Gets a sample by the given phase term instead of using the phase stored by this instance.
+        /// </summary>
+        /// <param name="phase">Phase must be between 0 and 2 * PI</param>
         /// <returns></returns>
         public float GetValue(float phase)
         {
             return waveFunction(phase);
         }
 
-        private void SetWaveType()
+        /// <summary>
+        /// Modulates the generated sample by the given phase term.
+        /// </summary>
+        /// <param name="phase">Phase must be between 0 and 2 * PI</param>
+        /// <returns></returns>
+        public float GetModulatedValue(float phase)
+        {
+            float result = waveFunction(this.phase + phase);
+            this.phase += phaseIncrement;
+            this.phase %= TAU;
+            return result;
+        }
+
+        private void SetWaveFunction()
         {
             switch(type)
             {
@@ -111,6 +185,11 @@ namespace MiniAudioExNET.Synthesis
                     waveFunction = GetTriangleSample;
                     break;
             }
+        }
+
+        private void SetPhaseIncrement()
+        {
+            phaseIncrement = TAU * frequency / MiniAudioEx.SampleRate;
         }
 
         private float GetSawSample(float phase) 
@@ -134,6 +213,5 @@ namespace MiniAudioExNET.Synthesis
             phase = phase / TAU;
             return (float)(2 * Math.Abs(2 * (phase - 0.5)) - 1);
         }
-
     }
 }
