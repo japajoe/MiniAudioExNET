@@ -52,10 +52,10 @@ namespace MiniAudioExNET.Synthesis
 {
     public enum WaveType
     {
-        Saw,
         Sine,
         Square,
-        Triangle
+        Triangle,
+        Saw
     }
 
     public class Oscillator
@@ -150,7 +150,7 @@ namespace MiniAudioExNET.Synthesis
         /// </summary>
         /// <param name="phase">Phase must be between 0 and 2 * PI</param>
         /// <returns></returns>
-        public float GetValue(float phase)
+        public float GetValueAtPhase(float phase)
         {
             return waveFunction(phase);
         }
@@ -195,7 +195,7 @@ namespace MiniAudioExNET.Synthesis
         private float GetSawSample(float phase) 
         {
             phase = phase / TAU;
-            return 2 * phase - 1;
+            return 2.0f * phase - 1.0f;
         }
 
         private float GetSineSample(float phase) 

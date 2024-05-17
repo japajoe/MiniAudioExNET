@@ -194,294 +194,107 @@ namespace MiniAudioExNET
         }
     }
 
-    public struct Vector3f
+    public enum ma_waveform_type
     {
-        public float x;
-        public float y;
-        public float z;
-
-        /// <summary>
-        /// Gets the length of the vector.
-        /// </summary>
-        public float Length
-        {
-            get
-            {
-                return (float)Math.Sqrt(x * x + y * y + z * z);
-            }
-        }
-
-        /// <summary>
-        /// Gets the squared length of the vector.
-        /// </summary>
-        public float LengthSquared
-        {
-            get
-            {
-                return x * x + y * y + z * z;
-            }
-        }
-
-        /// <summary>
-        /// Returns a vector with components set to zero.
-        /// </summary>
-        public static Vector3f Zero
-        {
-            get
-            {
-                return new Vector3f(0, 0, 0);
-            }
-        }
-
-        /// <summary>
-        /// Returns a vector with all components set to one.
-        /// </summary>
-        public static Vector3f One
-        {
-            get
-            {
-                return new Vector3f(1, 1, 1);
-            }
-        }
-
-        /// <summary>
-        /// Gets the unit vector along the X-axis.
-        /// </summary>
-        public static Vector3f UnitX
-        {
-            get
-            {
-                return new Vector3f(1, 0, 0);
-            }
-        }
-
-        /// <summary>
-        /// Gets the unit vector along the Y-axis.
-        /// </summary>
-        public static Vector3f UnitY
-        {
-            get
-            {
-                return new Vector3f(0, 1, 0);
-            }
-        }
-
-        /// <summary>
-        /// Gets the unit vector along the Z-axis.
-        /// </summary>
-        public static Vector3f UnitZ
-        {
-            get
-            {
-                return new Vector3f(0, 0, 1);
-            }
-        }
-
-        /// <summary>
-        /// Constructs a new Vector3f with the specified components.
-        /// </summary>
-        public Vector3f(float x, float y, float z)
-        {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        /// <summary>
-        /// Normalizes this vector.
-        /// </summary>
-        public void Normalize()
-        {
-            float scale = 1.0f / Length;
-            x *= scale;
-            y *= scale;
-            z *= scale;
-        }
-
-        /// <summary>
-        /// Returns the normalized vector of the input vector.
-        /// </summary>
-        public static Vector3f Normalize(Vector3f v)
-        {
-            float scale = 1.0f / v.Length;
-            v.x = v.x *= scale;
-            v.y = v.y *= scale;
-            v.z = v.z *= scale;
-            return v;
-        }        
-
-        /// <summary>
-        /// Calculates the distance between two vectors.
-        /// </summary>
-        public static float Distance(Vector3f a, Vector3f b)
-        {
-            float dx = b.x - a.x;
-            float dy = b.y - a.y;
-            float dz = b.z - a.z;
-            return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
-        }
-
-        /// <summary>
-        /// Calculates the squared distance between two vectors.
-        /// </summary>
-        public static float DistanceSquared(Vector3f a, Vector3f b)
-        {
-            float dx = b.x - a.x;
-            float dy = b.y - a.y;
-            float dz = b.z - a.z;
-            return dx * dx + dy * dy + dz * dz;
-        }
-
-        /// <summary>
-        /// Calculates the dot product of two vectors.
-        /// </summary>
-        public static float Dot(Vector3f a, Vector3f b)
-        {
-            return a.x * b.x + a.y * b.y + a.z * b.z;
-        }
-
-        /// <summary>
-        /// Calculates the cross product of two vectors.
-        /// </summary>
-        public static Vector3f Cross(Vector3f a, Vector3f b)
-        {
-            float x = a.y * b.z - a.z * b.y;
-            float y = a.z * b.x - a.x * b.z;
-            float z = a.x * b.y - a.y * b.x;
-            return new Vector3f(x, y, z);
-        }
-
-        /// <summary>
-        /// Performs linear interpolation between two vectors.
-        /// </summary>
-        public static Vector3f Lerp(Vector3f a, Vector3f b, float t)
-        {
-            float x = a.x + (b.x - a.x) * t;
-            float y = a.y + (b.y - a.y) * t;
-            float z = a.z + (b.z - a.z) * t;
-            return new Vector3f(x, y, z);
-        }
-
-        // Helper method for clamping values between min and max.
-        private static float Clamp(float n, float min, float max)
-        {
-            return Math.Max(Math.Min(n, max), min);
-        }
-
-        /// <summary>
-        /// Calculates the angle between two vectors in radians.
-        /// </summary>
-        public static float Angle(Vector3f a, Vector3f b)
-        {
-            float temp = Dot(a, b);
-            return (float)Math.Acos(Clamp(temp / (a.Length * b.Length), -1.0f, 1.0f));
-        }
-
-        public static Vector3f operator +(Vector3f a, Vector3f b)
-        {
-            return new Vector3f(a.x + b.x, a.y + b.y, a.z + b.z);
-        }
-
-        public static Vector3f operator -(Vector3f a, Vector3f b)
-        {
-            return new Vector3f(a.x - b.x, a.y - b.y, a.z - b.z);
-        }
-
-        public static Vector3f operator -(Vector3f a)
-        {
-            return new Vector3f(-a.x, -a.y, -a.z);
-        }
-
-        public static Vector3f operator *(Vector3f a, float scalar)
-        {
-            return new Vector3f(a.x * scalar, a.y * scalar, a.z * scalar);
-        }
-
-        public static Vector3f operator *(float scalar, Vector3f a)
-        {
-            return a * scalar;
-        }
-
-        public static Vector3f operator /(Vector3f a, float scalar)
-        {
-            a.x /= scalar;
-            a.y /= scalar;
-            a.z /= scalar;
-            return a;
-        }
-
-        public static bool operator ==(Vector3f a, Vector3f b)
-        {
-            return a.x == b.x && a.y == b.y && a.z == b.z;
-        }
-
-        public static bool operator !=(Vector3f a, Vector3f b)
-        {
-            return !(a == b);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (!(obj is Vector3f))
-                return false;
-
-            Vector3f other = (Vector3f)obj;
-            return this == other;
-        }
-
-        public override string ToString()
-        {
-            return "(" + x + "," + y + "," + z + ")";
-        }
-
-        public override int GetHashCode()
-        {
-            int hash = 42;
-            hash = hash ^ x.GetHashCode();
-            hash = hash ^ y.GetHashCode();
-            hash = hash ^ z.GetHashCode();
-            return hash;
-        }
+        ma_waveform_type_sine,
+        ma_waveform_type_square,
+        ma_waveform_type_triangle,
+        ma_waveform_type_sawtooth
     }
 
-    public enum AttenuationModel
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_oscillator_config
     {
-        None,
-        Inverse,
-        Linear,
-        Exponential
+        ma_waveform_type type;
+        float frequency;
+        float amplitude;
+        float sampleRate;
     }
 
-    public sealed class DeviceInfo
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_oscillator
     {
-        private string name;
-        private UInt32 index;
+        public ma_waveform_type type;
+        public IntPtr pWaveFunction;
+        public float frequency;
+        public float amplitude;
+        public float sampleRate;
+        public float phase;
+        public float phaseIncrement;
+    }
 
-        public string Name
-        {
-            get
-            {
-                return name;
-            }
-        }
+    public enum ma_wave_table_type
+    {
+        ma_wave_table_type_sine,
+        ma_wave_table_type_saw,
+        ma_wave_table_type_square,
+        ma_wave_table_type_triangle,
+        ma_wave_table_type_custom
+    }
 
-        public UInt32 Index
-        {
-            get
-            {
-                return index;
-            }
-        }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_wave_table_config
+    {
+        public ma_wave_table_type type;
+        public IntPtr pData;
+        public UInt64 dataSampleCount;
+    }
 
-        public DeviceInfo(IntPtr pName, UInt32 index)
-        {
-            if(pName != IntPtr.Zero)
-                name = Marshal.PtrToStringAnsi(pName);
-            else
-                name = string.Empty;
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_wave_table
+    {
+        IntPtr pData;
+        UInt64 dataSize;
+        UInt64 dataSampleCount;
+        UInt64 dataIndex;
+        ma_wave_table_type type;
+        float phase;
+        float phaseIncrement;
+    }
 
-            this.index = index;
-        }
+    public enum ma_filter_type
+    {
+        ma_filter_type_lowpass,
+        ma_filter_type_highpass,
+        ma_filter_type_bandpass,
+        ma_filter_type_lowshelf,
+        ma_filter_type_highshelf,
+        ma_filter_type_peak,
+        ma_filter_type_notch
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_filter_config
+    {
+        public ma_filter_type type;
+        public Int32 sampleRate;
+        public float frequency;
+        public float q;
+        public float gainDB;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_filter_vtable
+    {
+        public IntPtr onCalculateBiQuadCoefficients;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_biquad_filter
+    {
+        public ma_filter_type type;
+        public Int32 sampleRate;
+        public float frequency;
+        public float q;
+        public float gainDB;
+        public float a0;
+        public float a1;
+        public float a2;
+        public float b1;
+        public float b2;
+        public float z1;
+        public float z2;
+        public ma_filter_vtable vtable;
     }
 
     public static class Library
@@ -652,5 +465,104 @@ namespace MiniAudioExNET
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern void ma_ex_audio_listener_get_cone(IntPtr listener, out float innerAngleInRadians, out float outerAngleInRadians, out float outerGain);
+
+        //Oscillator
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_oscillator_config ma_oscillator_config_init(ma_waveform_type type, float frequency, float amplitude, float sampleRate);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_oscillator_init(ref ma_oscillator_config pConfig, ref ma_oscillator pOscillator);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_oscillator_set_type(ref ma_oscillator pOscillator, ma_waveform_type type);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_waveform_type ma_oscillator_get_type(ref ma_oscillator pOscillator);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_oscillator_set_frequency(ref ma_oscillator pOscillator, float frequency);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_oscillator_get_frequency(ref ma_oscillator pOscillator);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_oscillator_set_amplitude(ref ma_oscillator pOscillator, float amplitude);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_oscillator_get_amplitude(ref ma_oscillator pOscillator);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_oscillator_set_phase(ref ma_oscillator pOscillator, float phase);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_oscillator_get_phase(ref ma_oscillator pOscillator);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_oscillator_get_value(ref ma_oscillator pOscillator);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_oscillator_get_value_at_phase(ref ma_oscillator pOscillator, float phase);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_oscillator_get_modulated_value(ref ma_oscillator pOscillator, float phase);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_oscillator_uninit(ref ma_oscillator pOscillator);
+
+        //Wave table
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_wave_table_config ma_wave_table_config_init(ma_wave_table_type type, IntPtr pData, UInt64 dataSampleCount);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_wave_table_init(ref ma_wave_table_config pConfig, ref ma_wave_table pWavetable);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_wave_table_uninit(ref ma_wave_table pWavetable);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_wave_table_reset(ref ma_wave_table pWavetable);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_wave_table_get_sample(ref ma_wave_table pWavetable, float frequency, float sampleRate);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_wave_table_get_sample_at_phase(ref ma_wave_table pWavetable, float phase);
+
+        //Filter
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_filter_config ma_filter_config_init(ma_filter_type type, Int32 sampleRate, float frequency, float q, float gainDB);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_filter_init(ref ma_filter_config pConfig, ref ma_biquad_filter pFilter);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_filter_uninit(ref ma_biquad_filter pFilter);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_filter_type ma_filter_get_type(ref ma_biquad_filter pFilter);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_filter_set_frequency(ref ma_biquad_filter pFilter, float frequency);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_filter_get_frequency(ref ma_biquad_filter pFilter);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_filter_set_q(ref ma_biquad_filter pFilter, float q);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_filter_get_q(ref ma_biquad_filter pFilter);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_filter_set_gain_db(ref ma_biquad_filter pFilter, float gainDB);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_filter_get_gain_db(ref ma_biquad_filter pFilter);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_filter_process_sample(ref ma_biquad_filter pFilter, float input);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_filter_process_samples(ref ma_biquad_filter pFilter, IntPtr pInput, UInt64 inputSamples, IntPtr pOutput, UInt64 outputSamples);
     }
 }

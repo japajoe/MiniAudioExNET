@@ -20,7 +20,7 @@ MiniAudio was designed to work on every major platform, however I do not have a 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.6.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.6.1
 ```
 
 # General gotchas

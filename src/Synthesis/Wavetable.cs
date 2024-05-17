@@ -60,31 +60,47 @@ namespace MiniAudioExNET.Synthesis
         private readonly float[] data;
         private readonly int length;
         private int index;
+        private float phase;
+        private float phaseIncrement;
+        private readonly float TAU = (float)(2 * Math.PI);
 
         public Wavetable(IWavetable calculator, int length)
         {
             this.data = new float[length];
             this.length = length;
+            this.phase = 0;
+            this.phaseIncrement = 0;
+
+            float phaseIncrement = (float)((2 * Math.PI) / length);
 
             for (int i = 0; i < length; i++)
             {
-                data[i] = calculator.GetValue((float)i / length);
-            }            
+                data[i] = calculator.GetValue(i * phaseIncrement);
+            }
         }
 
         public Wavetable(float[] data)
         {
             this.data = data;
             this.length = data.Length;
+            this.phase = 0;
+            this.phaseIncrement = 0;            
         }
 
-        public float GetValue(long time, float frequency, float sampleRate)
+        /// <summary>
+        /// Gets a sample by the given frequency and sample rate.
+        /// </summary>
+        /// <param name="frequency"></param>
+        /// <param name="sampleRate"></param>
+        /// <returns></returns>
+        public float GetValue(float frequency, float sampleRate)
         {
-            return GetValue(frequency, (float)time, sampleRate);
-        }
+            float phase = this.phase > 0.0f ? (this.phase / TAU) : 0.0f;
 
-        public float GetValue(float phase, float frequency)
-        {
+            this.phaseIncrement = TAU * frequency / sampleRate;
+            this.phase += this.phaseIncrement;
+            this.phase %= TAU;
+
             index = (int)(phase * length);
             float t = phase * length - index;
 
@@ -99,27 +115,15 @@ namespace MiniAudioExNET.Synthesis
             return Interpolate(value1, value2, t);
         }
 
-        public float GetValue(float phase)
+        /// <summary>
+        /// Gets a sample by the given phase term.
+        /// </summary>
+        /// <param name="phase">Phase must be between 0 and 2 * PI</param>
+        /// <returns></returns>
+        public float GetValueAtPhase(float phase)
         {
-            phase = phase / (float)(2 * Math.PI); // Convert to the range from 0 to 1
+            phase = phase > 0.0f ? (phase / TAU) : 0.0f;
 
-            index = (int)(phase * length);
-            float t = phase * length - index;
-
-            int i1 = index % length;
-            int i2 = (index+1) % length;
-
-            if(i1 < 0 || i2 < 0)
-                return 0.0f;
-
-            float value1 = data[i1];
-            float value2 = data[i2];
-            return Interpolate(value1, value2, t);
-        }
-
-        private float GetValue(float frequency, float time, float sampleRate)
-        {
-            float phase = time * frequency / sampleRate;
             index = (int)(phase * length);
             float t = phase * length - index;
 
@@ -144,7 +148,8 @@ namespace MiniAudioExNET.Synthesis
     {
         public float GetValue(float phase)
         {
-            return 2 * (phase - 0.5f);
+            phase = phase / (float)(2 * Math.PI);
+            return 2.0f * phase - 1.0f;
         }
     }
 
@@ -152,7 +157,7 @@ namespace MiniAudioExNET.Synthesis
     {
         public float GetValue(float phase)
         {
-            return (float)System.Math.Sin(2 * Math.PI * phase);
+            return (float)System.Math.Sin(phase);
         }
     }
 
@@ -160,7 +165,7 @@ namespace MiniAudioExNET.Synthesis
     {
         public float GetValue(float phase)
         {
-            return (float)Math.Sign(System.Math.Sin(2 * Math.PI * phase));
+            return (float)Math.Sign(System.Math.Sin(phase));
         }
     }
 
@@ -168,7 +173,8 @@ namespace MiniAudioExNET.Synthesis
     {
         public float GetValue(float phase)
         {
-            return 2 * (float)Math.Abs(2 * (phase - 0.5)) - 1;
+            phase = phase / (float)(2 * Math.PI);
+            return (2.0f * (float)Math.Abs(2 * (phase - 0.5f)) - 1.0f);
         }
     }
 }
