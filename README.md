@@ -71,8 +71,13 @@ namespace MiniAudioExExample
 See links below for more examples. These use the `AudioApp` class which is suitable for simple console based applications.
 
 [Playing audio from a file on disk](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example1.cs)
+
 [Using the 'Read' callback to generate sound](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example2.cs)
+
 [Basic spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example3.cs)
+
 [Playing audio from a playlist](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example4.cs)
+
 [Generating sound, applying effects and spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example5.cs)
+
 [FM synthesis](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example6.cs)
