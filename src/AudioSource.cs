@@ -49,6 +49,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using MiniAudioExNET.Core;
 using MiniAudioExNET.Compatibility; //Needed for Span<T> on netstandard 2.0
 
 namespace MiniAudioExNET

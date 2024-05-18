@@ -1,6 +1,7 @@
 /.vscode
 /bin
 /obj
+/res
 /src/Program.cs
 /src/Program.cs.txt
 audio.mp3

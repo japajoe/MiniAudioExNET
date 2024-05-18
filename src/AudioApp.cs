@@ -47,104 +47,49 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioExNET.Compatibility;
+using System.Threading;
 
-namespace MiniAudioExNET.Synthesis
+namespace MiniAudioExNET
 {
-    class FMGenerator : IAudioGenerator
+    public sealed class AudioApp
     {
-        private Oscillator carrier;
-        private ThreadSafeQueue<Oscillator> operators;
+        public delegate void UpdateEvent(float deltaTime);
+        public delegate void CloseEvent();
+        public delegate void LoadEvent();
 
-        public Oscillator Carrier
+        public event LoadEvent Loaded;
+        public event UpdateEvent Update;
+        public event CloseEvent Closing;
+
+        private uint sampleRate;
+        private uint channels;
+
+        public AudioApp(uint sampleRate, uint channels)
         {
-            get
+            this.sampleRate = sampleRate;
+            this.channels = channels;
+        }
+
+        public void Run()
+        {
+            Console.CancelKeyPress += OnExit;
+
+            MiniAudioEx.Initialize(sampleRate, channels);
+
+            Loaded?.Invoke();
+
+            while(true)
             {
-                return carrier;
+                MiniAudioEx.Update();
+                Update?.Invoke(MiniAudioEx.DeltaTime);
+                Thread.Sleep(10);
             }
         }
 
-        /// <summary>
-        /// Gets the number of operators.
-        /// </summary>
-        /// <value></value>
-        public int Count
+        private void OnExit(object sender, ConsoleCancelEventArgs e)
         {
-            get
-            {
-                return operators.Count;
-            }
-        }
-
-        public Oscillator this[int index]
-        {
-            get
-            {
-                if ((uint)index >= (uint)operators.Count)
-                    new System.IndexOutOfRangeException();
-                return operators[index];
-            }
-        }
-
-        public FMGenerator(WaveType type, float frequency, float amplitude)
-        {
-            carrier = new Oscillator(type, frequency, amplitude);
-            operators = new ThreadSafeQueue<Oscillator>();
-        }
-        
-        /// <summary>
-        /// /// Resets the phase.
-        /// </summary>
-        public void Reset()
-        {
-            carrier.Reset();
-            for(int i = 0; i < operators.Count; i++)
-            {
-                operators[i].Reset();
-            }
-        }
-
-        public void AddOperator(WaveType type, float frequency, float depth)
-        {
-            operators.Add(new Oscillator(type, frequency, depth));
-        }
-
-        public void RemoveOperator(int index)
-        {
-            if(index >= 0 && index < operators.Count)
-            {
-                var target = operators[index];
-                operators.Remove(target);
-            }
-        }
-
-        public void OnGenerate(Span<float> framesOut, ulong frameCount, int channels)
-        {
-            float sample = 0;
-
-            for(int i = 0; i < framesOut.Length; i+=channels)
-            {
-                sample = GetModulatedSample();
-
-                for(int j = 0; j < channels; j++)
-                {
-                    framesOut[i+j] = sample;
-                }
-            }
-
-            operators.Flush();
-        }
-
-        private float GetModulatedSample()
-        {
-            float modulationSum = 0.0f;
-
-            for (int i = 0; i < operators.Count; i++)
-            {
-                modulationSum += operators[i].GetValue();
-            }
-
-            return carrier.GetModulatedValue(modulationSum);
+            Closing?.Invoke();
+            MiniAudioEx.Deinitialize();
         }
     }
 }

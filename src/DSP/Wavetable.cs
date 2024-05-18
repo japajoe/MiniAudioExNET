@@ -48,7 +48,7 @@
 
 using System;
 
-namespace MiniAudioExNET.Synthesis
+namespace MiniAudioExNET.DSP
 {
     public interface IWavetable
     {

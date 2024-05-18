@@ -47,66 +47,89 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioExNET.Compatibility;
 
-namespace MiniAudioExNET.Synthesis
+namespace MiniAudioExNET.DSP
 {
-    public sealed class FilterEffect: IAudioEffect
+    public enum NoiseType
     {
-        private Filter filter;
+        Brown,
+        Pink,
+        White
+    }
 
-        public FilterType Type
+    public sealed class Noise
+    {
+        private delegate float NoiseFunc();
+        private NoiseType type;
+        private NoiseFunc noiseFunc;
+        private float previousValue;
+        private static Random random;
+
+        public NoiseType Type
         {
             get
             {
-                return filter.Type;
-            }
-        }
-        
-        public float Frequency
-        {
-            get
-            {
-                return filter.Frequency;
+                return type;
             }
             set
             {
-                filter.Frequency = value;
+                type = value;
+                previousValue = 0.0f;
+                SetNoiseFunc();
             }
         }
 
-        public float Q
+        public Noise(NoiseType type)
         {
-            get
+            if(random == null)
+                random = new Random();
+            this.type = type;
+            previousValue = 0.0f;
+            SetNoiseFunc();
+        }
+
+        public float GetValue()
+        {
+            return noiseFunc();
+        }
+
+        private void SetNoiseFunc()
+        {
+            switch(type)
             {
-                return filter.Q;
-            }
-            set
-            {
-                filter.Q = value;
+                case NoiseType.Brown:
+                    noiseFunc = GetBrownNoise;
+                    break;
+                case NoiseType.Pink:
+                    noiseFunc = GetPinkNoise;
+                    break;
+                case NoiseType.White:
+                    noiseFunc = GetWhiteNoise;
+                    break;
             }
         }
 
-        public float GainDB
+        private float GetBrownNoise()
         {
-            get
-            {
-                return filter.GainDB;
-            }
-            set
-            {
-                filter.GainDB = value;
-            }
+            float newValue = (float)random.NextDouble() * 2 - 1;
+            float output = (previousValue + newValue) / 2.0f;
+            previousValue = newValue;
+            return output;
         }
 
-        public FilterEffect(FilterType type, float frequency, float q, float gainDB)
+        private float GetPinkNoise()
         {
-            filter = new Filter(type, frequency, q, gainDB, MiniAudioEx.SampleRate);
+            float value1 = (float)random.NextDouble() * 2 - 1;
+            float value2 = (float)random.NextDouble() * 2 - 1;
+            float output = (value1 + value2) / 2.0f;
+            return output;
         }
 
-        public void OnProcess(Span<float> framesOut, ulong frameCount, int channels)
+
+        private float GetWhiteNoise()
         {
-            filter.Process(framesOut, frameCount, channels);
+            float output = (float)random.NextDouble() * 2 - 1;
+            return output;
         }
     }
 }

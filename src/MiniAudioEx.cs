@@ -50,6 +50,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using MiniAudioExNET.Core;
 
 namespace MiniAudioExNET
 {
@@ -63,6 +64,7 @@ namespace MiniAudioExNET
         private static List<AudioClip> audioClips = new List<AudioClip>();
         private static List<AudioListener> audioListeners = new List<AudioListener>();
         private static UInt32 sampleRate = 44100;
+        private static UInt32 channels = 2;
         private static DateTime lastUpdateTime;
         private static float deltaTime;
 
@@ -84,6 +86,14 @@ namespace MiniAudioExNET
             {
                 return (int)sampleRate;
             }
+        }
+
+        public static Int32 Channels
+        {
+            get
+            {
+                return (int)channels;
+            }            
         }
 
         /// <summary>
@@ -130,6 +140,7 @@ namespace MiniAudioExNET
             pDeviceInfo.pName = IntPtr.Zero;
 
             MiniAudioEx.sampleRate = sampleRate;
+            MiniAudioEx.channels = channels;
 
             ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, ref pDeviceInfo);
 

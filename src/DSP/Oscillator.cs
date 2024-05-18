@@ -48,7 +48,7 @@
 
 using System;
 
-namespace MiniAudioExNET.Synthesis
+namespace MiniAudioExNET.DSP
 {
     public enum WaveType
     {
@@ -58,7 +58,7 @@ namespace MiniAudioExNET.Synthesis
         Saw
     }
 
-    public class Oscillator
+    public sealed class Oscillator
     {
         private delegate float WaveFunction(float phase);
         private WaveFunction waveFunction;

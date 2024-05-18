@@ -52,7 +52,7 @@
 
 using System;
 
-namespace MiniAudioExNET.Synthesis
+namespace MiniAudioExNET.DSP
 {
     public class ADSR
     {

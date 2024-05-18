@@ -47,6 +47,7 @@
 // SOFTWARE.
 
 using System;
+using MiniAudioExNET.Core;
 
 namespace MiniAudioExNET
 {

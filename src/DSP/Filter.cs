@@ -49,7 +49,7 @@
 using System;
 using MiniAudioExNET.Compatibility;
 
-namespace MiniAudioExNET.Synthesis
+namespace MiniAudioExNET.DSP
 {
     public enum FilterType
     {
