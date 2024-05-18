@@ -3,6 +3,7 @@
 using System;
 using MiniAudioExNET;
 using MiniAudioExNET.DSP;
+using MiniAudioExNET.Compatibility; //Needed for Span<T> compatibility on netstandard 2.0
 
 namespace MiniAudioExNETExamples
 {
