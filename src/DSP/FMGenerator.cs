@@ -135,6 +135,8 @@ namespace MiniAudioExNET.DSP
             operators.Flush();
         }
 
+        public void OnDestroy() {}
+
         private float GetModulatedSample()
         {
             float modulationSum = 0.0f;

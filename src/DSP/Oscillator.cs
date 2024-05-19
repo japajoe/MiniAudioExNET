@@ -61,13 +61,13 @@ namespace MiniAudioExNET.DSP
     public sealed class Oscillator
     {
         private delegate float WaveFunction(float phase);
-        private WaveFunction waveFunction;
+        private WaveFunction waveFunc;
         private WaveType type;
         private float frequency;
         private float amplitude;
         private float phase;
         private float phaseIncrement;
-        private readonly float TAU = (float)(2 * Math.PI);
+        private static readonly float TAU = (float)(2 * Math.PI);
 
         public WaveType Type
         {
@@ -139,7 +139,7 @@ namespace MiniAudioExNET.DSP
 
         public float GetValue()
         {
-            float result = waveFunction(phase);
+            float result = waveFunc(phase);
             phase += phaseIncrement;
             phase %= TAU;
             return result;
@@ -152,7 +152,7 @@ namespace MiniAudioExNET.DSP
         /// <returns></returns>
         public float GetValueAtPhase(float phase)
         {
-            return waveFunction(phase);
+            return waveFunc(phase);
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace MiniAudioExNET.DSP
         /// <returns></returns>
         public float GetModulatedValue(float phase)
         {
-            float result = waveFunction(this.phase + phase);
+            float result = waveFunc(this.phase + phase);
             this.phase += phaseIncrement;
             this.phase %= TAU;
             return result;
@@ -173,16 +173,16 @@ namespace MiniAudioExNET.DSP
             switch(type)
             {
                 case WaveType.Saw:
-                    waveFunction = GetSawSample;
+                    waveFunc = GetSawSample;
                     break;
                 case WaveType.Sine:
-                    waveFunction = GetSineSample;
+                    waveFunc = GetSineSample;
                     break;
                 case WaveType.Square:
-                    waveFunction = GetSquareSample;
+                    waveFunc = GetSquareSample;
                     break;
                 case WaveType.Triangle:
-                    waveFunction = GetTriangleSample;
+                    waveFunc = GetTriangleSample;
                     break;
             }
         }
@@ -192,23 +192,23 @@ namespace MiniAudioExNET.DSP
             phaseIncrement = TAU * frequency / MiniAudioEx.SampleRate;
         }
 
-        private float GetSawSample(float phase) 
+        public static float GetSawSample(float phase) 
         {
             phase = phase / TAU;
             return 2.0f * phase - 1.0f;
         }
 
-        private float GetSineSample(float phase) 
+        public static float GetSineSample(float phase) 
         {
             return (float)Math.Sin(phase);
         }
 
-        private float GetSquareSample(float phase) 
+        public static float GetSquareSample(float phase) 
         {
             return (float)Math.Sign(Math.Sin(phase));
         }
 
-        private float GetTriangleSample(float phase) 
+        public static float GetTriangleSample(float phase) 
         {
             phase = phase / TAU;
             return (float)(2 * Math.Abs(2 * (phase - 0.5)) - 1);

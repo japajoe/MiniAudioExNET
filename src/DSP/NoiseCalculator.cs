@@ -57,7 +57,7 @@ namespace MiniAudioExNET.DSP
         White
     }
 
-    public sealed class Noise
+    public sealed class NoiseCalculator : IWaveCalculator
     {
         private delegate float NoiseFunc();
         private NoiseType type;
@@ -79,7 +79,7 @@ namespace MiniAudioExNET.DSP
             }
         }
 
-        public Noise(NoiseType type)
+        public NoiseCalculator(NoiseType type)
         {
             if(random == null)
                 random = new Random();
@@ -89,6 +89,11 @@ namespace MiniAudioExNET.DSP
         }
 
         public float GetValue()
+        {
+            return noiseFunc();
+        }
+
+        public float GetValue(float phase)
         {
             return noiseFunc();
         }

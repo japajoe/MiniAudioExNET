@@ -360,6 +360,7 @@ namespace MiniAudioExNET
         {
             if(handle != IntPtr.Zero)
             {
+                Library.ma_ex_audio_source_stop(handle);
                 Library.ma_ex_audio_source_uninit(handle);
                 handle = IntPtr.Zero;
 
@@ -367,6 +368,12 @@ namespace MiniAudioExNET
                 while(endEventQueue.Count > 0)
                     endEventQueue.TryDequeue(out _);
                 
+                for(int i = 0; i < effects.Count; i++)
+                    effects[i].OnDestroy();
+
+                for(int i = 0; i < generators.Count; i++)
+                    generators[i].OnDestroy();
+
                 effects.Clear();
                 generators.Clear();
             }
@@ -606,6 +613,7 @@ namespace MiniAudioExNET
     public interface IAudioEffect
     {
         void OnProcess(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+        void OnDestroy();
     }
 
     /// <summary>
@@ -614,5 +622,6 @@ namespace MiniAudioExNET
     public interface IAudioGenerator
     {
         void OnGenerate(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+        void OnDestroy();
     }
 }

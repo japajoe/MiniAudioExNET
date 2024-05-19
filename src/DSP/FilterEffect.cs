@@ -108,5 +108,7 @@ namespace MiniAudioExNET.DSP
         {
             filter.Process(framesOut, frameCount, channels);
         }
+
+        public void OnDestroy() {}
     }
 }

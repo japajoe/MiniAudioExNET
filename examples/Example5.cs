@@ -80,6 +80,8 @@ namespace MiniAudioExNETExamples
                 tickTimer++;
             }
         }
+
+        public void OnDestroy() {}
     }
 
     public class SineGenerator : IAudioGenerator
@@ -105,5 +107,7 @@ namespace MiniAudioExNETExamples
                 tickTimer++;
             }
         }
+
+        public void OnDestroy() {}
     }
 }

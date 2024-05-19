@@ -95,6 +95,11 @@ namespace MiniAudioExNET.DSP
             WriteData(framesOut, frameCount, channels);
         }
 
+        public void OnDestroy()
+        {
+            CloseFile();
+        }
+
         private State GetState()
         {
             lock (stateLock)
@@ -139,7 +144,7 @@ namespace MiniAudioExNET.DSP
             Int32 subChunk1Size = 16;
             Int16 audioFormat = 1;
             Int16 numChannels = (Int16)MiniAudioEx.Channels;
-            Int16 sampleRate = (Int16)MiniAudioEx.SampleRate;
+            Int32 sampleRate = MiniAudioEx.SampleRate;
             Int32 byteRate = sampleRate * numChannels * bitDepth / 8;
             Int16 blockAlign = (Int16)(numChannels * bitDepth / 8);
             Int16 bitsPerSample = bitDepth;
