@@ -1,6 +1,6 @@
 using System;
 
-namespace MiniAudioExNET
+namespace MiniAudioExNET.Utilities
 {
     public static class AudioUtility
     {

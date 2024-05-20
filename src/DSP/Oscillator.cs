@@ -142,7 +142,7 @@ namespace MiniAudioExNET.DSP
             float result = waveFunc(phase);
             phase += phaseIncrement;
             phase %= TAU;
-            return result;
+            return result * amplitude;
         }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace MiniAudioExNET.DSP
         /// <returns></returns>
         public float GetValueAtPhase(float phase)
         {
-            return waveFunc(phase);
+            return waveFunc(phase) * amplitude;
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace MiniAudioExNET.DSP
             float result = waveFunc(this.phase + phase);
             this.phase += phaseIncrement;
             this.phase %= TAU;
-            return result;
+            return result * amplitude;
         }
 
         private void SetWaveFunction()

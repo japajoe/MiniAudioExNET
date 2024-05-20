@@ -9,7 +9,7 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a a modified version of MiniAudio
 This library ticks all these boxes. There are some (in my opinion) minor things missing such as more audio format decoders, but at least 3 widely used formats are supported which is sufficient for my needs. If you would like to have support for more formats, then please make your request [here](https://github.com/mackron/miniaudio).
 
 # Features
-- Playback of various audio formats such as WAV/MP3/FLAC.
+- Playback and decoding of various audio formats such as WAV/MP3/FLAC.
 - Stream audio from disk or from memory.
 - Callbacks for effects processing and generating audio.
 - Spatial properties like doppler effect, pitching, distance attenuation and panning.
@@ -20,7 +20,7 @@ MiniAudio was designed to work on every major platform, however I do not have a 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.6.3
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.6.4
 ```
 
 # General gotchas

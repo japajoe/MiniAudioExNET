@@ -199,6 +199,9 @@ namespace MiniAudioExNET.Core
         private const string LIB_MINIAUDIO_EX = "miniaudioex";
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ma_ex_free(IntPtr pointer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr ma_ex_playback_devices_get(out UInt32 count);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
@@ -362,5 +365,8 @@ namespace MiniAudioExNET.Core
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern void ma_ex_audio_listener_get_cone(IntPtr listener, out float innerAngleInRadians, out float outerAngleInRadians, out float outerGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ma_ex_decode_file(string pFilePath, out UInt64 dataLength, out UInt32 channels, out UInt32 sampleRate, UInt32 desiredChannels, UInt32 desiredSampleRate);
     }
 }
