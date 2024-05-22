@@ -1,11 +1,10 @@
 //An example of FM synthesis.
 
 using System;
-using MiniAudioExNET;
-using MiniAudioExNET.DSP;
-using MiniAudioExNET.Compatibility; //Needed for Span<T> compatibility on netstandard 2.0
+using MiniAudioEx;
+using MiniAudioEx.DSP;
 
-namespace MiniAudioExNETExamples
+namespace MiniAudioExExamples
 {
     class Example6
     {

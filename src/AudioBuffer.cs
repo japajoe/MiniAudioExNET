@@ -46,10 +46,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-namespace MiniAudioExNET.Compatibility
+namespace MiniAudioEx
 {
-#if NETSTANDARD2_0
-    public unsafe ref struct Span<T> where T : unmanaged
+    public unsafe ref struct AudioBuffer<T> where T : unmanaged
     {
         internal void* _pointer;
         /// <summary>The number of elements this Span contains.</summary>
@@ -83,18 +82,17 @@ namespace MiniAudioExNET.Compatibility
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public unsafe Span(void* pointer, int length)
+        public unsafe AudioBuffer(void* pointer, int length)
         {
             _pointer = pointer;
             _length = length;
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public unsafe Span(System.IntPtr pointer, int length)
+        public unsafe AudioBuffer(System.IntPtr pointer, int length)
         {
             _pointer = pointer.ToPointer();
             _length = length;
         }
     }
-#endif
 }

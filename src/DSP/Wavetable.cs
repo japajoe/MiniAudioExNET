@@ -48,7 +48,7 @@
 
 using System;
 
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public interface IWaveCalculator
     {
@@ -84,7 +84,11 @@ namespace MiniAudioExNET.DSP
             this.data = data;
             this.length = data.Length;
             this.phase = 0;
-            this.phaseIncrement = 0;            
+            this.phaseIncrement = 0;
+
+            //To do:
+            //If signal is non periodic (discrete then phase is between 0 and data.Length)
+            //Phase increment is calculated like: data.Length * frequency / sampleRate
         }
 
         /// <summary>

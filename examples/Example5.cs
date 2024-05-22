@@ -3,11 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using MiniAudioExNET;
-using MiniAudioExNET.DSP;
-using MiniAudioExNET.Compatibility; //Needed for Span<T> compatibility on netstandard 2.0
+using MiniAudioEx;
+using MiniAudioEx.DSP;
 
-namespace MiniAudioExNETExamples
+namespace MiniAudioExExamples
 {
     class Example5
     {
@@ -68,7 +67,7 @@ namespace MiniAudioExNETExamples
             tickTimer = 0;
         }
 
-        public void OnProcess(Span<float> framesOut, ulong frameCount, int channels)
+        public void OnProcess(AudioBuffer<float> framesOut, ulong frameCount, int channels)
         {
             float sample = 0;
             for(int i = 0; i < framesOut.Length; i+=channels)
@@ -95,7 +94,7 @@ namespace MiniAudioExNETExamples
             tickTimer = 0;
         }
 
-        public void OnGenerate(Span<float> framesOut, ulong frameCount, int channels)
+        public void OnGenerate(AudioBuffer<float> framesOut, ulong frameCount, int channels)
         {
             float sample = 0;
             for(int i = 0; i < framesOut.Length; i+=channels)

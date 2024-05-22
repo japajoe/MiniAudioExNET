@@ -47,9 +47,8 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioExNET.Compatibility;
 
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public enum FilterType
     {
@@ -133,7 +132,7 @@ namespace MiniAudioExNET.DSP
         public Filter(FilterType type, float frequency, float q, float gainDB, int sampleRate = 0)
         {
             if(sampleRate <= 0)
-                this.sampleRate = MiniAudioEx.SampleRate;
+                this.sampleRate = AudioContext.SampleRate;
             if(frequency <= 0.0f)
                 throw new ArgumentException("Frequency must be greater than 0");
             if(sampleRate <= (frequency * 2))
@@ -142,7 +141,7 @@ namespace MiniAudioExNET.DSP
                 throw new ArgumentException("Q can not be zero");
 
             this.type = type;
-            this.sampleRate = MiniAudioEx.SampleRate;
+            this.sampleRate = sampleRate;
             this.frequency = frequency;
             this.q = q;
             this.gainDB = gainDB > 0.0f ? gainDB : 6.0f;
@@ -158,7 +157,7 @@ namespace MiniAudioExNET.DSP
             return output;
         }
 
-        public void Process(Span<float> framesOut, ulong frameCount, int channels)
+        public void Process(AudioBuffer<float> framesOut, ulong frameCount, int channels)
         {
             float output = 0.0f;
             float currentSample = 0.0f;

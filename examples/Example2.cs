@@ -1,10 +1,9 @@
 //An example of how to procedurally generate sound with the 'Read' callback.
 
 using System;
-using MiniAudioExNET;
-using MiniAudioExNET.Compatibility; //Needed for Span<T> compatibility on netstandard 2.0
+using MiniAudioEx;
 
-namespace MiniAudioExNETExamples
+namespace MiniAudioExExamples
 {
     class Example2
     {
@@ -25,7 +24,7 @@ namespace MiniAudioExNETExamples
             source.Play();
         }
 
-        static void OnAudioRead(Span<float> framesOut, ulong frameCount, int channels)
+        static void OnAudioRead(AudioBuffer<float> framesOut, ulong frameCount, int channels)
         {
             float sample = 0.0f;
             float frequency = 440.0f;

@@ -49,16 +49,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using MiniAudioExNET.Core;
-using MiniAudioExNET.Compatibility; //Needed for Span<T> on netstandard 2.0
+using MiniAudioEx.Core;
 
-namespace MiniAudioExNET
+namespace MiniAudioEx
 {
     public delegate void AudioLoadEvent();
     public delegate void AudioEndEvent();
 
-    public delegate void AudioProcessEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
-    public delegate void AudioReadEvent(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioProcessEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioReadEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
 
     /// <summary>
     /// This class is used to play audio.
@@ -89,8 +88,8 @@ namespace MiniAudioExNET
         private ma_sound_process_proc processCallback;
         private ma_waveform_proc waveformCallback;
         private ConcurrentQueue<int> endEventQueue;
-        private ThreadSafeQueue<IAudioEffect> effects;
-        private ThreadSafeQueue<IAudioGenerator> generators;
+        private ConcurrentList<IAudioEffect> effects;
+        private ConcurrentList<IAudioGenerator> generators;
 
         /// <summary>
         /// Gets a handle to the native ma_audio_source instance.
@@ -329,14 +328,14 @@ namespace MiniAudioExNET
 
         public AudioSource()
         {
-            handle = Library.ma_ex_audio_source_init(MiniAudioEx.AudioContext);
+            handle = Library.ma_ex_audio_source_init(AudioContext.NativeContext);
 
             if(handle != IntPtr.Zero)
             {
                 previousPosition = new Vector3f(0, 0, 0);
                 endEventQueue = new ConcurrentQueue<int>();
-                effects = new ThreadSafeQueue<IAudioEffect>();
-                generators = new ThreadSafeQueue<IAudioGenerator>();
+                effects = new ConcurrentList<IAudioEffect>();
+                generators = new ConcurrentList<IAudioGenerator>();
 
                 loadCallback = OnLoad;
                 endCallback = OnEnd;
@@ -352,7 +351,7 @@ namespace MiniAudioExNET
 
                 Library.ma_ex_audio_source_set_callbacks(handle, callbacks);
                 
-                MiniAudioEx.Add(this);
+                AudioContext.Add(this);
             }
         }
 
@@ -381,7 +380,7 @@ namespace MiniAudioExNET
 
         public void Dispose()
         {
-            MiniAudioEx.Remove(this);
+            AudioContext.Remove(this);
         }
 
         /// <summary>
@@ -523,7 +522,7 @@ namespace MiniAudioExNET
         /// <returns></returns>
         public Vector3f GetCalculatedVelocity()
         {
-            float deltaTime = MiniAudioEx.DeltaTime;
+            float deltaTime = AudioContext.DeltaTime;
             Vector3f currentPosition = Position;
             float dx = currentPosition.x - previousPosition.x;
             float dy = currentPosition.y - previousPosition.y;
@@ -567,7 +566,7 @@ namespace MiniAudioExNET
 
             unsafe
             {
-                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
+                AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut.ToPointer(), length);
 
                 for(int i = 0; i < effects.Count; i++)
                 {
@@ -576,8 +575,6 @@ namespace MiniAudioExNET
 
                 Process?.Invoke(framesOut, frameCount, (int)channels);
             }
-
-            effects.Flush();
         }
 
         /// <summary>
@@ -593,7 +590,7 @@ namespace MiniAudioExNET
 
             unsafe
             {
-                Span<float> framesOut = new Span<float>(pFramesOut.ToPointer(), length);
+                AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut.ToPointer(), length);
 
                 for(int i = 0; i < generators.Count; i++)
                 {
@@ -602,8 +599,6 @@ namespace MiniAudioExNET
 
                 Read?.Invoke(framesOut, frameCount, (int)channels);
             }
-
-            generators.Flush();
         }
     }
 
@@ -612,7 +607,7 @@ namespace MiniAudioExNET
     /// </summary>
     public interface IAudioEffect
     {
-        void OnProcess(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+        void OnProcess(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
         void OnDestroy();
     }
 
@@ -621,7 +616,7 @@ namespace MiniAudioExNET
     /// </summary>
     public interface IAudioGenerator
     {
-        void OnGenerate(Span<float> framesOut, UInt64 frameCount, Int32 channels);
+        void OnGenerate(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
         void OnDestroy();
     }
 }

@@ -1,8 +1,8 @@
 //Playing audio from a file on disk.
 
-using MiniAudioExNET;
+using MiniAudioEx;
 
-namespace MiniAudioExNETExamples
+namespace MiniAudioExExamples
 {
     class Example1
     {

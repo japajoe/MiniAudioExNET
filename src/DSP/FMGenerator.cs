@@ -46,15 +46,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-using MiniAudioExNET.Compatibility;
-
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public sealed class FMGenerator : IAudioGenerator
     {
         private Oscillator carrier;
-        private ThreadSafeQueue<Oscillator> operators;
+        private ConcurrentList<Oscillator> operators;
 
         public Oscillator Carrier
         {
@@ -89,7 +86,7 @@ namespace MiniAudioExNET.DSP
         public FMGenerator(WaveType type, float frequency, float amplitude)
         {
             carrier = new Oscillator(type, frequency, amplitude);
-            operators = new ThreadSafeQueue<Oscillator>();
+            operators = new ConcurrentList<Oscillator>();
         }
         
         /// <summary>
@@ -118,7 +115,7 @@ namespace MiniAudioExNET.DSP
             }
         }
 
-        public void OnGenerate(Span<float> framesOut, ulong frameCount, int channels)
+        public void OnGenerate(AudioBuffer<float> framesOut, ulong frameCount, int channels)
         {
             float sample = 0;
 
@@ -131,8 +128,6 @@ namespace MiniAudioExNET.DSP
                     framesOut[i+j] = sample;
                 }
             }
-
-            operators.Flush();
         }
 
         public void OnDestroy() {}

@@ -46,10 +46,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-using MiniAudioExNET.Compatibility;
-
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public sealed class FilterEffect: IAudioEffect
     {
@@ -101,10 +98,10 @@ namespace MiniAudioExNET.DSP
 
         public FilterEffect(FilterType type, float frequency, float q, float gainDB)
         {
-            filter = new Filter(type, frequency, q, gainDB, MiniAudioEx.SampleRate);
+            filter = new Filter(type, frequency, q, gainDB, AudioContext.SampleRate);
         }
 
-        public void OnProcess(Span<float> framesOut, ulong frameCount, int channels)
+        public void OnProcess(AudioBuffer<float> framesOut, ulong frameCount, int channels)
         {
             filter.Process(framesOut, frameCount, channels);
         }

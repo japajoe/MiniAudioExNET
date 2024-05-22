@@ -49,7 +49,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace MiniAudioExNET.Core
+namespace MiniAudioEx.Core
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_sound_load_proc(IntPtr pUserData, IntPtr pSound);

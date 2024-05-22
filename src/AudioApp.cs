@@ -49,7 +49,7 @@
 using System;
 using System.Threading;
 
-namespace MiniAudioExNET
+namespace MiniAudioEx
 {
     public sealed class AudioApp
     {
@@ -61,10 +61,10 @@ namespace MiniAudioExNET
         public event UpdateEvent Update;
         public event CloseEvent Closing;
 
-        private uint sampleRate;
-        private uint channels;
+        private UInt32 sampleRate;
+        private UInt32 channels;
 
-        public AudioApp(uint sampleRate, uint channels)
+        public AudioApp(UInt32 sampleRate, UInt32 channels)
         {
             this.sampleRate = sampleRate;
             this.channels = channels;
@@ -74,14 +74,14 @@ namespace MiniAudioExNET
         {
             Console.CancelKeyPress += OnExit;
 
-            MiniAudioEx.Initialize(sampleRate, channels);
+            AudioContext.Initialize(sampleRate, channels);
 
             Loaded?.Invoke();
 
             while(true)
             {
-                MiniAudioEx.Update();
-                Update?.Invoke(MiniAudioEx.DeltaTime);
+                AudioContext.Update();
+                Update?.Invoke(AudioContext.DeltaTime);
                 Thread.Sleep(10);
             }
         }
@@ -89,7 +89,7 @@ namespace MiniAudioExNET
         private void OnExit(object sender, ConsoleCancelEventArgs e)
         {
             Closing?.Invoke();
-            MiniAudioEx.Deinitialize();
+            AudioContext.Deinitialize();
         }
     }
 }

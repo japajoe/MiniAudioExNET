@@ -48,7 +48,7 @@
 
 using System;
 
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public enum WaveType
     {
@@ -189,7 +189,7 @@ namespace MiniAudioExNET.DSP
 
         private void SetPhaseIncrement()
         {
-            phaseIncrement = TAU * frequency / MiniAudioEx.SampleRate;
+            phaseIncrement = TAU * frequency / AudioContext.SampleRate;
         }
 
         public static float GetSawSample(float phase) 

@@ -47,17 +47,16 @@
 // SOFTWARE.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using MiniAudioExNET.Core;
+using MiniAudioEx.Core;
 
-namespace MiniAudioExNET
+namespace MiniAudioEx
 {
     /// <summary>
     /// This class is responsible for managing the audio context.
     /// </summary>
-    public static class MiniAudioEx
+    public static class AudioContext
     {
         private static IntPtr audioContext;
         private static List<AudioSource> audioSources = new List<AudioSource>();
@@ -68,7 +67,7 @@ namespace MiniAudioExNET
         private static DateTime lastUpdateTime;
         private static float deltaTime;
 
-        internal static IntPtr AudioContext
+        internal static IntPtr NativeContext
         {
             get
             {
@@ -139,8 +138,8 @@ namespace MiniAudioExNET
             pDeviceInfo.index = deviceInfo == null ? 0 : deviceInfo.Index;
             pDeviceInfo.pName = IntPtr.Zero;
 
-            MiniAudioEx.sampleRate = sampleRate;
-            MiniAudioEx.channels = channels;
+            MiniAudioEx.AudioContext.sampleRate = sampleRate;
+            MiniAudioEx.AudioContext.channels = channels;
 
             ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, ref pDeviceInfo);
 
@@ -631,10 +630,8 @@ namespace MiniAudioExNET
         }
     }
 
-    public sealed class ThreadSafeQueue<T>
+    public sealed class ConcurrentList<T>
     {
-        private readonly ConcurrentQueue<T> addQueue;
-        private readonly ConcurrentQueue<T> removeQueue;
         private readonly List<T> items;
         private readonly object syncRoot = new object();
 
@@ -655,8 +652,6 @@ namespace MiniAudioExNET
             {
                 lock (syncRoot)
                 {
-                    if (index < 0 || index >= items.Count)
-                        throw new IndexOutOfRangeException();
                     return items[index];
                 }
             }
@@ -664,17 +659,13 @@ namespace MiniAudioExNET
             {
                 lock (syncRoot)
                 {
-                    if (index < 0 || index >= items.Count)
-                        throw new IndexOutOfRangeException();
                     items[index] = value;
                 }
             }
         }
 
-        public ThreadSafeQueue()
+        public ConcurrentList()
         {
-            this.addQueue = new ConcurrentQueue<T>();
-            this.removeQueue = new ConcurrentQueue<T>();
             this.items = new List<T>();
         }
 
@@ -682,51 +673,42 @@ namespace MiniAudioExNET
         {
             lock (syncRoot)
             {
-                while(addQueue.Count > 0)
-                    addQueue.TryDequeue(out _);
-                while(removeQueue.Count > 0)
-                    removeQueue.TryDequeue(out _);
                 items.Clear();
             }
         }
 
         public void Add(T item)
         {
-            addQueue.Enqueue(item);
+            lock (syncRoot)
+            {
+                items.Add(item);
+            }
         }
 
         public void Remove(T item)
         {
-            removeQueue.Enqueue(item);
+            lock (syncRoot)
+            {
+                items.Remove(item);
+            }
         }
 
         public void Remove(List<T> items)
         {
-            for(int i = 0; i < items.Count; i++)
+            lock (syncRoot)
             {
-                removeQueue.Enqueue(items[i]);
+                for(int i = 0; i < items.Count; i++)
+                {
+                    this.items.Remove(items[i]);
+                }
             }
         }
 
-        public void Flush()
+        public void RemoveAt(int index)
         {
             lock (syncRoot)
             {
-                if(addQueue.Count > 0)
-                {
-                    while(addQueue.TryDequeue(out T item))
-                    {
-                        items.Add(item);
-                    }
-                }
-
-                if(removeQueue.Count > 0)
-                {
-                    while(removeQueue.TryDequeue(out T item))
-                    {
-                        items.Remove(item);
-                    }
-                }
+                items.RemoveAt(index);
             }
         }
     }

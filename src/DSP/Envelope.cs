@@ -52,7 +52,7 @@
 
 using System;
 
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public class ADSR
     {
@@ -63,10 +63,10 @@ namespace MiniAudioExNET.DSP
 
         public ADSR(double a, double d, double s, double r)
         {
-            this.a = a * MiniAudioEx.SampleRate;
-            this.d = d * MiniAudioEx.SampleRate;
-            this.s = s * MiniAudioEx.SampleRate;
-            this.r = r * MiniAudioEx.SampleRate;
+            this.a = a * AudioContext.SampleRate;
+            this.d = d * AudioContext.SampleRate;
+            this.s = s * AudioContext.SampleRate;
+            this.r = r * AudioContext.SampleRate;
         }
     }
 

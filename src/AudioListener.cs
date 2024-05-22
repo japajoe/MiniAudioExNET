@@ -47,9 +47,9 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioExNET.Core;
+using MiniAudioEx.Core;
 
-namespace MiniAudioExNET
+namespace MiniAudioEx
 {
     /// <summary>
     /// This class represents a point in the 3D space where audio is perceived or heard.
@@ -162,12 +162,12 @@ namespace MiniAudioExNET
 
         public AudioListener()
         {
-            handle = Library.ma_ex_audio_listener_init(MiniAudioEx.AudioContext);
+            handle = Library.ma_ex_audio_listener_init(AudioContext.NativeContext);
 
             if(handle != IntPtr.Zero)
             {
                 previousPosition = new Vector3f(0, 0, 0);
-                MiniAudioEx.Add(this);
+                AudioContext.Add(this);
             }
         }
 
@@ -186,7 +186,7 @@ namespace MiniAudioExNET
         /// <returns></returns>
         public Vector3f GetCalculatedVelocity()
         {
-            float deltaTime = MiniAudioEx.DeltaTime;
+            float deltaTime = AudioContext.DeltaTime;
             Vector3f currentPosition = Position;
             float dx = currentPosition.x - previousPosition.x;
             float dy = currentPosition.y - previousPosition.y;
@@ -196,7 +196,7 @@ namespace MiniAudioExNET
 
         public void Dispose()
         {
-            MiniAudioEx.Remove(this);
+            AudioContext.Remove(this);
         }
     }
 }

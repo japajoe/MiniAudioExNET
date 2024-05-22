@@ -48,7 +48,7 @@
 
 using System;
 
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public enum NoiseType
     {

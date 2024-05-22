@@ -49,7 +49,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace MiniAudioExNET
+namespace MiniAudioEx
 {
     /// <summary>
     /// Represents audio data that can be played back or streamed by an AudioSource. Supported file types are WAV/MP3/FlAC.
@@ -114,7 +114,7 @@ namespace MiniAudioExNET
             this.filePath = filePath;
             this.streamFromDisk = streamFromDisk;
             this.handle = IntPtr.Zero;
-            MiniAudioEx.Add(this);
+            AudioContext.Add(this);
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace MiniAudioExNET
                     for(int i = 0; i < data.Length; i++)
                         ptr[i] = data[i];
                 }
-                MiniAudioEx.Add(this);
+                AudioContext.Add(this);
             }
             
         }
@@ -152,7 +152,7 @@ namespace MiniAudioExNET
 
         public void Dispose()
         {
-            MiniAudioEx.Remove(this);
+            AudioContext.Remove(this);
         }
     }
 }

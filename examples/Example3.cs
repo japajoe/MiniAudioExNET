@@ -1,8 +1,8 @@
 //A minimal example of spatial audio.
 
-using MiniAudioExNET;
+using MiniAudioEx;
 
-namespace MiniAudioExNETExamples
+namespace MiniAudioExExamples
 {
     class Example3
     {

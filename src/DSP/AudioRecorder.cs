@@ -48,9 +48,8 @@
 
 using System;
 using System.IO;
-using MiniAudioExNET.Compatibility;
 
-namespace MiniAudioExNET.DSP
+namespace MiniAudioEx.DSP
 {
     public sealed class AudioRecorder : IAudioEffect
     {
@@ -89,7 +88,7 @@ namespace MiniAudioExNET.DSP
             CloseFile();
         }
 
-        public void OnProcess(Span<float> framesOut, UInt64 frameCount, Int32 channels)
+        public void OnProcess(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels)
         {
             WriteHeader();
             WriteData(framesOut, frameCount, channels);
@@ -143,8 +142,8 @@ namespace MiniAudioExNET.DSP
             Int32 subChunk1Id = 544501094;        //"fmt "
             Int32 subChunk1Size = 16;
             Int16 audioFormat = 1;
-            Int16 numChannels = (Int16)MiniAudioEx.Channels;
-            Int32 sampleRate = MiniAudioEx.SampleRate;
+            Int16 numChannels = (Int16)AudioContext.Channels;
+            Int32 sampleRate = AudioContext.SampleRate;
             Int32 byteRate = sampleRate * numChannels * bitDepth / 8;
             Int16 blockAlign = (Int16)(numChannels * bitDepth / 8);
             Int16 bitsPerSample = bitDepth;
@@ -173,7 +172,7 @@ namespace MiniAudioExNET.DSP
             SetState(State.WriteData);
         }
 
-        private void WriteData(Span<float> framesOut, UInt64 frameCount, Int32 channels)
+        private void WriteData(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels)
         {
             if(GetState() != State.WriteData)
                 return;
