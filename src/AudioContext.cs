@@ -141,7 +141,7 @@ namespace MiniAudioEx
             MiniAudioEx.AudioContext.sampleRate = sampleRate;
             MiniAudioEx.AudioContext.channels = channels;
 
-            ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, ref pDeviceInfo);
+            ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, 0, ref pDeviceInfo);
 
             audioContext = Library.ma_ex_context_init(ref contextConfig);
 

@@ -34,4 +34,11 @@
     <None Remove="**/examples/**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="**/test/**" />
+    <Compile Remove="**/test/**" />
+    <EmbeddedResource Remove="**/test/**" />
+    <None Remove="**/test/**" />
+  </ItemGroup>
+
 </Project>

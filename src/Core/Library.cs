@@ -167,6 +167,7 @@ namespace MiniAudioEx.Core
         public ma_ex_device_info deviceInfo;
         public UInt32 sampleRate;
         public byte channels;
+        public UInt32 periodSizeInFrames;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -208,7 +209,7 @@ namespace MiniAudioEx.Core
         public static extern void ma_ex_playback_devices_free(IntPtr pDeviceInfo, UInt32 count);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_ex_context_config ma_ex_context_config_init(UInt32 sampleRate, byte channels, ref ma_ex_device_info pDeviceInfo);
+        public static extern ma_ex_context_config ma_ex_context_config_init(UInt32 sampleRate, byte channels, UInt32 periodSizeInFrames, ref ma_ex_device_info pDeviceInfo);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr ma_ex_context_init(ref ma_ex_context_config config);
