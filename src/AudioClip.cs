@@ -57,8 +57,9 @@ namespace MiniAudioEx
     public sealed class AudioClip : IDisposable
     {
         private string filePath;
-        private byte[] data;
         private IntPtr handle;
+        private UInt64 dataSize;
+        private UInt64 hashCode;
         private bool streamFromDisk;
 
         /// <summary>
@@ -89,16 +90,25 @@ namespace MiniAudioEx
         }
 
         /// <summary>
+        /// Gets the hash code used to identify the data of this AudioClip. Only applicable if the 'byte[] data' overload is used.
+        /// </summary>
+        /// <value></value>
+        public UInt64 Hash
+        {
+            get => hashCode;
+        }
+
+        /// <summary>
         /// If the constructor with 'byte[] data' overload is used this will contain the size of the data in number of bytes.
         /// </summary>
         /// <value></value>
-        public ulong DataSize
+        public UInt64 DataSize
         {
             get
             {
-                if(data != null)
+                if(handle != IntPtr.Zero)
                 {
-                    return (ulong)data.Length;
+                    return dataSize;
                 }
                 return 0;
             }
@@ -107,52 +117,75 @@ namespace MiniAudioEx
         /// <summary>
         /// Creates a new AudioClip instance which gets its data from a file on disk. The file must be in an encoded format.
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="streamFromDisk"></param>
+        /// <param name="filePath">The filepath of the encoded audio file (WAV/MP3/FLAC)</param>
+        /// <param name="streamFromDisk">If true, streams data from disk rather than loading the entire file into memory for playback. Typically you'd stream from disk if a sound is more than just a couple of seconds long.</param>
         public AudioClip(string filePath, bool streamFromDisk = true)
         {
             this.filePath = filePath;
             this.streamFromDisk = streamFromDisk;
             this.handle = IntPtr.Zero;
-            AudioContext.Add(this);
+            this.hashCode = 0;
         }
 
         /// <summary>
         /// Creates a new AudioClip instance which gets its data from memory. The data must be in an encoded format.
         /// </summary>
-        /// <param name="data"></param>
-        public AudioClip(byte[] data)
+        /// <param name="data">Must be encoded audio data (either WAV/MP3/WAV)</param>
+        /// <param name="isUnique">If true, then this clip will not use shared memory. If true, this clip will reuse existing memory if possible.</param>
+        public AudioClip(byte[] data, bool isUnique = false)
         {
             this.filePath = string.Empty;
-            this.data = data;
             this.streamFromDisk = false;
-            this.handle = Marshal.AllocHGlobal(data.Length);
+            this.dataSize = (UInt64)data.Length;
 
-            if(handle != IntPtr.Zero)
-            {            
-                unsafe
-                {
-                    byte *ptr = (byte*)handle.ToPointer();
-                    for(int i = 0; i < data.Length; i++)
-                        ptr[i] = data[i];
-                }
-                AudioContext.Add(this);
-            }
-            
-        }
+            if(isUnique)
+                this.hashCode = (UInt64)data.GetHashCode();
+            else
+                this.hashCode = GetHashCode(data, data.Length);
 
-        internal void Destroy()
-        {
-            if(handle != IntPtr.Zero)
+            if(AudioContext.GetAudioClipHandle(hashCode, out IntPtr existingHandle))
             {
-                Marshal.FreeHGlobal(handle);
-                handle = IntPtr.Zero;
+                handle = existingHandle;
+            }
+            else
+            {
+                handle = Marshal.AllocHGlobal(data.Length);
+
+                if(handle != IntPtr.Zero)
+                {            
+                    unsafe
+                    {
+                        byte *ptr = (byte*)handle.ToPointer();
+                        for(int i = 0; i < data.Length; i++)
+                            ptr[i] = data[i];
+                    }
+
+                    AudioContext.Add(this);
+                }
             }
         }
 
         public void Dispose()
         {
             AudioContext.Remove(this);
+        }
+
+        /// <summary>
+        /// This methods creates a hash of the given data.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        private UInt64 GetHashCode(byte[] data, int size)
+        {
+            UInt64 hash = 0;
+
+            for(int i = 0; i < size; i++) 
+            {
+                hash = data[i] + (hash << 6) + (hash << 16) - hash;
+            }
+
+            return hash;            
         }
     }
 }

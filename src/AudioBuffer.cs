@@ -82,14 +82,14 @@ namespace MiniAudioEx
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public unsafe AudioBuffer(void* pointer, int length)
+        public AudioBuffer(void* pointer, int length)
         {
             _pointer = pointer;
             _length = length;
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public unsafe AudioBuffer(System.IntPtr pointer, int length)
+        public AudioBuffer(System.IntPtr pointer, int length)
         {
             _pointer = pointer.ToPointer();
             _length = length;

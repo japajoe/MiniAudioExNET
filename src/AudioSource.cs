@@ -55,7 +55,6 @@ namespace MiniAudioEx
 {
     public delegate void AudioLoadEvent();
     public delegate void AudioEndEvent();
-
     public delegate void AudioProcessEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
     public delegate void AudioReadEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
 
@@ -404,7 +403,7 @@ namespace MiniAudioEx
         }
 
         /// <summary>
-        /// Stop the AudioSource playback, note that this method does not set the cursor back to 0.
+        /// Stop the AudioSource playback, note that this method does not set the cursor back to 0 so it could be used as a pause method.
         /// </summary>
         public void Stop()
         {
@@ -415,7 +414,7 @@ namespace MiniAudioEx
         {
             if(endEventQueue.Count > 0)
             {
-                while(endEventQueue.TryDequeue(out int result))
+                while(endEventQueue.TryDequeue(out _))
                 {
                     End?.Invoke();
                 }
@@ -564,17 +563,14 @@ namespace MiniAudioEx
         {
             int length = (int)(frameCount * channels);
 
-            unsafe
+            AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut, length);
+
+            for(int i = 0; i < effects.Count; i++)
             {
-                AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut.ToPointer(), length);
-
-                for(int i = 0; i < effects.Count; i++)
-                {
-                    effects[i].OnProcess(framesOut, frameCount, (int)channels);
-                }
-
-                Process?.Invoke(framesOut, frameCount, (int)channels);
+                effects[i].OnProcess(framesOut, frameCount, (int)channels);
             }
+
+            Process?.Invoke(framesOut, frameCount, (int)channels);
         }
 
         /// <summary>
@@ -588,17 +584,14 @@ namespace MiniAudioEx
         {
             int length = (int)(frameCount * channels);            
 
-            unsafe
+            AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut, length);
+
+            for(int i = 0; i < generators.Count; i++)
             {
-                AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut.ToPointer(), length);
-
-                for(int i = 0; i < generators.Count; i++)
-                {
-                    generators[i].OnGenerate(framesOut, frameCount, (int)channels);
-                }
-
-                Read?.Invoke(framesOut, frameCount, (int)channels);
+                generators[i].OnGenerate(framesOut, frameCount, (int)channels);
             }
+
+            Read?.Invoke(framesOut, frameCount, (int)channels);
         }
     }
 

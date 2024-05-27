@@ -60,8 +60,9 @@ namespace MiniAudioEx
     {
         private static IntPtr audioContext;
         private static List<AudioSource> audioSources = new List<AudioSource>();
-        private static List<AudioClip> audioClips = new List<AudioClip>();
         private static List<AudioListener> audioListeners = new List<AudioListener>();
+        private static Dictionary<UInt64, IntPtr> audioClipHandles = new Dictionary<UInt64, IntPtr>();
+
         private static UInt32 sampleRate = 44100;
         private static UInt32 channels = 2;
         private static DateTime lastUpdateTime;
@@ -166,10 +167,13 @@ namespace MiniAudioEx
 
             audioSources.Clear();
 
-            for(int i = 0; i < audioClips.Count; i++)
-                audioClips[i].Destroy();
-            
-            audioClips.Clear();
+            foreach(var audioClipHandle in audioClipHandles.Values)
+            {
+                if(audioClipHandle != IntPtr.Zero)
+                    Marshal.FreeHGlobal(audioClipHandle);
+            }
+
+            audioClipHandles.Clear();
 
             for(int i = 0; i < audioListeners.Count; i++)
                 audioListeners[i].Destroy();
@@ -246,15 +250,16 @@ namespace MiniAudioEx
 
         internal static void Add(AudioClip clip)
         {
-            int hashcode = clip.GetHashCode();
+            if(clip.Hash == 0)
+                return;
 
-            for(int i = 0; i < audioClips.Count; i++)
-            {
-                if(audioClips[i].GetHashCode() == hashcode)
-                    return;
-            }
-
-            audioClips.Add(clip);
+            if(clip.Handle == IntPtr.Zero)
+                return;
+            
+            if(audioClipHandles.ContainsKey(clip.Hash))
+                return;
+            
+            audioClipHandles.Add(clip.Hash, clip.Handle);
         }
 
         internal static void Add(AudioListener listener)
@@ -293,29 +298,6 @@ namespace MiniAudioEx
             }
         }
 
-        internal static void Remove(AudioClip clip)
-        {
-            int hashcode = clip.GetHashCode();
-            bool found = false;
-            int index = 0;
-
-            for(int i = 0; i < audioClips.Count; i++)
-            {
-                if(audioClips[i].GetHashCode() == hashcode)
-                {
-                    index = i;
-                    found = true;
-                    break;
-                }
-            }
-
-            if(found)
-            {
-                audioClips[index].Destroy();
-                audioClips.RemoveAt(index);
-            }
-        }
-
         internal static void Remove(AudioListener listener)
         {
             int hashcode = listener.GetHashCode();
@@ -337,6 +319,33 @@ namespace MiniAudioEx
                 audioListeners[index].Destroy();
                 audioListeners.RemoveAt(index);
             }
+        }
+
+        internal static void Remove(AudioClip clip)
+        {
+            if(clip.Hash == 0)
+                return;
+            
+            if(audioClipHandles.ContainsKey(clip.Hash))
+            {
+                IntPtr handle = audioClipHandles[clip.Hash];
+                if(handle != IntPtr.Zero)
+                    Marshal.FreeHGlobal(handle);
+                audioClipHandles.Remove(clip.Hash);
+            }
+        }
+
+        internal static bool GetAudioClipHandle(UInt64 hashcode, out IntPtr handle)
+        {
+            handle = IntPtr.Zero;
+
+            if(audioClipHandles.ContainsKey(hashcode))
+            {
+                handle = audioClipHandles[hashcode];
+                return true;
+            }
+
+            return false;
         }
     }
 
