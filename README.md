@@ -20,8 +20,11 @@ MiniAudio was designed to work on every major platform, however I do not have a 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.1
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.2
 ```
+
+# Changes in 1.7.2
+- Add global device data processing callback.
 
 # Changes in 1.7.1
 - Reuse memory if multiple audio clips use the same data.

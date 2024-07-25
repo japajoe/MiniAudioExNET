@@ -63,6 +63,9 @@ namespace MiniAudioEx.Core
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_waveform_proc(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ma_device_data_proc(IntPtr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount);
+
     public enum ma_result
     {
         MA_SUCCESS                        =  0,
@@ -168,6 +171,7 @@ namespace MiniAudioEx.Core
         public UInt32 sampleRate;
         public byte channels;
         public UInt32 periodSizeInFrames;
+        public ma_device_data_proc deviceDataProc;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -222,6 +226,12 @@ namespace MiniAudioEx.Core
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern float ma_ex_context_get_master_volume(IntPtr context);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ma_ex_context_get_engine(IntPtr context);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ma_ex_device_get_user_data(IntPtr pDevice);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr ma_ex_audio_source_init(IntPtr context);
@@ -369,5 +379,8 @@ namespace MiniAudioEx.Core
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr ma_ex_decode_file(string pFilePath, out UInt64 dataLength, out UInt32 channels, out UInt32 sampleRate, UInt32 desiredChannels, UInt32 desiredSampleRate);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_engine_read_pcm_frames(IntPtr pEngine, IntPtr pFramesOut, UInt64 frameCount, out UInt64 pFramesRead);
     }
 }

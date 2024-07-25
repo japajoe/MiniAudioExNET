@@ -53,12 +53,15 @@ using MiniAudioEx.Core;
 
 namespace MiniAudioEx
 {
+    public delegate void DeviceDataEvent(AudioBuffer<float> data, UInt32 frameCount);
+
     /// <summary>
     /// This class is responsible for managing the audio context.
     /// </summary>
     public static class AudioContext
     {
         private static IntPtr audioContext;
+        private static ma_device_data_proc deviceDataProc;
         private static List<AudioSource> audioSources = new List<AudioSource>();
         private static List<AudioListener> audioListeners = new List<AudioListener>();
         private static Dictionary<UInt64, IntPtr> audioClipHandles = new Dictionary<UInt64, IntPtr>();
@@ -67,6 +70,8 @@ namespace MiniAudioEx
         private static UInt32 channels = 2;
         private static DateTime lastUpdateTime;
         private static float deltaTime;
+
+        public static event DeviceDataEvent DataProcess;
 
         internal static IntPtr NativeContext
         {
@@ -143,6 +148,9 @@ namespace MiniAudioEx
             MiniAudioEx.AudioContext.channels = channels;
 
             ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, 0, ref pDeviceInfo);
+            
+            deviceDataProc = OnDeviceDataProc;
+            contextConfig.deviceDataProc = deviceDataProc;
 
             audioContext = Library.ma_ex_context_init(ref contextConfig);
 
@@ -346,6 +354,18 @@ namespace MiniAudioEx
             }
 
             return false;
+        }
+
+        private static void OnDeviceDataProc(IntPtr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
+        {
+            IntPtr pEngine = Library.ma_ex_device_get_user_data(pDevice);
+            Library.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount, out _);
+
+            if(DataProcess != null)
+            {
+                AudioBuffer<float> buffer = new AudioBuffer<float>(pOutput, (Int32)(frameCount * channels));
+                DataProcess.Invoke(buffer, frameCount);
+            }
         }
     }
 

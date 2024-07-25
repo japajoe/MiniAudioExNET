@@ -75,7 +75,7 @@ namespace MiniAudioEx
             [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
             get
             {
-                if ((uint)index >= (uint)_length)
+                if (index >= _length || index < 0)
                     new System.IndexOutOfRangeException();
                 return ref ((T*)_pointer)[index];
             }
