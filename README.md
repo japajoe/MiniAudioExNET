@@ -16,12 +16,17 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 - Utilities for audio generation.
 
 # Platforms
-MiniAudio was designed to work on every major platform, however I do not have a Mac so I can not build a library for Mac OS. As a result only Windows and Linux libraries are currently available.
+- Windows x64
+- Linux x64
+- OSX x64 (Intel only for now)
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.2
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.3
 ```
+
+# Changes in 1.7.3
+- Add native library for OSX x64 (Intel).
 
 # Changes in 1.7.2
 - Add global device data processing callback.
