@@ -18,12 +18,16 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 # Platforms
 - Windows x64
 - Linux x64
-- OSX x64 (Intel only for now)
+- OSX x64 (Intel)
+- OSX x64 (ARM)
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.3
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.4
 ```
+
+# Changes in 1.7.4
+- Add native library for OSX x64 (ARM).
 
 # Changes in 1.7.3
 - Add native library for OSX x64 (Intel).
