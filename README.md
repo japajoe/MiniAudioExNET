@@ -16,15 +16,21 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 - Utilities for audio generation.
 
 # Platforms
-- Windows x64
-- Linux x64
-- OSX x64 (Intel)
-- OSX x64 (ARM)
+- Windows x86_64
+- Linux x86_64
+- Linux ARM64
+- Linux ARM32
+- OSX x86_64
+- OSX ARM64
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.4
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.5
 ```
+
+# Changes in 1.7.5
+- Add native libraries for Linux (ARM32 and ARM64).
+- Fix possible bug that prevents the native library from loading on OSX x86_64.
 
 # Changes in 1.7.4
 - Add native library for OSX x64 (ARM).
