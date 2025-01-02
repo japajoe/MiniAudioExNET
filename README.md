@@ -17,6 +17,7 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Platforms
 - Windows x86_64
+- Windows x86
 - Linux x86_64
 - Linux ARM64
 - Linux ARM32
@@ -25,8 +26,11 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.5
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.6
 ```
+
+# Changes in 1.7.6
+- Add native library for Windows x86.
 
 # Changes in 1.7.5
 - Add native libraries for Linux (ARM32 and ARM64).
