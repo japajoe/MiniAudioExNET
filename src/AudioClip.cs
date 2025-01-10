@@ -57,6 +57,7 @@ namespace MiniAudioEx
     public sealed class AudioClip : IDisposable
     {
         private string filePath;
+        private string name;
         private IntPtr handle;
         private UInt64 dataSize;
         private UInt64 hashCode;
@@ -69,6 +70,16 @@ namespace MiniAudioEx
         public string FilePath
         {
             get => filePath;
+        }
+
+        /// <summary>
+        /// The name of this AudioClip. If the filepath constructor is used it will contain the filepath, otherwise the string is empty.
+        /// </summary>
+        /// <value></value>
+        public string Name
+        {
+            get => name;
+            set => name = value;
         }
 
         /// <summary>
@@ -121,7 +132,11 @@ namespace MiniAudioEx
         /// <param name="streamFromDisk">If true, streams data from disk rather than loading the entire file into memory for playback. Typically you'd stream from disk if a sound is more than just a couple of seconds long.</param>
         public AudioClip(string filePath, bool streamFromDisk = true)
         {
+            if(!System.IO.File.Exists(filePath))
+                throw new System.IO.FileNotFoundException("Can't create AudioClip because the file does not exist: " + filePath);
+
             this.filePath = filePath;
+            this.name = filePath;
             this.streamFromDisk = streamFromDisk;
             this.handle = IntPtr.Zero;
             this.hashCode = 0;
@@ -134,7 +149,11 @@ namespace MiniAudioEx
         /// <param name="isUnique">If true, then this clip will not use shared memory. If true, this clip will reuse existing memory if possible.</param>
         public AudioClip(byte[] data, bool isUnique = false)
         {
+            if(data == null)
+                throw new System.ArgumentException("Can't create AudioClip because the data is null");
+
             this.filePath = string.Empty;
+            this.name = string.Empty;
             this.streamFromDisk = false;
             this.dataSize = (UInt64)data.Length;
 
@@ -153,13 +172,7 @@ namespace MiniAudioEx
 
                 if(handle != IntPtr.Zero)
                 {            
-                    unsafe
-                    {
-                        byte *ptr = (byte*)handle.ToPointer();
-                        for(int i = 0; i < data.Length; i++)
-                            ptr[i] = data[i];
-                    }
-
+                    Marshal.Copy(data, 0, handle, data.Length);
                     AudioContext.Add(this);
                 }
             }

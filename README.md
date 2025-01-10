@@ -1,5 +1,5 @@
 # MiniAudioExNET
-A .NET wrapper for MiniAudioEx. MiniAudioEx is a a modified version of MiniAudio, see [this repository](https://github.com/japajoe/miniaudioex). The goal of MiniAudioExNET is to make it easy to add audio playback to .NET applications. I've tried several libraries in the past and none of them could offer all of the things I was looking for:
+A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, see [this repository](https://github.com/japajoe/miniaudioex). The goal of MiniAudioExNET is to make it easy to add audio playback to .NET applications. I've tried several libraries in the past and none of them could offer all of the things I was looking for:
 
 - Easy to set up and interact with.
 - Spatial audio.
@@ -26,8 +26,14 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.6
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.7
 ```
+
+# Changes in 1.7.7
+- Throw exception in `AudioClip` constructor if file or data does not exist.
+- Remove unsafe block from `AudioClip` constructor and use Marshal.Copy instead.
+- Add `Name` property to `AudioClip` class.
+- Check sample rate in `Filter` constructor.
 
 # Changes in 1.7.6
 - Add native library for Windows x86.

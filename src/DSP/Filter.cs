@@ -141,7 +141,7 @@ namespace MiniAudioEx.DSP
                 throw new ArgumentException("Q can not be zero");
 
             this.type = type;
-            this.sampleRate = sampleRate;
+            this.sampleRate = sampleRate == 0 ? AudioContext.SampleRate : sampleRate;
             this.frequency = frequency;
             this.q = q;
             this.gainDB = gainDB > 0.0f ? gainDB : 6.0f;
