@@ -26,8 +26,12 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.7
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.8
 ```
+
+# Changes in 1.7.8
+- Attempt to select default device if no device info was given at initialization.
+- Expose `IsDefault` property in `DeviceInfo`.
 
 # Changes in 1.7.7
 - Throw exception in `AudioClip` constructor if file or data does not exist.

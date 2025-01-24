@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>JAJ.Packages.MiniAudioEx</PackageId>
-    <Version>1.7.7</Version>
+    <Version>1.7.8</Version>
     <Authors>W.M.R Jap-A-Joe</Authors>
     <PackageTags>MiniAudio Audio DSP WAV MP3 FLAC</PackageTags>
     <Description>

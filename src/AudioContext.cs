@@ -141,7 +141,7 @@ namespace MiniAudioEx
                 return;
 
             ma_ex_device_info pDeviceInfo = new ma_ex_device_info();
-            pDeviceInfo.index = deviceInfo == null ? 0 : deviceInfo.Index;
+            pDeviceInfo.index = deviceInfo == null ? -1 : deviceInfo.Index;
             pDeviceInfo.pName = IntPtr.Zero;
 
             MiniAudioEx.AudioContext.sampleRate = sampleRate;
@@ -235,7 +235,7 @@ namespace MiniAudioEx
             {
                 IntPtr elementPtr = IntPtr.Add(pDevices, (int)i * Marshal.SizeOf<ma_ex_device_info>());
                 ma_ex_device_info deviceInfo = Marshal.PtrToStructure<ma_ex_device_info>(elementPtr);
-                devices[i] = new DeviceInfo(deviceInfo.pName, deviceInfo.index);
+                devices[i] = new DeviceInfo(deviceInfo.pName, deviceInfo.index, deviceInfo.isDefault > 0 ? true : false);
             }
 
             Library.ma_ex_playback_devices_free(pDevices, count);
@@ -630,7 +630,8 @@ namespace MiniAudioEx
     public sealed class DeviceInfo
     {
         private string name;
-        private UInt32 index;
+        private Int32 index;
+        private bool isDefault;
 
         public string Name
         {
@@ -640,7 +641,7 @@ namespace MiniAudioEx
             }
         }
 
-        public UInt32 Index
+        public Int32 Index
         {
             get
             {
@@ -648,7 +649,15 @@ namespace MiniAudioEx
             }
         }
 
-        public DeviceInfo(IntPtr pName, UInt32 index)
+        public bool IsDefault
+        {
+            get
+            {
+                return isDefault;
+            }
+        }
+
+        public DeviceInfo(IntPtr pName, Int32 index, bool isDefault)
         {
             if(pName != IntPtr.Zero)
                 name = Marshal.PtrToStringAnsi(pName);
@@ -656,6 +665,7 @@ namespace MiniAudioEx
                 name = string.Empty;
 
             this.index = index;
+            this.isDefault = isDefault;
         }
     }
 

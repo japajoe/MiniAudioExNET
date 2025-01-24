@@ -161,7 +161,8 @@ namespace MiniAudioEx.Core
     public struct ma_ex_device_info
     {
         public IntPtr pName;
-        public UInt32 index;
+        public Int32 index;
+        public Int32 isDefault;
     }
 
     [StructLayout(LayoutKind.Sequential)]
