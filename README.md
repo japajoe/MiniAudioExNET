@@ -26,8 +26,11 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.8
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.9
 ```
+
+# Changes in 1.7.9
+- Add `Pointer` property to `AudioBuffer`.
 
 # Changes in 1.7.8
 - Attempt to select default device if no device info was given at initialization.

@@ -46,6 +46,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
+
 namespace MiniAudioEx
 {
     public unsafe ref struct AudioBuffer<T> where T : unmanaged
@@ -68,6 +70,14 @@ namespace MiniAudioEx
             {
                 return 0 >= (uint)_length;
             } 
+        }
+
+        public IntPtr Pointer
+        {
+            get
+            {
+                return new IntPtr(_pointer);
+            }
         }
 
         public ref T this[int index]
