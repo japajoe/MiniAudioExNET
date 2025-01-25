@@ -26,8 +26,11 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 1.7.9
+dotnet add package JAJ.Packages.MiniAudioEx --version 1.8.0
 ```
+
+# Changes in 1.8.0
+- Fix for no symbols on Windows x86 and x86_64
 
 # Changes in 1.7.9
 - Add `Pointer` property to `AudioBuffer`.
