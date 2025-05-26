@@ -26,14 +26,17 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.0.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.0.1
 ```
 
+# Changes in 2.0.1
+- Attempt to fix bug where default device isn't selected.
+
 # Changes in 2.0.0
-- Upgrade to miniaudio 0.11.22
+- Upgrade to miniaudio 0.11.22.
 
 # Changes in 1.8.0
-- Fix for no symbols on Windows x86 and x86_64
+- Fix for no symbols on Windows x86 and x86_64.
 
 # Changes in 1.7.9
 - Add `Pointer` property to `AudioBuffer`.
