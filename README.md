@@ -26,8 +26,10 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.0.1
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.1.0
 ```
+# Changes in 2.1.0
+- Renamed MiniAudioEx.csproj to MiniAudioExNET.csproj.
 
 # Changes in 2.0.1
 - Attempt to fix bug where default device isn't selected.

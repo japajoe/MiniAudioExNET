@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>JAJ.Packages.MiniAudioEx</PackageId>
-    <Version>2.0.1</Version>
+    <Version>2.1.0</Version>
     <Authors>W.M.R Jap-A-Joe</Authors>
     <PackageTags>MiniAudio Audio DSP WAV MP3 FLAC</PackageTags>
     <Description>
