@@ -382,6 +382,9 @@ namespace MiniAudioEx.Core
         public static extern IntPtr ma_ex_decode_file(string pFilePath, out UInt64 dataLength, out UInt32 channels, out UInt32 sampleRate, UInt32 desiredChannels, UInt32 desiredSampleRate);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ma_ex_decode_memory(IntPtr pData, UInt64 size, out UInt64 dataLength, out UInt32 channels, out UInt32 sampleRate, UInt32 desiredChannels, UInt32 desiredSampleRate);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_engine_read_pcm_frames(IntPtr pEngine, IntPtr pFramesOut, UInt64 frameCount, out UInt64 pFramesRead);
     }
 }

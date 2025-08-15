@@ -85,19 +85,27 @@ namespace MiniAudioEx.Utilities
             }
         }
 
+        public AudioDecoder()
+        {
+            channels = 0;
+            sampleRate = 0;
+            data = null;
+        }
+        
         /// <summary>
         /// Initializes this object and on success sets the data.
         /// </summary>
         /// <param name="filepath">The file path to the file to decode.</param>
         /// <param name="desiredChannels">The desired number of channels. Leave at 0 to let the decoder decide.</param>
         /// <param name="desiredSampleRate">The desired sample rate. Leave at 0 to let the decoder decide.</param>
-        public AudioDecoder(string filepath, UInt32 desiredChannels = 0, UInt32 desiredSampleRate = 0)
+        /// <exception cref="Exception"></exception>
+        public void DecodeFromFile(string filepath, UInt32 desiredChannels = 0, UInt32 desiredSampleRate = 0)
         {
-            if(File.Exists(filepath))
+            if (File.Exists(filepath))
             {
                 IntPtr pResult = Library.ma_ex_decode_file(filepath, out UInt64 dataLength, out channels, out sampleRate, desiredChannels, desiredSampleRate);
 
-                if(pResult != IntPtr.Zero)
+                if (pResult != IntPtr.Zero)
                 {
                     data = new float[dataLength];
 
@@ -105,7 +113,7 @@ namespace MiniAudioEx.Utilities
                     {
                         AudioBuffer<float> pData = new AudioBuffer<float>(pResult.ToPointer(), (int)dataLength);
 
-                        for(int i = 0; i < pData.Length; i++)
+                        for (int i = 0; i < pData.Length; i++)
                         {
                             data[i] = pData[i];
                         }
@@ -115,12 +123,59 @@ namespace MiniAudioEx.Utilities
                 }
                 else
                 {
-                    Console.WriteLine("Failed to decode file: unsupported format");
+                    throw new Exception("Failed to decode file: unsupported format");
                 }
             }
             else
             {
-                Console.WriteLine("Failed to decode file because the file was not found: " + filepath);
+                throw new Exception("Failed to decode file because the file was not found: " + filepath);
+            }
+        }
+        
+        /// <summary>
+        /// Initializes this object and on success sets the data.
+        /// </summary>
+        /// <param name="memory">The buffer of dats to be decoded.</param>
+        /// <param name="desiredChannels">The desired number of channels. Leave at 0 to let the decoder decide.</param>
+        /// <param name="desiredSampleRate">The desired sample rate. Leave at 0 to let the decoder decide.</param>
+        /// <exception cref="Exception"></exception>
+        public void DecodeFromMemory(byte[] memory, UInt32 desiredChannels = 0, UInt32 desiredSampleRate = 0)
+        {
+            if (memory?.Length > 0)
+            {
+                unsafe
+                {
+                    IntPtr pResult = IntPtr.Zero;
+                    UInt64 dataLength = 0;
+
+                    fixed (byte* pMemory = &memory[0])
+                    {
+                        IntPtr pData = new IntPtr(pMemory);
+                        pResult = Library.ma_ex_decode_memory(pData, (UInt64)memory.Length, out dataLength, out channels, out sampleRate, desiredChannels, desiredSampleRate);
+                    }
+
+                    if (pResult != IntPtr.Zero)
+                    {
+                        data = new float[dataLength];
+
+                        AudioBuffer<float> pData = new AudioBuffer<float>(pResult.ToPointer(), (int)dataLength);
+
+                        for (int i = 0; i < pData.Length; i++)
+                        {
+                            data[i] = pData[i];
+                        }
+
+                        Library.ma_ex_free(pResult);
+                    }
+                    else
+                    {
+                        throw new Exception("Failed to decode memory: unsupported format");
+                    }
+                }
+            }
+            else
+            {
+                throw new Exception("Failed to decode memory because data was either null or empty");
             }
         }
     }
