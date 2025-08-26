@@ -26,8 +26,11 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.2.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.2.1
 ```
+
+# Changes in 2.2.1
+- Expose more device properties.
 
 # Changes in 2.2.0
 - Add support for ogg file format (experimental).

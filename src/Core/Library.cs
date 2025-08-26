@@ -157,12 +157,38 @@ namespace MiniAudioEx.Core
         ma_attenuation_model_exponential    /* Exponential attenuation. Equivalent to OpenAL's AL_EXPONENT_DISTANCE_CLAMPED. */
     }
 
+    public enum ma_format
+    {
+        /*
+        I like to keep these explicitly defined because they're used as a key into a lookup table. When items are
+        added to this, make sure there are no gaps and that they're added to the lookup table in ma_get_bytes_per_sample().
+        */
+        ma_format_unknown = 0,     /* Mainly used for indicating an error, but also used as the default for the output format for decoders. */
+        ma_format_u8      = 1,
+        ma_format_s16     = 2,     /* Seems to be the most widely supported format. */
+        ma_format_s24     = 3,     /* Tightly packed. 3 bytes per sample. */
+        ma_format_s32     = 4,
+        ma_format_f32     = 5,
+        ma_format_count
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_ex_native_data_format
+    {
+        public ma_format format;       /* Sample format. If set to ma_format_unknown, all sample formats are supported. */
+        public UInt32 channels;     /* If set to 0, all channels are supported. */
+        public UInt32 sampleRate;   /* If set to 0, all sample rates are supported. */
+        public UInt32 flags;        /* A combination of MA_DATA_FORMAT_FLAG_* flags. */
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct ma_ex_device_info
     {
         public IntPtr pName;
         public Int32 index;
         public Int32 isDefault;
+        public UInt32 nativeDataFormatCount;
+        public IntPtr nativeDataFormats;
     }
 
     [StructLayout(LayoutKind.Sequential)]

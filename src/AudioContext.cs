@@ -143,6 +143,8 @@ namespace MiniAudioEx
             ma_ex_device_info pDeviceInfo = new ma_ex_device_info();
             pDeviceInfo.index = deviceInfo == null ? -1 : deviceInfo.Index;
             pDeviceInfo.pName = IntPtr.Zero;
+            pDeviceInfo.nativeDataFormatCount = 0;
+            pDeviceInfo.nativeDataFormats = IntPtr.Zero;
 
             MiniAudioEx.AudioContext.sampleRate = sampleRate;
             MiniAudioEx.AudioContext.channels = channels;
@@ -213,9 +215,9 @@ namespace MiniAudioEx
         }
 
         /// <summary>
-        /// Gets an array of available playback devices.
+        /// Gets an array of available playback devices. Retrieving devices is a relatively slow operation, so don't call it continuously.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An array with playback devices</returns>
         public static DeviceInfo[] GetDevices()
         {
             IntPtr pDevices = Library.ma_ex_playback_devices_get(out UInt32 count);
@@ -235,7 +237,7 @@ namespace MiniAudioEx
             {
                 IntPtr elementPtr = IntPtr.Add(pDevices, (int)i * Marshal.SizeOf<ma_ex_device_info>());
                 ma_ex_device_info deviceInfo = Marshal.PtrToStructure<ma_ex_device_info>(elementPtr);
-                devices[i] = new DeviceInfo(deviceInfo.pName, deviceInfo.index, deviceInfo.isDefault > 0 ? true : false);
+                devices[i] = new DeviceInfo(deviceInfo.pName, deviceInfo.index, deviceInfo.isDefault > 0 ? true : false, deviceInfo.nativeDataFormats, deviceInfo.nativeDataFormatCount);
             }
 
             Library.ma_ex_playback_devices_free(pDevices, count);
@@ -627,45 +629,66 @@ namespace MiniAudioEx
         Exponential
     }
 
+    public struct DeviceDataFormat
+    {
+        public ma_format format;       /* Sample format. If set to ma_format_unknown, all sample formats are supported. */
+        public UInt32 channels;     /* If set to 0, all channels are supported. */
+        public UInt32 sampleRate;   /* If set to 0, all sample rates are supported. */
+        public UInt32 flags;        /* A combination of MA_DATA_FORMAT_FLAG_* flags. */
+    }
+
     public sealed class DeviceInfo
     {
         private string name;
         private Int32 index;
         private bool isDefault;
+        private DeviceDataFormat[] formats;
 
         public string Name
         {
-            get
-            {
-                return name;
-            }
+            get => name;
         }
 
         public Int32 Index
         {
-            get
-            {
-                return index;
-            }
+            get => index;
         }
 
         public bool IsDefault
         {
-            get
-            {
-                return isDefault;
-            }
+            get => isDefault;
         }
 
-        public DeviceInfo(IntPtr pName, Int32 index, bool isDefault)
+        public DeviceDataFormat[] Formats
         {
-            if(pName != IntPtr.Zero)
+            get => formats;
+        }
+
+        public DeviceInfo(IntPtr pName, Int32 index, bool isDefault, IntPtr pFormats, UInt32 formatCount)
+        {
+            if (pName != IntPtr.Zero)
                 name = Marshal.PtrToStringAnsi(pName);
             else
                 name = string.Empty;
 
             this.index = index;
             this.isDefault = isDefault;
+
+            formats = (formatCount > 0 && pFormats != IntPtr.Zero) ? new DeviceDataFormat[formatCount] : null;
+
+            if (formats != null)
+            {
+                for (int i = 0; i < formats.Length; i++)
+                {
+                    IntPtr elementPtr = IntPtr.Add(pFormats, i * Marshal.SizeOf<ma_ex_native_data_format>());
+                    ma_ex_native_data_format f = Marshal.PtrToStructure<ma_ex_native_data_format>(elementPtr);
+                    formats[i] = new DeviceDataFormat();
+                    formats[i].channels = f.channels;
+                    formats[i].flags = f.flags;
+                    formats[i].format = f.format;
+                    formats[i].sampleRate = f.sampleRate;
+                }
+            }
         }
     }
 
