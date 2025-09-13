@@ -85,7 +85,7 @@ namespace MiniAudioEx
         private ma_sound_load_proc loadCallback;
         private ma_sound_end_proc endCallback;
         private ma_sound_process_proc processCallback;
-        private ma_waveform_proc waveformCallback;
+        private ma_procedural_sound_proc proceduralProcessCallback;
         private ConcurrentQueue<int> endEventQueue;
         private ConcurrentList<IAudioEffect> effects;
         private ConcurrentList<IAudioGenerator> generators;
@@ -339,14 +339,13 @@ namespace MiniAudioEx
                 loadCallback = OnLoad;
                 endCallback = OnEnd;
                 processCallback = OnProcess;
-                waveformCallback = OnWaveform;
+                proceduralProcessCallback = OnProceduralProcess;
 
                 ma_ex_audio_source_callbacks callbacks = new ma_ex_audio_source_callbacks();
                 callbacks.pUserData = handle;
                 callbacks.processCallback = processCallback;
                 callbacks.endCallback = endCallback;
                 callbacks.loadCallback = loadCallback;
-                callbacks.waveformCallback = waveformCallback;
 
                 Library.ma_ex_audio_source_set_callbacks(handle, callbacks);
                 
@@ -387,7 +386,7 @@ namespace MiniAudioEx
         /// </summary>
         public void Play()
         {
-            Library.ma_ex_audio_source_play(handle);
+            Library.ma_ex_audio_source_play_from_callback(handle, proceduralProcessCallback);
         }
 
         /// <summary>
@@ -580,7 +579,7 @@ namespace MiniAudioEx
         /// <param name="pFramesOut"></param>
         /// <param name="frameCount"></param>
         /// <param name="channels"></param>
-        private void OnWaveform(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
+        private void OnProceduralProcess(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
             int length = (int)(frameCount * channels);            
 

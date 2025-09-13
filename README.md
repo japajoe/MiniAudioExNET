@@ -26,8 +26,13 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.2.2
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.3.0
 ```
+
+# Changes in 2.3.0
+- Update to miniaudio 0.11.23.
+- Implemented playing ogg files from memory.
+- Supports older Linux versions for x86_64/ARM32/ARM64 architectures (starting at Ubuntu 16.04).
 
 # Changes in 2.2.2
 - Update native libraries.
