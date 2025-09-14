@@ -58,7 +58,7 @@ namespace MiniAudioEx
     public delegate void AudioReadEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
 
     /// <summary>
-    /// This class is used to play multiple audio sources at the same time, while having them all in the same FX chain.
+    /// This class is used to play sounds.
     /// </summary>
     public sealed class AudioSource : IDisposable
     {
@@ -313,7 +313,7 @@ namespace MiniAudioEx
         /// <summary>
         /// Creates and AudioSourceGroup instance.
         /// </summary>
-        /// <param name="maxVoices">The maximum number of sounds that can be played simultaneuously.</param>
+        /// <param name="maxSources">The maximum number of sounds that can be played simultaneuously.</param>
         public AudioSource(Int32 maxSources = 16)
         {
             if (maxSources < 1)
