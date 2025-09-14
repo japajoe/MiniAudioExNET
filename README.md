@@ -6,8 +6,6 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Cross platform.
 - A permissive license.
 
-This library ticks all these boxes. There are some (in my opinion) minor things missing such as more audio format decoders, but at least 3 widely used formats are supported which is sufficient for my needs. If you would like to have support for more formats, then please make your request [here](https://github.com/mackron/miniaudio).
-
 # Features
 - Playback and decoding of various audio formats such as WAV/MP3/FLAC/OGG.
 - Stream audio from disk or from memory.
@@ -26,13 +24,16 @@ This library ticks all these boxes. There are some (in my opinion) minor things 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.3.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.4.0
 ```
+
+# Changes in 2.4.0
+- New AudioSource implementation that allows playing multiple sounds simultaneously. With this comes a new method called `PlayOneShot` which is suitable in scenarios where you need to rapidly play sounds (for example think of gun shots) without having to stop an already playing sound and thus cutting it off. An additional benefit is that all these sounds are processed in the same FX chain.
 
 # Changes in 2.3.0
 - Update to miniaudio 0.11.23.
 - Implemented playing ogg files from memory.
-- Supports older Linux versions for x86_64/ARM32/ARM64 architectures (starting at Ubuntu 16.04).
+- Support for older Linux versions (x86_64/ARM32/ARM64 architectures starting at Ubuntu 16.04).
 
 # Changes in 2.2.2
 - Update native libraries.

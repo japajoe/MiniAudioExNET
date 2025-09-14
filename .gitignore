@@ -2,6 +2,7 @@
 /bin
 /obj
 /test
+/src/AudioSourceX.cs.bak
 pack.sh
 run.sh
 MiniAudioExNETTesting.csproj

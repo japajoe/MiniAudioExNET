@@ -362,6 +362,12 @@ namespace MiniAudioEx.Core
         public static extern UInt32 ma_ex_audio_source_get_is_playing(IntPtr source);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_ex_audio_source_set_group(IntPtr source, IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ma_ex_audio_source_get_group(IntPtr source);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr ma_ex_audio_listener_init(IntPtr context);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
@@ -411,5 +417,87 @@ namespace MiniAudioEx.Core
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_engine_read_pcm_frames(IntPtr pEngine, IntPtr pFramesOut, UInt64 frameCount, out UInt64 pFramesRead);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr ma_ex_sound_group_init(IntPtr context);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_ex_sound_group_uninit(IntPtr soundGroup);
+
+        // miniaudio functions
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_sound_set_process_notification_callback(IntPtr pSound, ma_sound_process_proc callback);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_sound_set_end_notification_callback(IntPtr pSound, ma_sound_end_proc callback);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_sound_set_notifications_userdata(IntPtr pSound, IntPtr pUserData);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_sound_group_stop(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UInt32 ma_sound_group_is_playing(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_volume(IntPtr soundGroup, float volume);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_volume(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_pitch(IntPtr soundGroup, float pitch);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_pitch(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_spatialization_enabled(IntPtr soundGroup, UInt32 enabled);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UInt32 ma_sound_group_is_spatialization_enabled(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_doppler_factor(IntPtr soundGroup, float dopplerFactor);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_doppler_factor(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_attenuation_model(IntPtr soundGroup, ma_attenuation_model attenuationModel);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_attenuation_model ma_sound_group_get_attenuation_model(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_min_distance(IntPtr soundGroup, float minDistance);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_min_distance(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_max_distance(IntPtr soundGroup, float minDistance);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_max_distance(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_position(IntPtr soundGroup, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_sound_group_get_position(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_direction(IntPtr soundGroup, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_sound_group_get_direction(IntPtr soundGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_velocity(IntPtr soundGroup, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_sound_group_get_velocity(IntPtr soundGroup);
     }
 }

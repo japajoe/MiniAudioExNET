@@ -130,12 +130,13 @@ namespace MiniAudioEx
         }
 
         /// <summary>
-        /// Initializes MiniAudioEx. Call this once at the start of your application. The 'deviceInfo' parameter can be left null.
+        /// Initializes MiniAudioEx. Call this once at the start of your application.
         /// </summary>
-        /// <param name="sampleRate"></param>
-        /// <param name="channels"></param>
-        /// <param name="deviceInfo"></param>
-        public static void Initialize(UInt32 sampleRate, UInt32 channels, DeviceInfo deviceInfo = null)
+        /// <param name="sampleRate">The sample rate to use. Typical sampling rates are 44100 and 48000.</param>
+        /// <param name="channels">The number of channels to use. For most purposes 2 is the best choice (stereo audio).</param>
+        /// <param name="periodSizeInFrames">Buffer size for audio processing. This value is a 'hint' so in practice it may be different than what you passed.</param>
+        /// <param name="deviceInfo">If left null, a default device is used.</param>
+        public static void Initialize(UInt32 sampleRate, UInt32 channels, UInt32 periodSizeInFrames = 2048, DeviceInfo deviceInfo = null)
         {
             if(audioContext != IntPtr.Zero)
                 return;
@@ -146,10 +147,10 @@ namespace MiniAudioEx
             pDeviceInfo.nativeDataFormatCount = 0;
             pDeviceInfo.nativeDataFormats = IntPtr.Zero;
 
-            MiniAudioEx.AudioContext.sampleRate = sampleRate;
-            MiniAudioEx.AudioContext.channels = channels;
+            AudioContext.sampleRate = sampleRate;
+            AudioContext.channels = channels;
 
-            ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, 0, ref pDeviceInfo);
+            ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, periodSizeInFrames, ref pDeviceInfo);
             
             deviceDataProc = OnDeviceDataProc;
             contextConfig.deviceDataProc = deviceDataProc;
@@ -174,12 +175,12 @@ namespace MiniAudioEx
 
             for(int i = 0; i < audioSources.Count; i++)
                 audioSources[i].Destroy();
-
+            
             audioSources.Clear();
 
-            foreach(var audioClipHandle in audioClipHandles.Values)
+            foreach (var audioClipHandle in audioClipHandles.Values)
             {
-                if(audioClipHandle != IntPtr.Zero)
+                if (audioClipHandle != IntPtr.Zero)
                     Marshal.FreeHGlobal(audioClipHandle);
             }
 
@@ -206,7 +207,7 @@ namespace MiniAudioEx
             TimeSpan dt = currentTime - lastUpdateTime;
             deltaTime = (float)dt.TotalSeconds;
 
-            for(int i = 0; i < audioSources.Count; i++)
+            for (int i = 0; i < audioSources.Count; i++)
             {
                 audioSources[i].Update();
             }
@@ -260,15 +261,15 @@ namespace MiniAudioEx
 
         internal static void Add(AudioClip clip)
         {
-            if(clip.Hash == 0)
+            if (clip.Hash == 0)
                 return;
 
-            if(clip.Handle == IntPtr.Zero)
+            if (clip.Handle == IntPtr.Zero)
                 return;
-            
-            if(audioClipHandles.ContainsKey(clip.Hash))
+
+            if (audioClipHandles.ContainsKey(clip.Hash))
                 return;
-            
+
             audioClipHandles.Add(clip.Hash, clip.Handle);
         }
 
@@ -314,9 +315,9 @@ namespace MiniAudioEx
             bool found = false;
             int index = 0;
 
-            for(int i = 0; i < audioListeners.Count; i++)
+            for (int i = 0; i < audioListeners.Count; i++)
             {
-                if(audioListeners[i].GetHashCode() == hashcode)
+                if (audioListeners[i].GetHashCode() == hashcode)
                 {
                     index = i;
                     found = true;
@@ -324,7 +325,7 @@ namespace MiniAudioEx
                 }
             }
 
-            if(found)
+            if (found)
             {
                 audioListeners[index].Destroy();
                 audioListeners.RemoveAt(index);

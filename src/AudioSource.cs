@@ -53,54 +53,39 @@ using MiniAudioEx.Core;
 
 namespace MiniAudioEx
 {
-    public delegate void AudioLoadEvent();
     public delegate void AudioEndEvent();
     public delegate void AudioProcessEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
     public delegate void AudioReadEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
 
     /// <summary>
-    /// This class is used to play audio.
+    /// This class is used to play multiple audio sources at the same time, while having them all in the same FX chain.
     /// </summary>
     public sealed class AudioSource : IDisposable
     {
-        /// <summary>
-        /// Callback handler for when an AudioClip is loaded using the 'Play(AudioClip clip)' method.
-        /// </summary>
-        public event AudioLoadEvent Load;
-        /// <summary>
-        /// Callback handler for when the playback has finished. This does not trigger if the AudioSource is set to Loop.
-        /// </summary>
-        public event AudioEndEvent End;
         /// <summary>
         /// Callback handler for implementing custom effects.
         /// </summary>
         public event AudioProcessEvent Process;
         /// <summary>
+        /// Callback handler for when the playback has finished. This does not trigger if the AudioSource is set to Loop.
+        /// </summary>
+        public event AudioEndEvent End;
+        /// <summary>
         /// Callback handler for generating procedural audio when using the 'Play()' method.
         /// </summary>
         public event AudioReadEvent Read;
 
-        private IntPtr handle;
+        private List<IntPtr> sources;
+        private IntPtr handleGroup;
         private Vector3f previousPosition;
-        private ma_sound_load_proc loadCallback;
-        private ma_sound_end_proc endCallback;
         private ma_sound_process_proc processCallback;
+        private ma_sound_end_proc endCallback;
         private ma_procedural_sound_proc proceduralProcessCallback;
-        private ConcurrentQueue<int> endEventQueue;
+        private ConcurrentQueue<IntPtr> endEventQueue;
         private ConcurrentList<IAudioEffect> effects;
         private ConcurrentList<IAudioGenerator> generators;
-
-        /// <summary>
-        /// Gets a handle to the native ma_audio_source instance.
-        /// </summary>
-        /// <value></value>
-        public IntPtr Handle
-        {
-            get
-            {
-                return handle;
-            }
-        }
+        private int currentIndex;
+        private readonly int MAX_SOURCES;
 
         /// <summary>
         /// Gets or sets the current position of the playback cursor in PCM samples.
@@ -110,11 +95,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_pcm_position(handle);
+                return Library.ma_ex_audio_source_get_pcm_position(sources[0]);
             }
             set
             {
-                Library.ma_ex_audio_source_set_pcm_position(handle, value);
+                Library.ma_ex_audio_source_set_pcm_position(sources[0], value);
             }
         }
 
@@ -126,7 +111,7 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_pcm_length(handle);
+                return Library.ma_ex_audio_source_get_pcm_length(sources[0]);
             }
         }
 
@@ -138,11 +123,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_volume(handle);
+                return Library.ma_sound_group_get_volume(handleGroup);
             }
             set
             {
-                Library.ma_ex_audio_source_set_volume(handle, value);
+                Library.ma_sound_group_set_volume(handleGroup, value);
             }
         }
 
@@ -154,27 +139,27 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_pitch(handle);
+                return Library.ma_sound_group_get_pitch(handleGroup);
             }
             set
             {
-                Library.ma_ex_audio_source_set_pitch(handle, value);
+                Library.ma_sound_group_set_pitch(handleGroup, value);
             }
         }
 
         /// <summary>
-        /// Gets or sets whether the audio should loop. If true, then the 'End' event will not be called. If the Play() overload is used, this property has no effect because the audio will loop regardless.
+        /// Gets or sets whether the audio should loop. If true, then the 'End' event will not be called. If the Play() overload is used, this property has no effect because the audio will loop regardless. Take note that this setting only applies to the first source, so it may cause undesirable results when using the PlayOneShot method.
         /// </summary>
         /// <value></value>
         public bool Loop
         {
             get
             {
-                return Library.ma_ex_audio_source_get_loop(handle) > 0;
+                return Library.ma_ex_audio_source_get_loop(sources[0]) > 0;
             }
             set
             {
-                Library.ma_ex_audio_source_set_loop(handle, value ? (uint)1 : 0);
+                Library.ma_ex_audio_source_set_loop(sources[0], value ? (uint)1 : 0);
             }
         }
 
@@ -186,11 +171,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_spatialization(handle) > 0;
+                return Library.ma_sound_group_is_spatialization_enabled(handleGroup) > 0;
             }
             set
             {
-                Library.ma_ex_audio_source_set_spatialization(handle, value ? (uint)1 : 0);
+                Library.ma_sound_group_set_spatialization_enabled(handleGroup, value ? (uint)1 : 0);
             }
         }
 
@@ -202,11 +187,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_doppler_factor(handle);
+                return Library.ma_sound_group_get_doppler_factor(handleGroup);
             }
             set
             {
-                Library.ma_ex_audio_source_set_doppler_factor(handle, value);
+                Library.ma_sound_group_set_doppler_factor(handleGroup, value);
             }
         }
 
@@ -218,11 +203,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_min_distance(handle);
+                return Library.ma_sound_group_get_min_distance(handleGroup);
             }
             set
             {
-                Library.ma_ex_audio_source_set_min_distance(handle, value);
+                Library.ma_sound_group_set_min_distance(handleGroup, value);
             }
         }
 
@@ -234,11 +219,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_max_distance(handle);
+                return Library.ma_sound_group_get_max_distance(handleGroup);
             }
             set
             {
-                Library.ma_ex_audio_source_set_max_distance(handle, value);
+                Library.ma_sound_group_set_max_distance(handleGroup, value);
             }
         }
 
@@ -250,11 +235,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return (AttenuationModel)Library.ma_ex_audio_source_get_attenuation_model(handle);
+                return (AttenuationModel)Library.ma_sound_group_get_attenuation_model(handleGroup);
             }
             set
             {
-                Library.ma_ex_audio_source_set_attenuation_model(handle, (ma_attenuation_model)value);
+                Library.ma_sound_group_set_attenuation_model(handleGroup, (ma_attenuation_model)value);
             }
         }
 
@@ -266,14 +251,16 @@ namespace MiniAudioEx
         {
             get
             {
-                float x, y, z;
-                Library.ma_ex_audio_source_get_position(handle, out x, out y, out z);
-                return new Vector3f(x, y, z);
+                var result = Library.ma_sound_group_get_position(handleGroup);
+                return new Vector3f(result.x, result.y, result.z);
             }
             set
             {
-                Library.ma_ex_audio_source_get_position(handle, out previousPosition.x, out previousPosition.y, out previousPosition.z);
-                Library.ma_ex_audio_source_set_position(handle, value.x, value.y, value.z);
+                var p = Library.ma_sound_group_get_position(handleGroup);
+                previousPosition.x = p.x;
+                previousPosition.y = p.y;
+                previousPosition.z = p.z;
+                Library.ma_sound_group_set_position(handleGroup, value.x, value.y, value.z);
             }
         }
 
@@ -285,13 +272,12 @@ namespace MiniAudioEx
         {
             get
             {
-                float x, y, z;
-                Library.ma_ex_audio_source_get_direction(handle, out x, out y, out z);
-                return new Vector3f(x, y, z);
+                var result = Library.ma_sound_group_get_direction(handleGroup);
+                return new Vector3f(result.x, result.y, result.z);
             }
             set
             {
-                Library.ma_ex_audio_source_set_direction(handle, value.x, value.y, value.z);
+                Library.ma_sound_group_set_direction(handleGroup, value.x, value.y, value.z);
             }
         }
 
@@ -303,13 +289,12 @@ namespace MiniAudioEx
         {
             get
             {
-                float x, y, z;
-                Library.ma_ex_audio_source_get_velocity(handle, out x, out y, out z);
-                return new Vector3f(x, y, z);
+                var result = Library.ma_sound_group_get_velocity(handleGroup);
+                return new Vector3f(result.x, result.y, result.z);
             }
             set
             {
-                Library.ma_ex_audio_source_set_velocity(handle, value.x, value.y, value.z);
+                Library.ma_sound_group_set_velocity(handleGroup, value.x, value.y, value.z);
             }
         }
 
@@ -321,59 +306,86 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_is_playing(handle) > 0;
+                return Library.ma_sound_group_is_playing(handleGroup) > 0;
             }
         }
 
-        public AudioSource()
+        /// <summary>
+        /// Creates and AudioSourceGroup instance.
+        /// </summary>
+        /// <param name="maxVoices">The maximum number of sounds that can be played simultaneuously.</param>
+        public AudioSource(Int32 maxSources = 16)
         {
-            handle = Library.ma_ex_audio_source_init(AudioContext.NativeContext);
+            if (maxSources < 1)
+                maxSources = 1;
 
-            if(handle != IntPtr.Zero)
+            MAX_SOURCES = maxSources;
+
+            previousPosition = new Vector3f(0, 0, 0);
+            sources = new List<IntPtr>();
+            endEventQueue = new ConcurrentQueue<IntPtr>();
+            effects = new ConcurrentList<IAudioEffect>();
+            generators = new ConcurrentList<IAudioGenerator>();
+            currentIndex = 0;
+
+            processCallback = OnProcess;
+            endCallback = OnEnd;
+            proceduralProcessCallback = OnProceduralProcess;
+
+            handleGroup = Library.ma_ex_sound_group_init(AudioContext.NativeContext);
+
+            if (handleGroup != IntPtr.Zero)
             {
-                previousPosition = new Vector3f(0, 0, 0);
-                endEventQueue = new ConcurrentQueue<int>();
-                effects = new ConcurrentList<IAudioEffect>();
-                generators = new ConcurrentList<IAudioGenerator>();
-
-                loadCallback = OnLoad;
-                endCallback = OnEnd;
-                processCallback = OnProcess;
-                proceduralProcessCallback = OnProceduralProcess;
-
-                ma_ex_audio_source_callbacks callbacks = new ma_ex_audio_source_callbacks();
-                callbacks.pUserData = handle;
-                callbacks.processCallback = processCallback;
-                callbacks.endCallback = endCallback;
-                callbacks.loadCallback = loadCallback;
-
-                Library.ma_ex_audio_source_set_callbacks(handle, callbacks);
-                
                 AudioContext.Add(this);
+
+                Library.ma_sound_set_notifications_userdata(handleGroup, IntPtr.Zero);
+                Library.ma_sound_set_process_notification_callback(handleGroup, processCallback);
+
+                for (int i = 0; i < MAX_SOURCES; i++)
+                {
+                    IntPtr source = Library.ma_ex_audio_source_init(AudioContext.NativeContext);
+                    sources.Add(source);
+
+                    ma_ex_audio_source_callbacks callbacks = new ma_ex_audio_source_callbacks();
+                    callbacks.pUserData = source;
+                    callbacks.endCallback = endCallback;
+                    callbacks.loadCallback = null;
+                    callbacks.processCallback = null;
+
+                    Library.ma_ex_audio_source_set_callbacks(source, callbacks);
+                    Library.ma_ex_audio_source_set_group(source, handleGroup);
+                }
             }
         }
 
         internal void Destroy()
         {
-            if(handle != IntPtr.Zero)
+            if (handleGroup == IntPtr.Zero)
+                return;
+
+            for (int i = 0; i < sources.Count; i++)
             {
-                Library.ma_ex_audio_source_stop(handle);
-                Library.ma_ex_audio_source_uninit(handle);
-                handle = IntPtr.Zero;
-
-                //Clear the queues (netstandard2.0 does not have a Clear method for ConcurrentQueue)
-                while(endEventQueue.Count > 0)
-                    endEventQueue.TryDequeue(out _);
-                
-                for(int i = 0; i < effects.Count; i++)
-                    effects[i].OnDestroy();
-
-                for(int i = 0; i < generators.Count; i++)
-                    generators[i].OnDestroy();
-
-                effects.Clear();
-                generators.Clear();
+                Library.ma_ex_audio_source_stop(sources[i]);
+                Library.ma_ex_audio_source_uninit(sources[i]);
             }
+
+            sources.Clear();
+
+            Library.ma_ex_sound_group_uninit(handleGroup);
+            handleGroup = IntPtr.Zero;
+
+            //Clear the queues (netstandard2.0 does not have a Clear method for ConcurrentQueue)
+            while (endEventQueue.Count > 0)
+                endEventQueue.TryDequeue(out _);
+
+            for (int i = 0; i < effects.Count; i++)
+                effects[i].OnDestroy();
+
+            for (int i = 0; i < generators.Count; i++)
+                generators[i].OnDestroy();
+
+            effects.Clear();
+            generators.Clear();
         }
 
         public void Dispose()
@@ -386,19 +398,50 @@ namespace MiniAudioEx
         /// </summary>
         public void Play()
         {
-            Library.ma_ex_audio_source_play_from_callback(handle, proceduralProcessCallback);
+            if (handleGroup == IntPtr.Zero)
+                return;
+            Library.ma_ex_audio_source_play_from_callback(sources[0], proceduralProcessCallback);
         }
 
         /// <summary>
-        /// Plays an AudioClip by given filepath or encoded data buffer (data must be either WAV/MP3/FLAC).
+        /// Plays an AudioClip by given filepath or encoded data buffer (data must be either WAV/MP3/FLAC/OGG).
         /// </summary>
         /// <param name="clip">The AudioClip to play.</param>
         public void Play(AudioClip clip)
         {
-            if(clip.Handle != IntPtr.Zero)
-                Library.ma_ex_audio_source_play_from_memory(handle, clip.Handle, clip.DataSize);
+            if (handleGroup == IntPtr.Zero)
+                return;
+
+            if (clip.Handle != IntPtr.Zero)
+                Library.ma_ex_audio_source_play_from_memory(sources[0], clip.Handle, clip.DataSize);
             else
-                Library.ma_ex_audio_source_play_from_file(handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                Library.ma_ex_audio_source_play_from_file(sources[0], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+        }
+
+        /// <summary>
+        /// Plays an AudioClip by given filepath or encoded data buffer (data must be either WAV/MP3/FLAC/OGG).
+        /// </summary>
+        /// <param name="clip">The AudioClip to play.</param>
+        public void PlayOneShot(AudioClip clip)
+        {
+            if (handleGroup == IntPtr.Zero)
+                return;
+
+            if (Library.ma_ex_audio_source_get_is_playing(sources[currentIndex]) > 0)
+            {
+                Library.ma_ex_audio_source_stop(sources[currentIndex]);
+                Library.ma_ex_audio_source_set_pcm_position(sources[currentIndex], 0);
+            }
+
+            if (clip.Handle != IntPtr.Zero)
+                Library.ma_ex_audio_source_play_from_memory(sources[currentIndex], clip.Handle, clip.DataSize);
+            else
+                Library.ma_ex_audio_source_play_from_file(sources[currentIndex], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+
+            if (++currentIndex >= sources.Count - 1)
+            {
+                currentIndex = 0;
+            }
         }
 
         /// <summary>
@@ -406,14 +449,14 @@ namespace MiniAudioEx
         /// </summary>
         public void Stop()
         {
-            Library.ma_ex_audio_source_stop(handle);
+            Library.ma_sound_group_stop(handleGroup);
         }
 
         internal void Update()
         {
-            if(endEventQueue.Count > 0)
+            if (endEventQueue.Count > 0)
             {
-                while(endEventQueue.TryDequeue(out _))
+                while (endEventQueue.TryDequeue(out _))
                 {
                     End?.Invoke();
                 }
@@ -444,7 +487,7 @@ namespace MiniAudioEx
         /// <param name="effect"></param>
         public void RemoveEffect(int index)
         {
-            if(index >= 0 && index < effects.Count)
+            if (index >= 0 && index < effects.Count)
             {
                 var target = effects[index];
                 effects.Remove(target);
@@ -457,11 +500,11 @@ namespace MiniAudioEx
         public void RemoveEffects()
         {
             List<IAudioEffect> targets = new List<IAudioEffect>();
-            for(int i = 0; i < effects.Count; i++)
+            for (int i = 0; i < effects.Count; i++)
             {
                 targets.Add(effects[i]);
             }
-            if(targets.Count > 0)
+            if (targets.Count > 0)
             {
                 effects.Remove(targets);
             }
@@ -491,7 +534,7 @@ namespace MiniAudioEx
         /// <param name="effect"></param>
         public void RemoveGenerator(int index)
         {
-            if(index >= 0 && index < generators.Count)
+            if (index >= 0 && index < generators.Count)
             {
                 var target = generators[index];
                 generators.Remove(target);
@@ -504,11 +547,11 @@ namespace MiniAudioEx
         public void RemoveGenerators()
         {
             List<IAudioGenerator> targets = new List<IAudioGenerator>();
-            for(int i = 0; i < generators.Count; i++)
+            for (int i = 0; i < generators.Count; i++)
             {
                 targets.Add(generators[i]);
             }
-            if(targets.Count > 0)
+            if (targets.Count > 0)
             {
                 generators.Remove(targets);
             }
@@ -529,16 +572,6 @@ namespace MiniAudioEx
         }
 
         /// <summary>
-        /// Called whenever audio is loaded using the 'Play' method.
-        /// </summary>
-        /// <param name="pUserData"></param>
-        /// <param name="pSound"></param>
-        private void OnLoad(IntPtr pUserData, IntPtr pSound)
-        {
-            Load?.Invoke();
-        }
-
-        /// <summary>
         /// Called whenever audio has finished playing. This does not trigger when 'Loop' is true.
         /// </summary>
         /// <param name="pUserData"></param>
@@ -547,9 +580,9 @@ namespace MiniAudioEx
         {
             //This callback is called from another thread so we move the message to a queue that the main thread can safely access
             //If the audio is set to looping, this event is never triggered
-            endEventQueue.Enqueue(1);            
+            endEventQueue.Enqueue(pUserData);
         }
-        
+
         /// <summary>
         /// Called whenever the audio buffer of this source is filled with data.
         /// </summary>
@@ -564,7 +597,7 @@ namespace MiniAudioEx
 
             AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut, length);
 
-            for(int i = 0; i < effects.Count; i++)
+            for (int i = 0; i < effects.Count; i++)
             {
                 effects[i].OnProcess(framesOut, frameCount, (int)channels);
             }
@@ -573,7 +606,7 @@ namespace MiniAudioEx
         }
 
         /// <summary>
-        /// Called whenever the buffer of this source needs data. This is only called whenever the 'Play' method without parameters is called.
+        /// Called whenever the buffer of this source needs data. This is only called whenever the 'Play' method without parameters was used.
         /// </summary>
         /// <param name="pUserData"></param>
         /// <param name="pFramesOut"></param>
@@ -581,11 +614,11 @@ namespace MiniAudioEx
         /// <param name="channels"></param>
         private void OnProceduralProcess(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
-            int length = (int)(frameCount * channels);            
+            int length = (int)(frameCount * channels);
 
             AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut, length);
 
-            for(int i = 0; i < generators.Count; i++)
+            for (int i = 0; i < generators.Count; i++)
             {
                 generators[i].OnGenerate(framesOut, frameCount, (int)channels);
             }
