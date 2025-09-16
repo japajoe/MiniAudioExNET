@@ -1491,17 +1491,17 @@ namespace MiniAudioEx.Core
 
         public void SetDataProc(ma_device_data_proc callback)
         {
-            dataCallback = Marshal.GetFunctionPointerForDelegate(callback);
+            dataCallback = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
 
         public void SetNotificationProc(ma_device_notification_proc callback)
         {
-            notificationCallback = Marshal.GetFunctionPointerForDelegate(callback);
+            notificationCallback = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
         
         public void SetEngineProcessProc(ma_engine_process_proc callback)
         {
-            onProcess = Marshal.GetFunctionPointerForDelegate(callback);
+            onProcess = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
     }
 
@@ -1516,7 +1516,7 @@ namespace MiniAudioEx.Core
 
         public void SetCallback(ma_procedural_sound_proc callback)
         {
-            this.callback = Marshal.GetFunctionPointerForDelegate(callback);
+            this.callback = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
     }
 
@@ -1527,7 +1527,7 @@ namespace MiniAudioEx.Core
         public IntPtr pUserData;
         public void SetLogCallback(ma_log_callback_proc callback)
         {
-            onLog = Marshal.GetFunctionPointerForDelegate(callback);
+            onLog = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
     }
 
@@ -1672,17 +1672,17 @@ namespace MiniAudioEx.Core
         public IntPtr pUserData;
         public void SetLoadProc(ma_sound_load_proc callback)
         {
-            onLoaded = Marshal.GetFunctionPointerForDelegate(callback);
+            onLoaded = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
 
         public void SetEndProc(ma_sound_end_proc callback)
         {
-            onAtEnd = Marshal.GetFunctionPointerForDelegate(callback);
+            onAtEnd = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
 
         public void SetProcessProc(ma_sound_process_proc callback)
         {
-            onProcess = Marshal.GetFunctionPointerForDelegate(callback);
+            onProcess = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
 
     }
@@ -1885,17 +1885,17 @@ namespace MiniAudioEx.Core
 
         public void SetDataCallback(ma_device_data_proc dataCallback)
         {
-            this.dataCallback = Marshal.GetFunctionPointerForDelegate(dataCallback);
+            this.dataCallback = MarshalHelper.GetFunctionPointerForDelegate(dataCallback);
         }
 
         public void SetNotificationCallback(ma_device_notification_proc notificationCallback)
         {
-            this.notificationCallback = Marshal.GetFunctionPointerForDelegate(notificationCallback);
+            this.notificationCallback = MarshalHelper.GetFunctionPointerForDelegate(notificationCallback);
         }
 
         public void SetStopCallback(ma_stop_proc stopCallback)
         {
-            this.stopCallback = Marshal.GetFunctionPointerForDelegate(stopCallback);
+            this.stopCallback = MarshalHelper.GetFunctionPointerForDelegate(stopCallback);
         }
     }
 
@@ -1953,17 +1953,17 @@ namespace MiniAudioEx.Core
 
         public void SetDataProc(ma_device_data_proc onData)
         {
-            this.onData = Marshal.GetFunctionPointerForDelegate(onData);
+            this.onData = MarshalHelper.GetFunctionPointerForDelegate(onData);
         }
 
         public void SetNotificationProc(ma_device_notification_proc onNotification)
         {
-            this.onNotification = Marshal.GetFunctionPointerForDelegate(onNotification);
+            this.onNotification = MarshalHelper.GetFunctionPointerForDelegate(onNotification);
         }
 
         public void SetStopProc(ma_stop_proc onStop)
         {
-            this.onStop = Marshal.GetFunctionPointerForDelegate(onStop);
+            this.onStop = MarshalHelper.GetFunctionPointerForDelegate(onStop);
         }
     }
 
@@ -2010,15 +2010,15 @@ namespace MiniAudioEx.Core
 
         public void SetReadProc(ma_decoder_read_proc callback)
         {
-            onRead = Marshal.GetFunctionPointerForDelegate(callback);
+            onRead = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
         public void SetSeekProc(ma_decoder_seek_proc callback)
         {
-            onSeek = Marshal.GetFunctionPointerForDelegate(callback);
+            onSeek = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
         public void SetTellProc(ma_decoder_tell_proc callback)
         {
-            onTell = Marshal.GetFunctionPointerForDelegate(callback);
+            onTell = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -2073,7 +2073,7 @@ namespace MiniAudioEx.Core
 
         public void SetNextProc(ma_data_source_get_next_proc callback)
         {
-            onGetNext = Marshal.GetFunctionPointerForDelegate(callback);
+            onGetNext = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
     }
 
@@ -2364,12 +2364,12 @@ namespace MiniAudioEx.Core
 
         public void SetOnProcess(ma_node_vtable_process_proc callback)
         {
-            onProcess = Marshal.GetFunctionPointerForDelegate(callback);
+            onProcess = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
 
         public void SetOnGetRequiredInputFrameCount(ma_node_vtable_get_required_input_frame_count_proc callback)
         {
-            onGetRequiredInputFrameCount = Marshal.GetFunctionPointerForDelegate(callback);
+            onGetRequiredInputFrameCount = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
     }
 
@@ -2717,7 +2717,12 @@ namespace MiniAudioEx.Core
         public static extern ma_log_ptr ma_context_get_log(ma_context_ptr pContext);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_context_enumerate_devices(ma_context_ptr pContext, ma_enum_devices_callback_proc callback, IntPtr pUserData);
+        private static extern ma_result ma_context_enumerate_devices(ma_context_ptr pContext, IntPtr callback, IntPtr pUserData);
+
+        public static ma_result ma_context_enumerate_devices(ma_context_ptr pContext, ma_enum_devices_callback_proc callback, IntPtr pUserData)
+        {
+            return ma_context_enumerate_devices(pContext, MarshalHelper.GetFunctionPointerForDelegate(callback), pUserData);
+        }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         private static extern unsafe ma_result ma_context_get_devices(ma_context_ptr pContext, ma_device_info** ppPlaybackDeviceInfos, ma_uint32* pPlaybackDeviceCount, ma_device_info** ppCaptureDeviceInfos, ma_uint32* pCaptureDeviceCount);
@@ -3137,13 +3142,28 @@ namespace MiniAudioEx.Core
         public static extern ma_result ma_sound_set_notifications_userdata(ma_sound_ptr pSound, IntPtr pUserData);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_sound_set_end_notification_callback(ma_sound_ptr pSound, ma_sound_end_proc callback);
+        private static extern ma_result ma_sound_set_end_notification_callback(ma_sound_ptr pSound, IntPtr callback);
+
+        public static ma_result ma_sound_set_end_notification_callback(ma_sound_ptr pSound, ma_sound_end_proc callback)
+        {
+            return ma_sound_set_end_notification_callback(pSound, MarshalHelper.GetFunctionPointerForDelegate(callback));
+        }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_sound_set_load_notification_callback(ma_sound_ptr pSound, ma_sound_load_proc callback);
+        private static extern ma_result ma_sound_set_load_notification_callback(ma_sound_ptr pSound, IntPtr callback);
+
+        public static ma_result ma_sound_set_load_notification_callback(ma_sound_ptr pSound, ma_sound_load_proc callback)
+        {
+            return ma_sound_set_load_notification_callback(pSound, MarshalHelper.GetFunctionPointerForDelegate(callback));
+        }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_sound_set_process_notification_callback(ma_sound_ptr pSound, ma_sound_process_proc callback);
+        private static extern ma_result ma_sound_set_process_notification_callback(ma_sound_ptr pSound, IntPtr callback);
+
+        public static ma_result ma_sound_set_process_notification_callback(ma_sound_ptr pSound, ma_sound_process_proc callback)
+        {
+            return ma_sound_set_process_notification_callback(pSound, MarshalHelper.GetFunctionPointerForDelegate(callback));
+        }
 
         // ma_sound_group
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
@@ -3313,7 +3333,12 @@ namespace MiniAudioEx.Core
 
         // ma_procedural_sound
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_procedural_sound_config ma_procedural_sound_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, ma_procedural_sound_proc pProceduralSoundProc, IntPtr pUserData);
+        private static extern ma_procedural_sound_config ma_procedural_sound_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, IntPtr pProceduralSoundProc, IntPtr pUserData);
+
+        public static ma_procedural_sound_config ma_procedural_sound_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, ma_procedural_sound_proc pProceduralSoundProc, IntPtr pUserData)
+        {
+            return ma_procedural_sound_config_init(format, channels, sampleRate, MarshalHelper.GetFunctionPointerForDelegate(pProceduralSoundProc), pUserData);
+        }
 
         // ma_spatializer_listener
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
@@ -3496,7 +3521,12 @@ namespace MiniAudioEx.Core
         public static extern ma_decoder_config ma_decoder_config_init_default();
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_decoder_init(ma_decoder_read_proc onRead, ma_decoder_seek_proc onSeek, IntPtr pUserData, ref ma_decoder_config pConfig, ma_decoder_ptr pDecoder);
+        private static extern ma_result ma_decoder_init(IntPtr onRead, IntPtr onSeek, IntPtr pUserData, ref ma_decoder_config pConfig, ma_decoder_ptr pDecoder);
+
+        public static ma_result ma_decoder_init(ma_decoder_read_proc onRead, ma_decoder_seek_proc onSeek, IntPtr pUserData, ref ma_decoder_config pConfig, ma_decoder_ptr pDecoder)
+        {
+            return ma_decoder_init(MarshalHelper.GetFunctionPointerForDelegate(onRead), MarshalHelper.GetFunctionPointerForDelegate(onSeek), pUserData, ref pConfig, pDecoder);
+        }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_decoder_init_memory(IntPtr pData, size_t dataSize, ref ma_decoder_config pConfig, ma_decoder_ptr pDecoder);
@@ -3612,5 +3642,21 @@ namespace MiniAudioEx.Core
         // ma_libvorbis
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static unsafe extern ma_decoding_backend_vtable* ma_libvorbis_get_decoding_backend();
+    }
+
+    public static class MarshalHelper
+    {
+        /// <summary>
+        /// A value that can be passed to unmanaged code, which, in turn, can use it to call the underlying managed delegate. Does not throw exceptions.
+        /// </summary>
+        /// <typeparam name="TDelegate">The type of delegate to convert.</typeparam>
+        /// <param name="d">The delegate to be passed to unmanaged code.</param>
+        /// <returns><A value that can be passed to unmanaged code, which, in turn, can use it to call the underlying managed delegate. Returns IntPtr.Zero if the passed delegate is null./returns>
+        public static IntPtr GetFunctionPointerForDelegate<TDelegate>(TDelegate d)
+        {
+            if (d == null)
+                return IntPtr.Zero;
+            return Marshal.GetFunctionPointerForDelegate(d);
+        }
     }
 }

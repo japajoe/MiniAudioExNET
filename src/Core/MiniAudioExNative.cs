@@ -81,6 +81,15 @@ namespace MiniAudioEx.Core
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct ma_ex_audio_source_callbacks_
+    {
+        public IntPtr pUserData;
+        public IntPtr endCallback;
+        public IntPtr loadCallback;
+        public IntPtr processCallback;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct ma_ex_audio_source_callbacks
     {
         public IntPtr pUserData;
@@ -130,7 +139,17 @@ namespace MiniAudioEx.Core
         public static extern void ma_ex_audio_source_uninit(IntPtr source);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_ex_audio_source_set_callbacks(IntPtr source, ma_ex_audio_source_callbacks callbacks);
+        private static extern void ma_ex_audio_source_set_callbacks(IntPtr source, ma_ex_audio_source_callbacks_ callbacks);
+
+        public static void ma_ex_audio_source_set_callbacks(IntPtr source, ma_ex_audio_source_callbacks callbacks)
+        {
+            ma_ex_audio_source_callbacks_ c = new ma_ex_audio_source_callbacks_();
+            c.pUserData = callbacks.pUserData;
+            c.endCallback = MarshalHelper.GetFunctionPointerForDelegate(callbacks.endCallback);
+            c.loadCallback = MarshalHelper.GetFunctionPointerForDelegate(callbacks.loadCallback);
+            c.processCallback = MarshalHelper.GetFunctionPointerForDelegate(callbacks.processCallback);
+            ma_ex_audio_source_set_callbacks(source, c);
+        }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_ex_audio_source_play_from_callback(IntPtr source, ma_procedural_sound_proc callback);
