@@ -109,6 +109,60 @@ namespace MiniAudioEx.Core
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_log_callback_proc(IntPtr pUserData, ma_uint32 level, IntPtr pMessage);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ma_node_vtable_process_proc(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_node_vtable_get_required_input_frame_count_proc(ma_node_ptr pNode, ma_uint32 outputFrameCount, IntPtr pInputFrameCount);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate IntPtr ma_allocation_callbacks_malloc_proc(size_t sz, IntPtr pUserData);
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate IntPtr ma_allocation_callbacks_realloc_proc(IntPtr p, size_t sz, IntPtr pUserData);
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ma_allocation_callbacks_free_proc(IntPtr p, IntPtr pUserData);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_context_init_proc(ma_context_ptr pContext, ref ma_context_config pConfig, ref ma_backend_callbacks pCallbacks);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_context_uninit_proc(ma_context_ptr pContext);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_context_enumerate_devices_proc(ma_context_ptr pContext, ma_enum_devices_callback_proc callback, IntPtr pUserData);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_context_get_device_info_proc(ma_context_ptr pContext, ma_device_type deviceType, ma_device_id_ptr pDeviceID, ma_device_info_ptr pDeviceInfo);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_init_proc(ma_device_ptr pDevice, ref ma_device_config pConfig, ma_device_descriptor_ptr pDescriptorPlayback, ma_device_descriptor_ptr pDescriptorCapture);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_uninit_proc(ma_device_ptr pDevice);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_start_proc(ma_device_ptr pDevice);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_stop_proc(ma_device_ptr pDevice);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_read_proc(ma_device_ptr pDevice, IntPtr pFrames, ma_uint32 frameCount, IntPtr pFramesRead);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_write_proc(ma_device_ptr pDevice, IntPtr pFrames, ma_uint32 frameCount, IntPtr pFramesWritten);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_dataloop_proc(ma_device_ptr pDevice);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_dataloop_wakeup_proc(ma_device_ptr pDevice);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_backend_device_get_info_proc(ma_device_ptr pDevice, ma_device_type type, ma_device_info_ptr pDeviceInfo);
+
     // ma_enums
     public enum ma_result
     {
@@ -191,6 +245,16 @@ namespace MiniAudioEx.Core
         MA_FAILED_TO_OPEN_BACKEND_DEVICE = -401,
         MA_FAILED_TO_START_BACKEND_DEVICE = -402,
         MA_FAILED_TO_STOP_BACKEND_DEVICE = -403
+    }
+
+    public enum ma_device_notification_type
+    {
+        ma_device_notification_type_started,
+        ma_device_notification_type_stopped,
+        ma_device_notification_type_rerouted,
+        ma_device_notification_type_interruption_began,
+        ma_device_notification_type_interruption_ended,
+        ma_device_notification_type_unlocked
     }
 
     public enum ma_seek_origin
@@ -375,6 +439,8 @@ namespace MiniAudioEx.Core
         ma_allocation_type_device,
         ma_allocation_type_device_id,
         ma_allocation_type_device_notification,
+        ma_allocation_type_device_descriptor,
+        ma_allocation_type_device_info,
         ma_allocation_type_engine,
         ma_allocation_type_fence,
         ma_allocation_type_gainer,
@@ -774,23 +840,87 @@ namespace MiniAudioEx.Core
 		}
 	}
 
-	[StructLayout(LayoutKind.Sequential)]
-	public unsafe struct ma_device_notification_ptr
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_device_notification_ptr
+    {
+        public IntPtr pointer;
+        public ma_device_notification_ptr() { }
+        public ma_device_notification_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_device_notification_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_notification);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+	}
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_device_descriptor_ptr
+    {
+        public IntPtr pointer;
+        public ma_device_descriptor_ptr() { }
+        public ma_device_descriptor_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_device_descriptor_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_descriptor);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        public ma_device_descriptor Get()
+        {
+            if (pointer == IntPtr.Zero)
+                return default;
+            return Marshal.PtrToStructure<ma_device_descriptor>(pointer);            
+        }
+	}
+
+    [StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_device_info_ptr
 	{
 		public IntPtr pointer;
-		public ma_device_notification_ptr() { }
-		public ma_device_notification_ptr(IntPtr handle)
+		public ma_device_info_ptr() { }
+		public ma_device_info_ptr(IntPtr handle)
 		{
 			pointer = handle;
 		}
-		public ma_device_notification_ptr(bool allocate)
+		public ma_device_info_ptr(bool allocate)
 		{
 			if (allocate)
 				Allocate();
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_notification);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_info);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -801,9 +931,15 @@ namespace MiniAudioEx.Core
 				pointer = IntPtr.Zero;
 			}
 		}
+        public ma_device_info Get()
+        {
+            if (pointer == IntPtr.Zero)
+                return default;
+            return Marshal.PtrToStructure<ma_device_info>(pointer);
+        }
 	}
 
-	[StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_engine_ptr
 	{
 		public IntPtr pointer;
@@ -832,7 +968,7 @@ namespace MiniAudioEx.Core
 		}
 	}
 
-	[StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_fence_ptr
 	{
 		public IntPtr pointer;
@@ -1421,9 +1557,24 @@ namespace MiniAudioEx.Core
     public unsafe struct ma_allocation_callbacks
     {
         public IntPtr pUserData;
-        public delegate* unmanaged[Cdecl]<size_t, IntPtr, IntPtr> onMalloc;
-        public delegate* unmanaged[Cdecl]<IntPtr, size_t, IntPtr, IntPtr> onRealloc;
-        public delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> onFree;
+        public IntPtr onMalloc;
+        public IntPtr onRealloc;
+        public IntPtr onFree;
+
+        public void SetMallocProc(ma_allocation_callbacks_malloc_proc callback)
+        {
+            onMalloc = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetReallocProc(ma_allocation_callbacks_realloc_proc callback)
+        {
+            onRealloc = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetFreeProc(ma_allocation_callbacks_free_proc callback)
+        {
+            onFree = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1600,20 +1751,85 @@ namespace MiniAudioEx.Core
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_backend_callbacks
     {
-        public delegate* unmanaged[Cdecl]<ma_context_ptr, ref ma_context_config, ref ma_backend_callbacks, ma_result> onContextInit;
-        public delegate* unmanaged[Cdecl]<ma_context_ptr, ma_result> onContextUninit;
-        public delegate* unmanaged[Cdecl]<ma_context_ptr, ma_enum_devices_callback_proc, IntPtr, ma_result> onContextEnumerateDevices;
-        public delegate* unmanaged[Cdecl]<ma_context_ptr, ma_device_type, ma_device_id_ptr, ma_device_info, ma_result> onContextGetDeviceInfo;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, ref ma_device_config, ref ma_device_descriptor, ref ma_device_descriptor, ma_result> onDeviceInit;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, ma_result> onDeviceUninit;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, ma_result> onDeviceStart;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, ma_result> onDeviceStop;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, IntPtr, ma_uint32, ref ma_uint32, ma_result> onDeviceRead;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, IntPtr, ma_uint32, ref ma_uint32, ma_result> onDeviceWrite;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, ma_result> onDeviceDataLoop;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, ma_result> onDeviceDataLoopWakeup;
-        public delegate* unmanaged[Cdecl]<ma_device_ptr, ma_device_type, ma_device_info, ma_result> onDeviceGetInfo;
-    };
+        public IntPtr onContextInit;
+        public IntPtr onContextUninit;
+        public IntPtr onContextEnumerateDevices;
+        public IntPtr onContextGetDeviceInfo;
+        public IntPtr onDeviceInit;
+        public IntPtr onDeviceUninit;
+        public IntPtr onDeviceStart;
+        public IntPtr onDeviceStop;
+        public IntPtr onDeviceRead;
+        public IntPtr onDeviceWrite;
+        public IntPtr onDeviceDataLoop;
+        public IntPtr onDeviceDataLoopWakeup;
+        public IntPtr onDeviceGetInfo;
+
+        public void Set(ma_backend_context_init_proc callback)
+        {
+            onContextInit = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_context_uninit_proc callback)
+        {
+            onContextUninit = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_context_enumerate_devices_proc callback)
+        {
+            onContextEnumerateDevices = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_context_get_device_info_proc callback)
+        {
+            onContextGetDeviceInfo = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_init_proc callback)
+        {
+            onDeviceInit = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_uninit_proc callback)
+        {
+            onDeviceUninit = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_start_proc callback)
+        {
+            onDeviceStart = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_stop_proc callback)
+        {
+            onDeviceStop = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_read_proc callback)
+        {
+            onDeviceRead = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_write_proc callback)
+        {
+            onDeviceWrite = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_dataloop_proc callback)
+        {
+            onDeviceDataLoop = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_dataloop_wakeup_proc callback)
+        {
+            onDeviceDataLoopWakeup = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void Set(ma_backend_device_get_info_proc callback)
+        {
+            onDeviceGetInfo = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_sound_config
@@ -2298,11 +2514,11 @@ namespace MiniAudioEx.Core
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_decoding_backend_vtable
     {
-        public delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ma_result> onInit;
-        public delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ma_result> onInitFile;
-        public delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ma_result> onInitFileW;
-        public delegate* unmanaged[Cdecl]<IntPtr, IntPtr, size_t, IntPtr, IntPtr, IntPtr, ma_result> onInitMemory;
-        public delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, void> onUninit;
+        public IntPtr onInit;
+        public IntPtr onInitFile;
+        public IntPtr onInitFileW;
+        public IntPtr onInitMemory;
+        public IntPtr onUninit;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2312,12 +2528,6 @@ namespace MiniAudioEx.Core
         public size_t sizeInBytes;
         public fixed byte _data[1];
     }
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ma_node_vtable_process_proc(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate ma_result ma_node_vtable_get_required_input_frame_count_proc(ma_node_ptr pNode, ma_uint32 outputFrameCount, IntPtr pInputFrameCount);
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_node_vtable
