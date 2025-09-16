@@ -51,10 +51,12 @@ using System.Runtime.InteropServices;
 
 namespace MiniAudioEx.Core
 {
+    // ma_typedefs
     using size_t = UInt64;
     using ma_channel = Byte;
     using ma_bool8 = Byte;
     using ma_bool32 = UInt32;
+    using ma_uint8 = Byte;
     using ma_uint16 = UInt16;
     using ma_int32 = UInt32;
     using ma_uint32 = UInt32;
@@ -62,27 +64,9 @@ namespace MiniAudioEx.Core
     using ma_uint64 = UInt64;
     using ma_handle = IntPtr;
     using ma_vfs_file = IntPtr;
+    using ma_spinlock = UInt32;
 
-    // [StructLayout(LayoutKind.Sequential)]
-    // public unsafe struct ma_bool32
-    // {
-    //     private int _value;
-    //     public ma_bool32(int v) { _value = v; }
-    //     public static implicit operator ma_bool32(bool b) => new ma_bool32(b ? 1 : 0);
-    //     public static implicit operator bool(ma_bool32 b) => b._value != 0;
-    //     public int ToInt32() => _value;
-    // }
-
-    // [StructLayout(LayoutKind.Sequential)]
-    // public unsafe struct ma_bool8
-    // {
-    //     private byte _value;
-    //     public ma_bool8(byte v) { _value = v; }
-    //     public static implicit operator ma_bool8(bool b) => new ma_bool8((byte)(b ? 1 : 0));
-    //     public static implicit operator bool(ma_bool8 b) => b._value != 0;
-    //     public byte ToByte() => _value;
-    // }
-
+    // ma_callbacks
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_sound_load_proc(IntPtr pUserData, ma_sound_ptr pSound);
 
@@ -125,6 +109,7 @@ namespace MiniAudioEx.Core
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_log_callback_proc(IntPtr pUserData, ma_uint32 level, IntPtr pMessage);
 
+    // ma_enums
     public enum ma_result
     {
         MA_SUCCESS = 0,
@@ -373,22 +358,41 @@ namespace MiniAudioEx.Core
         ma_positioning_relative
     }
 
+    public enum ma_handedness
+    {
+        ma_handedness_right,
+        ma_handedness_left
+    }
+
     public enum ma_allocation_type
     {
         ma_allocation_type_async_notification,
+        ma_allocation_type_biquad_coefficient,
+        ma_allocation_type_channel,
         ma_allocation_type_context,
+        ma_allocation_type_data_source,
         ma_allocation_type_decoder,
         ma_allocation_type_device,
         ma_allocation_type_device_id,
         ma_allocation_type_device_notification,
         ma_allocation_type_engine,
         ma_allocation_type_fence,
+        ma_allocation_type_gainer,
         ma_allocation_type_log,
+        ma_allocation_type_lpf1,
+        ma_allocation_type_lpf2,
         ma_allocation_type_node,
         ma_allocation_type_node_graph,
+        ma_allocation_type_node_input_bus,
+        ma_allocation_type_node_output_bus,
+        ma_allocation_type_node_vtable,
+        ma_allocation_type_resampling_backend_vtable,
         ma_allocation_type_resource_manager,
         ma_allocation_type_sound,
         ma_allocation_type_sound_group,
+        ma_allocation_type_spatializer,
+        ma_allocation_type_spatializer_listener,
+        ma_allocation_type_stack,
         ma_allocation_type_vfs
     }
 
@@ -471,10 +475,10 @@ namespace MiniAudioEx.Core
     public enum ma_device_state
     {
         ma_device_state_uninitialized = 0,
-        ma_device_state_stopped       = 1,  /* The device's default state after initialization. */
-        ma_device_state_started       = 2,  /* The device is started and is requesting and/or delivering audio data. */
-        ma_device_state_starting      = 3,  /* Transitioning from a stopped state to started. */
-        ma_device_state_stopping      = 4   /* Transitioning from a started state to stopped. */
+        ma_device_state_stopped = 1,  /* The device's default state after initialization. */
+        ma_device_state_started = 2,  /* The device is started and is requesting and/or delivering audio data. */
+        ma_device_state_starting = 3,  /* Transitioning from a stopped state to started. */
+        ma_device_state_stopping = 4   /* Transitioning from a started state to stopped. */
     }
 
     [Flags]
@@ -493,6 +497,926 @@ namespace MiniAudioEx.Core
         MA_SOUND_FLAG_NO_SPATIALIZATION = 0x00004000    /* Disable spatialization. */
     }
 
+    public enum ma_node_state
+    {
+        ma_node_state_started = 0,
+        ma_node_state_stopped = 1
+    }
+
+    [Flags]
+    public enum ma_node_flags
+    {
+        MA_NODE_FLAG_PASSTHROUGH = 0x00000001,
+        MA_NODE_FLAG_CONTINUOUS_PROCESSING = 0x00000002,
+        MA_NODE_FLAG_ALLOW_NULL_INPUT = 0x00000004,
+        MA_NODE_FLAG_DIFFERENT_PROCESSING_RATES = 0x00000008,
+        MA_NODE_FLAG_SILENT_OUTPUT = 0x00000010
+    }
+
+    // ma_pointer_types
+    [StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_async_notification_ptr
+	{
+		public IntPtr pointer;
+		public ma_async_notification_ptr() { }
+		public ma_async_notification_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_async_notification_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_async_notification);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_biquad_coefficient_ptr
+	{
+		public IntPtr pointer;
+		public ma_biquad_coefficient_ptr() { }
+		public ma_biquad_coefficient_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_biquad_coefficient_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_biquad_coefficient);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_biquad_coefficient Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_biquad_coefficient>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_channel_ptr
+	{
+		public IntPtr pointer;
+		public ma_channel_ptr() { }
+		public ma_channel_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_channel_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_channel);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_context_ptr
+	{
+		public IntPtr pointer;
+		public ma_context_ptr() { }
+		public ma_context_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_context_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_context);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_data_source_ptr
+	{
+		public IntPtr pointer;
+		public ma_data_source_ptr() { }
+		public ma_data_source_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_data_source_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_data_source);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_decoder_ptr
+	{
+		public IntPtr pointer;
+		public ma_decoder_ptr() { }
+		public ma_decoder_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_decoder_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_decoder);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_decoder Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_decoder>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_device_ptr
+	{
+		public IntPtr pointer;
+		public ma_device_ptr() { }
+		public ma_device_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_device_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_device Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_device>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_device_id_ptr
+	{
+		public IntPtr pointer;
+		public ma_device_id_ptr() { }
+		public ma_device_id_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_device_id_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_id);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_device_id Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_device_id>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_device_notification_ptr
+	{
+		public IntPtr pointer;
+		public ma_device_notification_ptr() { }
+		public ma_device_notification_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_device_notification_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_notification);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_engine_ptr
+	{
+		public IntPtr pointer;
+		public ma_engine_ptr() { }
+		public ma_engine_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_engine_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_engine);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_fence_ptr
+	{
+		public IntPtr pointer;
+		public ma_fence_ptr() { }
+		public ma_fence_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_fence_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_fence);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_gainer_ptr
+    {
+        public IntPtr pointer;
+        public ma_gainer_ptr() { }
+        public ma_gainer_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_gainer_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_gainer);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        public ma_gainer Get()
+        {
+            if (pointer == IntPtr.Zero)
+                return default;
+            return Marshal.PtrToStructure<ma_gainer>(pointer);
+        }
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_log_ptr
+	{
+		public IntPtr pointer;
+		public ma_log_ptr() { }
+		public ma_log_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_log_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_log);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_lpf1_ptr
+	{
+		public IntPtr pointer;
+		public ma_lpf1_ptr() { }
+		public ma_lpf1_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_lpf1_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_lpf1);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_lpf1 Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_lpf1>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_lpf2_ptr
+	{
+		public IntPtr pointer;
+		public ma_lpf2_ptr() { }
+		public ma_lpf2_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_lpf2_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_lpf2);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_lpf2 Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_lpf2>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_node_ptr
+	{
+		public IntPtr pointer;
+		public ma_node_ptr() { }
+		public ma_node_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_node_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_node_graph_ptr
+	{
+		public IntPtr pointer;
+		public ma_node_graph_ptr() { }
+		public ma_node_graph_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_node_graph_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_graph);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_node_graph Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_node_graph>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_node_input_bus_ptr
+	{
+		public IntPtr pointer;
+		public ma_node_input_bus_ptr() { }
+		public ma_node_input_bus_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_node_input_bus_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_input_bus);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_node_input_bus Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_node_input_bus>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_node_output_bus_ptr
+	{
+		public IntPtr pointer;
+		public ma_node_output_bus_ptr() { }
+		public ma_node_output_bus_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_node_output_bus_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_output_bus);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_node_output_bus Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_node_output_bus>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_node_vtable_ptr
+	{
+		public IntPtr pointer;
+		public ma_node_vtable_ptr() { }
+		public ma_node_vtable_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_node_vtable_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_vtable);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_node_vtable Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_node_vtable>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_resampling_backend_vtable_ptr
+	{
+		public IntPtr pointer;
+		public ma_resampling_backend_vtable_ptr() { }
+		public ma_resampling_backend_vtable_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_resampling_backend_vtable_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_resampling_backend_vtable);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_resource_manager_ptr
+	{
+		public IntPtr pointer;
+		public ma_resource_manager_ptr() { }
+		public ma_resource_manager_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_resource_manager_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_resource_manager);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_sound_ptr
+	{
+		public IntPtr pointer;
+		public ma_sound_ptr() { }
+		public ma_sound_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_sound_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_sound);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_sound_group_ptr
+	{
+		public IntPtr pointer;
+		public ma_sound_group_ptr() { }
+		public ma_sound_group_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_sound_group_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_sound_group);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_spatializer_ptr
+	{
+		public IntPtr pointer;
+		public ma_spatializer_ptr() { }
+		public ma_spatializer_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_spatializer_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_spatializer);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_spatializer_listener_ptr
+	{
+		public IntPtr pointer;
+		public ma_spatializer_listener_ptr() { }
+		public ma_spatializer_listener_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_spatializer_listener_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_spatializer_listener);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_spatializer_listener Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_spatializer_listener>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_stack_ptr
+	{
+		public IntPtr pointer;
+		public ma_stack_ptr() { }
+		public ma_stack_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_stack_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_stack);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_stack Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return default;
+			return Marshal.PtrToStructure<ma_stack>(pointer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_vfs_ptr
+	{
+		public IntPtr pointer;
+		public ma_vfs_ptr() { }
+		public ma_vfs_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_vfs_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_vfs);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+	}
+
+    // ma_structures
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_allocation_callbacks
     {
@@ -532,535 +1456,10 @@ namespace MiniAudioEx.Core
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_node_ptr
+    public unsafe struct ma_atomic_vec3f
     {
-        public IntPtr pointer;
-
-        public ma_node_ptr()
-        {
-
-        }
-
-        public ma_node_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_sound_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_sound_ptr()
-        {
-
-        }
-
-        public ma_sound_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_sound_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_sound);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_sound_group_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_sound_group_ptr()
-        {
-
-        }
-
-        public ma_sound_group_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_sound_group_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_sound_group);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_node_graph_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_node_graph_ptr()
-        {
-
-        }
-
-        public ma_node_graph_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_node_graph_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_graph);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_decoder_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_decoder_ptr()
-        {
-
-        }
-
-        public ma_decoder_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_decoder_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_decoder);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-
-        public ma_decoder Get()
-        {
-            if (pointer == IntPtr.Zero)
-                return default;
-
-            return Marshal.PtrToStructure<ma_decoder>(pointer);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_data_source_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_data_source_ptr()
-        {
-
-        }
-
-        public ma_data_source_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_engine_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_engine_ptr()
-        {
-
-        }
-
-        public ma_engine_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_engine_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_engine);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_context_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_context_ptr()
-        {
-
-        }
-
-        public ma_context_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_context_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_context);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-
-        // public ma_context Get()
-        // {
-        //     retu
-        // }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_device_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_device_ptr()
-        {
-
-        }
-
-        public ma_device_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_device_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-
-        public ma_device Get()
-        {
-            if (pointer == IntPtr.Zero)
-                return default;
-            return Marshal.PtrToStructure<ma_device>(pointer);
-        }
-
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_device_id_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_device_id_ptr()
-        {
-
-        }
-
-        public ma_device_id_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_device_id Get()
-        {
-            if (pointer == IntPtr.Zero)
-                return default;
-            return Marshal.PtrToStructure<ma_device_id>(pointer);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_device_notification_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_device_notification_ptr()
-        {
-
-        }
-
-        public ma_device_notification_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_resource_manager_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_resource_manager_ptr()
-        {
-
-        }
-
-        public ma_resource_manager_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-
-        public ma_resource_manager_ptr(bool allocate)
-        {
-            if (allocate)
-                Allocate();
-        }
-
-        public bool Allocate()
-        {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_resource_manager);
-            return pointer != IntPtr.Zero;
-        }
-
-        public void Free()
-        {
-            if (pointer != IntPtr.Zero)
-            {
-                MiniAudioNative.ma_deallocate_type(pointer);
-                pointer = IntPtr.Zero;
-            }
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_log_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_log_ptr()
-        {
-
-        }
-
-        public ma_log_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_vfs_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_vfs_ptr()
-        {
-
-        }
-
-        public ma_vfs_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_fence_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_fence_ptr()
-        {
-
-        }
-
-        public ma_fence_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_async_notification_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_async_notification_ptr()
-        {
-
-        }
-
-        public ma_async_notification_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_resampling_backend_vtable_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_resampling_backend_vtable_ptr()
-        {
-
-        }
-
-        public ma_resampling_backend_vtable_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_lpf1_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_lpf1_ptr()
-        {
-
-        }
-
-        public ma_lpf1_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_lpf2_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_lpf2_ptr()
-        {
-
-        }
-
-        public ma_lpf2_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_biquad_coefficient_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_biquad_coefficient_ptr()
-        {
-
-        }
-
-        public ma_biquad_coefficient_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_stack_ptr
-    {
-        public IntPtr pointer;
-
-        public ma_stack_ptr()
-        {
-
-        }
-
-        public ma_stack_ptr(IntPtr handle)
-        {
-            pointer = handle;
-        }
+        public ma_vec3f v;
+        public ma_spinlock lck;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1070,8 +1469,8 @@ namespace MiniAudioEx.Core
         public ma_context_ptr pContext;
         public ma_device_ptr pDevice;                             /* If set, the caller is responsible for calling ma_engine_data_callback() in the device's data callback. */
         public ma_device_id_ptr pPlaybackDeviceID;                /* The ID of the playback device to use with the default listener. */
-        public ma_device_data_proc dataCallback;               /* Can be null. Can be used to provide a custom device data callback. */
-        public ma_device_notification_proc notificationCallback;
+        public IntPtr dataCallback;               /* Can be null. Can be used to provide a custom device data callback. */
+        public IntPtr notificationCallback;
         public ma_log_ptr pLog;                                   /* When set to NULL, will use the context's log. */
         public ma_uint32 listenerCount;                        /* Must be between 1 and MA_ENGINE_MAX_LISTENERS. */
         public ma_uint32 channels;                             /* The number of channels to use when mixing and spatializing. When set to 0, will use the native channel count of the device. */
@@ -1087,8 +1486,23 @@ namespace MiniAudioEx.Core
         public ma_bool32 noDevice;                             /* When set to true, don't create a default device. ma_engine_read_pcm_frames() can be called manually to read data. */
         public ma_mono_expansion_mode monoExpansionMode;       /* Controls how the mono channel should be expanded to other channels when spatialization is disabled on a sound. */
         public ma_vfs_ptr pResourceManagerVFS;                    /* A pointer to a pre-allocated VFS object to use with the resource manager. This is ignored if pResourceManager is not NULL. */
-        public ma_engine_process_proc onProcess;               /* Fired at the end of each call to ma_engine_read_pcm_frames(). For engine's that manage their own internal device (the default configuration), this will be fired from the audio thread, and you do not need to call ma_engine_read_pcm_frames() manually in order to trigger this. */
+        public IntPtr onProcess;               /* Fired at the end of each call to ma_engine_read_pcm_frames(). For engine's that manage their own internal device (the default configuration), this will be fired from the audio thread, and you do not need to call ma_engine_read_pcm_frames() manually in order to trigger this. */
         public IntPtr pProcessUserData;                         /* User data that's passed into onProcess. */
+
+        public void SetDataProc(ma_device_data_proc callback)
+        {
+            dataCallback = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetNotificationProc(ma_device_notification_proc callback)
+        {
+            notificationCallback = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+        
+        public void SetEngineProcessProc(ma_engine_process_proc callback)
+        {
+            onProcess = Marshal.GetFunctionPointerForDelegate(callback);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1097,15 +1511,24 @@ namespace MiniAudioEx.Core
         public ma_format format;
         public ma_uint32 channels;
         public ma_uint32 sampleRate;
-        public ma_procedural_sound_proc callback;
+        public IntPtr callback;
         public IntPtr pUserData;
+
+        public void SetCallback(ma_procedural_sound_proc callback)
+        {
+            this.callback = Marshal.GetFunctionPointerForDelegate(callback);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_log_callback
     {
-        ma_log_callback_proc onLog;
-        IntPtr pUserData;
+        public IntPtr onLog;
+        public IntPtr pUserData;
+        public void SetLogCallback(ma_log_callback_proc callback)
+        {
+            onLog = Marshal.GetFunctionPointerForDelegate(callback);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1243,10 +1666,25 @@ namespace MiniAudioEx.Core
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_sound_notifications
     {
-        public ma_sound_end_proc onLoaded;  /* Fired by the resource manager when the sound has finished loading. */
-        public ma_sound_end_proc onAtEnd;  /* Fired when the sound reaches the end of the data source. */
-        public ma_sound_process_proc onProcess;
+        public IntPtr onLoaded;  /* Fired by the resource manager when the sound has finished loading. */
+        public IntPtr onAtEnd;  /* Fired when the sound reaches the end of the data source. */
+        public IntPtr onProcess;
         public IntPtr pUserData;
+        public void SetLoadProc(ma_sound_load_proc callback)
+        {
+            onLoaded = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetEndProc(ma_sound_end_proc callback)
+        {
+            onAtEnd = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetProcessProc(ma_sound_process_proc callback)
+        {
+            onProcess = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1372,7 +1810,7 @@ namespace MiniAudioEx.Core
             public ma_device_id_ptr pDeviceID;
             public ma_format format;
             public ma_uint32 channels;
-            public IntPtr pChannelMap;
+            public ma_channel_ptr pChannelMap;
             public ma_channel_mix_mode channelMixMode;
             public ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
             public ma_share_mode shareMode;
@@ -1384,7 +1822,7 @@ namespace MiniAudioEx.Core
             public ma_device_id_ptr pDeviceID;
             public ma_format format;
             public ma_uint32 channels;
-            public IntPtr pChannelMap;
+            public ma_channel_ptr pChannelMap;
             public ma_channel_mix_mode channelMixMode;
             public ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
             public ma_share_mode shareMode;
@@ -1535,7 +1973,7 @@ namespace MiniAudioEx.Core
         public ma_format format;      /* Set to 0 or ma_format_unknown to use the stream's internal format. */
         public ma_uint32 channels;    /* Set to 0 to use the stream's internal channels. */
         public ma_uint32 sampleRate;  /* Set to 0 to use the stream's internal sample rate. */
-        public IntPtr pChannelMap;
+        public ma_channel_ptr pChannelMap;
         public ma_channel_mix_mode channelMixMode;
         public ma_dither_mode ditherMode;
         public ma_resampler_config resampling;
@@ -1554,9 +1992,9 @@ namespace MiniAudioEx.Core
         public ma_data_source_ptr pBackend;                   /* The decoding backend we'll be pulling data from. */
         public IntPtr pBackendVTable; /* The vtable for the decoding backend. This needs to be stored so we can access the onUninit() callback. */
         public IntPtr pBackendUserData;
-        public ma_decoder_read_proc onRead;
-        public ma_decoder_seek_proc onSeek;
-        public ma_decoder_tell_proc onTell;
+        public IntPtr onRead;
+        public IntPtr onSeek;
+        public IntPtr onTell;
         public IntPtr pUserData;
         public ma_uint64 readPointerInPCMFrames;      /* In output sample rate. Used for keeping track of how many frames are available for decoding. */
         public ma_format outputFormat;
@@ -1569,6 +2007,19 @@ namespace MiniAudioEx.Core
         public ma_uint64 inputCacheRemaining;  /* The number of valid frames remaining in the cache. */
         public ma_allocation_callbacks allocationCallbacks;
         public ma_decoder_data_union data;
+
+        public void SetReadProc(ma_decoder_read_proc callback)
+        {
+            onRead = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+        public void SetSeekProc(ma_decoder_seek_proc callback)
+        {
+            onSeek = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+        public void SetTellProc(ma_decoder_tell_proc callback)
+        {
+            onTell = Marshal.GetFunctionPointerForDelegate(callback);
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct ma_decoder_data_vfs
@@ -1617,8 +2068,13 @@ namespace MiniAudioEx.Core
         public ma_uint64 loopEndInFrames;              /* Relative to rangeBegInFrames. Set to -1 for the end of the range. */
         public ma_data_source_ptr pCurrent;               /* When non-NULL, the data source being initialized will act as a proxy and will route all operations to pCurrent. Used in conjunction with pNext/onGetNext for seamless chaining. */
         public ma_data_source_ptr pNext;                  /* When set to NULL, onGetNext will be used. */
-        public ma_data_source_get_next_proc onGetNext; /* Will be used when pNext is NULL. If both are NULL, no next will be used. */
+        public IntPtr onGetNext; /* Will be used when pNext is NULL. If both are NULL, no next will be used. */
         public ATOMIC_MA_BOOL32 isLooping;
+
+        public void SetNextProc(ma_data_source_get_next_proc callback)
+        {
+            onGetNext = Marshal.GetFunctionPointerForDelegate(callback);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1629,8 +2085,8 @@ namespace MiniAudioEx.Core
         public ma_uint32 channelsOut;
         public ma_channel_mix_mode mixingMode;
         public ma_channel_conversion_path conversionPath;
-        public IntPtr pChannelMapIn;
-        public IntPtr pChannelMapOut;
+        public ma_channel_ptr pChannelMapIn;
+        public ma_channel_ptr pChannelMapOut;
         public IntPtr pShuffleTable;    /* Indexed by output channel index. */
         public ma_channel_converter_weights weights;  /* [in][out] */
         /* Memory management. */
@@ -1849,12 +2305,316 @@ namespace MiniAudioEx.Core
         public delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, void> onUninit;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_stack
+    {
+        public size_t offset;
+        public size_t sizeInBytes;
+        public fixed byte _data[1];
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ma_node_vtable_process_proc(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_node_vtable_get_required_input_frame_count_proc(ma_node_ptr pNode, ma_uint32 outputFrameCount, IntPtr pInputFrameCount);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_node_vtable
+    {
+        /*
+        Extended processing callback. This callback is used for effects that process input and output
+        at different rates (i.e. they perform resampling). This is similar to the simple version, only
+        they take two separate frame counts: one for input, and one for output.
+
+        On input, `pFrameCountOut` is equal to the capacity of the output buffer for each bus, whereas
+        `pFrameCountIn` will be equal to the number of PCM frames in each of the buffers in `ppFramesIn`.
+
+        On output, set `pFrameCountOut` to the number of PCM frames that were actually output and set
+        `pFrameCountIn` to the number of input frames that were consumed.
+        */
+        public IntPtr onProcess;
+
+        /*
+        A callback for retrieving the number of input frames that are required to output the
+        specified number of output frames. You would only want to implement this when the node performs
+        resampling. This is optional, even for nodes that perform resampling, but it does offer a
+        small reduction in latency as it allows miniaudio to calculate the exact number of input frames
+        to read at a time instead of having to estimate.
+        */
+        public IntPtr onGetRequiredInputFrameCount;
+
+        /*
+        The number of input buses. This is how many sub-buffers will be contained in the `ppFramesIn`
+        parameters of the callbacks above.
+        */
+        public ma_uint8 inputBusCount;
+
+        /*
+        The number of output buses. This is how many sub-buffers will be contained in the `ppFramesOut`
+        parameters of the callbacks above.
+        */
+        public ma_uint8 outputBusCount;
+
+        /*
+        Flags describing characteristics of the node. This is currently just a placeholder for some
+        ideas for later on.
+        */
+        public ma_uint32 flags;
+
+        public void SetOnProcess(ma_node_vtable_process_proc callback)
+        {
+            onProcess = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetOnGetRequiredInputFrameCount(ma_node_vtable_get_required_input_frame_count_proc callback)
+        {
+            onGetRequiredInputFrameCount = Marshal.GetFunctionPointerForDelegate(callback);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_node_output_bus
+    {
+        /* Immutable. */
+        public ma_node_ptr pNode;                                         /* The node that owns this output bus. The input node. Will be null for dummy head and tail nodes. */
+        public ma_uint8 outputBusIndex;                                /* The index of the output bus on pNode that this output bus represents. */
+        public ma_uint8 channels;                                      /* The number of channels in the audio stream for this bus. */
+
+        /* Mutable via multiple threads. Must be used atomically. The weird ordering here is for packing reasons. */
+        public ma_uint8 inputNodeInputBusIndex;                        /* The index of the input bus on the input. Required for detaching. Will only be used within the spinlock so does not need to be atomic. */
+        public ma_uint32 flags;                          /* Some state flags for tracking the read state of the output buffer. A combination of MA_NODE_OUTPUT_BUS_FLAG_*. */
+        public ma_uint32 refCount;                       /* Reference count for some thread-safety when detaching. */
+        public ma_bool32 isAttached;                     /* This is used to prevent iteration of nodes that are in the middle of being detached. Used for thread safety. */
+        public ma_spinlock lck;                         /* Unfortunate lock, but significantly simplifies the implementation. Required for thread-safe attaching and detaching. */
+        public float volume;                             /* Linear. */
+        public ma_node_output_bus_ptr pNext;    /* If null, it's the tail node or detached. */
+        public ma_node_output_bus_ptr pPrev;    /* If null, it's the head node or detached. */
+        public ma_node_ptr pInputNode;          /* The node that this output bus is attached to. Required for detaching. */
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_node_input_bus
+    {
+        /* Mutable via multiple threads. */
+        public ma_node_output_bus head;                /* Dummy head node for simplifying some lock-free thread-safety stuff. */
+        public ma_uint32 nextCounter;    /* This is used to determine whether or not the input bus is finding the next node in the list. Used for thread safety when detaching output buses. */
+        public ma_spinlock lck;         /* Unfortunate lock, but significantly simplifies the implementation. Required for thread-safe attaching and detaching. */
+        /* Set once at startup. */
+        public ma_uint8 channels;                      /* The number of channels in the audio stream for this bus. */
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_node_base
+    {
+        /* These variables are set once at startup. */
+        public ma_node_graph_ptr pNodeGraph;                  /* The graph this node belongs to. */
+        public ma_node_vtable_ptr vtable;
+        public ma_uint32 inputBusCount;
+        public ma_uint32 outputBusCount;
+        public ma_node_input_bus_ptr pInputBuses;
+        public ma_node_output_bus_ptr pOutputBuses;
+        public IntPtr pCachedData;                         /* Allocated on the heap. Fixed size. Needs to be stored on the heap because reading from output buses is done in separate function calls. */
+        public ma_uint16 cachedDataCapInFramesPerBus;      /* The capacity of the input data cache in frames, per bus. */
+
+        /* These variables are read and written only from the audio thread. */
+        public ma_uint16 cachedFrameCountOut;
+        public ma_uint16 cachedFrameCountIn;
+        public ma_uint16 consumedFrameCountIn;
+
+        /* These variables are read and written between different threads. */
+        public ma_node_state state;          /* When set to stopped, nothing will be read, regardless of the times in stateTimes. */
+        public fixed ma_uint64 stateTimes[2];      /* Indexed by ma_node_state. Specifies the time based on the global clock that a node should be considered to be in the relevant state. */
+        public ma_uint64 localTime;          /* The node's local clock. This is just a running sum of the number of output frames that have been processed. Can be modified by any thread with `ma_node_set_time()`. */
+
+        /* Memory management. */
+        public fixed byte _inputBuses[72 * MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT];
+        public fixed byte _outputBuses[56 * MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT];
+        public IntPtr _pHeap;   /* A heap allocation for internal use only. pInputBuses and/or pOutputBuses will point to this if the bus count exceeds MA_MAX_NODE_LOCAL_BUS_COUNT. */
+        public ma_bool32 _ownsHeap;    /* If set to true, the node owns the heap allocation and _pHeap will be freed in ma_node_uninit(). */
+
+        public ma_node_input_bus GetInputBus(int index)
+        {
+            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                throw new IndexOutOfRangeException();
+
+            int offset = index * 72;
+
+            fixed (byte* pBus = &_inputBuses[offset])
+            {
+                ma_node_input_bus* pInputBus = (ma_node_input_bus*)pBus;
+                return *pInputBus;
+            }
+        }
+
+        public void SetInputBus(ma_node_input_bus inputBus, int index)
+        {
+            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                throw new IndexOutOfRangeException();
+
+            int offset = index * 72;
+
+            fixed (byte* pBus = &_inputBuses[offset])
+            {
+                ma_node_input_bus* pInputBus = (ma_node_input_bus*)pBus;
+                *pInputBus = inputBus;
+            }
+        }
+
+        public ma_node_output_bus GetOutputBus(int index)
+        {
+            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                throw new IndexOutOfRangeException();
+
+            int offset = index * 56;
+
+            fixed (byte* pBus = &_outputBuses[offset])
+            {
+                ma_node_output_bus* pOutputBus = (ma_node_output_bus*)pBus;
+                return *pOutputBus;
+            }
+        }
+
+        public void SetOutputBus(ma_node_output_bus outputBus, int index)
+        {
+            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                throw new IndexOutOfRangeException();
+
+            int offset = index * 56;
+
+            fixed (byte* pBus = &_outputBuses[offset])
+            {
+                ma_node_output_bus* pOutputBus = (ma_node_output_bus*)pBus;
+                *pOutputBus = outputBus;
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_node_graph
+    {
+        /* Immutable. */
+        public ma_node_base baseNode;                  /* The node graph itself is a node so it can be connected as an input to different node graph. This has zero inputs and calls ma_node_graph_read_pcm_frames() to generate it's output. */
+        public ma_node_base endpoint;              /* Special node that all nodes eventually connect to. Data is read from this node in ma_node_graph_read_pcm_frames(). */
+        public IntPtr pProcessingCache;            /* This will be allocated when processingSizeInFrames is non-zero. This is needed because ma_node_graph_read_pcm_frames() can be called with a variable number of frames, and we may need to do some buffering in situations where the caller requests a frame count that's not a multiple of processingSizeInFrames. */
+        public ma_uint32 processingCacheFramesRemaining;
+        public ma_uint32 processingSizeInFrames;
+        /* Read and written by multiple threads. */
+        public ma_bool32 isReading;
+        /* Modified only by the audio thread. */
+        public ma_stack_ptr pPreMixStack;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_gainer_config
+    {
+        public ma_uint32 channels;
+        public ma_uint32 smoothTimeInFrames;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_gainer
+    {
+        public ma_gainer_config config;
+        public ma_uint32 t;
+        public float masterVolume;
+        public IntPtr pOldGains;
+        public IntPtr pNewGains;
+        /* Memory management. */
+        public IntPtr _pHeap;
+        public ma_bool32 _ownsHeap;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_spatializer_config
+    {
+        public ma_uint32 channelsIn;
+        public ma_uint32 channelsOut;
+        public ma_channel_ptr pChannelMapIn;
+        public ma_attenuation_model attenuationModel;
+        public ma_positioning positioning;
+        public ma_handedness handedness;           /* Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis. */
+        public float minGain;
+        public float maxGain;
+        public float minDistance;
+        public float maxDistance;
+        public float rolloff;
+        public float coneInnerAngleInRadians;
+        public float coneOuterAngleInRadians;
+        public float coneOuterGain;
+        public float dopplerFactor;                /* Set to 0 to disable doppler effect. */
+        public float directionalAttenuationFactor; /* Set to 0 to disable directional attenuation. */
+        public float minSpatializationChannelGain; /* The minimal scaling factor to apply to channel gains when accounting for the direction of the sound relative to the listener. Must be in the range of 0..1. Smaller values means more aggressive directional panning, larger values means more subtle directional panning. */
+        public ma_uint32 gainSmoothTimeInFrames;   /* When the gain of a channel changes during spatialization, the transition will be linearly interpolated over this number of frames. */
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_spatializer
+    {
+        ma_uint32 channelsIn;
+        ma_uint32 channelsOut;
+        ma_channel_ptr pChannelMapIn;
+        ma_attenuation_model attenuationModel;
+        ma_positioning positioning;
+        ma_handedness handedness;           /* Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis. */
+        float minGain;
+        float maxGain;
+        float minDistance;
+        float maxDistance;
+        float rolloff;
+        float coneInnerAngleInRadians;
+        float coneOuterAngleInRadians;
+        float coneOuterGain;
+        float dopplerFactor;                /* Set to 0 to disable doppler effect. */
+        float directionalAttenuationFactor; /* Set to 0 to disable directional attenuation. */
+        ma_uint32 gainSmoothTimeInFrames;   /* When the gain of a channel changes during spatialization, the transition will be linearly interpolated over this number of frames. */
+        ma_atomic_vec3f position;
+        ma_atomic_vec3f direction;
+        ma_atomic_vec3f velocity;  /* For doppler effect. */
+        float dopplerPitch; /* Will be updated by ma_spatializer_process_pcm_frames() and can be used by higher level functions to apply a pitch shift for doppler effect. */
+        float minSpatializationChannelGain;
+        ma_gainer gainer;   /* For smooth gain transitions. */
+        IntPtr pNewChannelGainsOut; /* An offset of _pHeap. Used by ma_spatializer_process_pcm_frames() to store new channel gains. The number of elements in this array is equal to config.channelsOut. */
+        /* Memory management. */
+        void* _pHeap;
+        ma_bool32 _ownsHeap;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_spatializer_listener_config
+    {
+        public ma_uint32 channelsOut;
+        public ma_channel_ptr pChannelMapOut;
+        public ma_handedness handedness;   /* Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis. */
+        public float coneInnerAngleInRadians;
+        public float coneOuterAngleInRadians;
+        public float coneOuterGain;
+        public float speedOfSound;
+        public ma_vec3f worldUp;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_spatializer_listener
+    {
+        public ma_spatializer_listener_config config;
+        public ma_atomic_vec3f position;  /* The absolute position of the listener. */
+        public ma_atomic_vec3f direction; /* The direction the listener is facing. The world up vector is config.worldUp. */
+        public ma_atomic_vec3f velocity;
+        public ma_bool32 isEnabled;
+        /* Memory management. */
+        public ma_bool32 _ownsHeap;
+        public IntPtr _pHeap;
+    }
+
     public static class MiniAudioNative
     {
         public const int MA_MAX_CHANNELS = 254;
         public const int MA_MAX_DEVICE_NAME_LENGTH = 255;
         public const int MA_MAX_LOG_CALLBACKS = 4;
         public const int MA_ENGINE_MAX_LISTENERS = 4;
+        public const int MA_MAX_NODE_LOCAL_BUS_COUNT = 2;
+        public const int MA_MAX_NODE_BUS_COUNT = 254;
+        public const int MA_NODE_BUS_COUNT_UNKNOWN = 255;
 
         private const string LIB_MINIAUDIO_EX = "miniaudioex";
 
@@ -2396,74 +3156,337 @@ namespace MiniAudioEx.Core
         public static extern void ma_sound_group_uninit(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_sound_group_stop(ma_sound_group_ptr soundGroup);
+        public static extern ma_engine_ptr ma_sound_group_get_engine(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_uint32 ma_sound_group_is_playing(ma_sound_group_ptr soundGroup);
+        public static extern ma_result ma_sound_group_start(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_volume(ma_sound_group_ptr soundGroup, float volume);
+        public static extern ma_result ma_sound_group_stop(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern float ma_sound_group_get_volume(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_volume(ma_sound_group_ptr pGroup, float volume);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_pitch(ma_sound_group_ptr soundGroup, float pitch);
+        public static extern float ma_sound_group_get_volume(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern float ma_sound_group_get_pitch(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_pan(ma_sound_group_ptr pGroup, float pan);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_spatialization_enabled(ma_sound_group_ptr soundGroup, ma_uint32 enabled);
+        public static extern float ma_sound_group_get_pan(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_uint32 ma_sound_group_is_spatialization_enabled(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_pan_mode(ma_sound_group_ptr pGroup, ma_pan_mode panMode);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_doppler_factor(ma_sound_group_ptr soundGroup, float dopplerFactor);
+        public static extern ma_pan_mode ma_sound_group_get_pan_mode(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern float ma_sound_group_get_doppler_factor(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_pitch(ma_sound_group_ptr pGroup, float pitch);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_attenuation_model(ma_sound_group_ptr soundGroup, ma_attenuation_model attenuationModel);
+        public static extern float ma_sound_group_get_pitch(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_attenuation_model ma_sound_group_get_attenuation_model(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_spatialization_enabled(ma_sound_group_ptr pGroup, ma_bool32 enabled);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_min_distance(ma_sound_group_ptr soundGroup, float minDistance);
+        public static extern ma_bool32 ma_sound_group_is_spatialization_enabled(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern float ma_sound_group_get_min_distance(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_pinned_listener_index(ma_sound_group_ptr pGroup, ma_uint32 listenerIndex);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_max_distance(ma_sound_group_ptr soundGroup, float minDistance);
+        public static extern ma_uint32 ma_sound_group_get_pinned_listener_index(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern float ma_sound_group_get_max_distance(ma_sound_group_ptr soundGroup);
+        public static extern ma_uint32 ma_sound_group_get_listener_index(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_position(ma_sound_group_ptr soundGroup, float x, float y, float z);
+        public static extern ma_vec3f ma_sound_group_get_direction_to_listener(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_vec3f ma_sound_group_get_position(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_position(ma_sound_group_ptr pGroup, float x, float y, float z);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_direction(ma_sound_group_ptr soundGroup, float x, float y, float z);
+        public static extern ma_vec3f ma_sound_group_get_position(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_vec3f ma_sound_group_get_direction(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_direction(ma_sound_group_ptr pGroup, float x, float y, float z);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ma_sound_group_set_velocity(ma_sound_group_ptr soundGroup, float x, float y, float z);
+        public static extern ma_vec3f ma_sound_group_get_direction(ma_sound_group_ptr pGroup);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_vec3f ma_sound_group_get_velocity(ma_sound_group_ptr soundGroup);
+        public static extern void ma_sound_group_set_velocity(ma_sound_group_ptr pGroup, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_sound_group_get_velocity(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_attenuation_model(ma_sound_group_ptr pGroup, ma_attenuation_model attenuationModel);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_attenuation_model ma_sound_group_get_attenuation_model(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_positioning(ma_sound_group_ptr pGroup, ma_positioning positioning);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_positioning ma_sound_group_get_positioning(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_rolloff(ma_sound_group_ptr pGroup, float rolloff);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_rolloff(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_min_gain(ma_sound_group_ptr pGroup, float minGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_min_gain(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_max_gain(ma_sound_group_ptr pGroup, float maxGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_max_gain(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_min_distance(ma_sound_group_ptr pGroup, float minDistance);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_min_distance(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_max_distance(ma_sound_group_ptr pGroup, float maxDistance);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_max_distance(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_cone(ma_sound_group_ptr pGroup, float innerAngleInRadians, float outerAngleInRadians, float outerGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_get_cone(ma_sound_group_ptr pGroup, out float pInnerAngleInRadians, out float pOuterAngleInRadians, out float pOuterGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_doppler_factor(ma_sound_group_ptr pGroup, float dopplerFactor);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_doppler_factor(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_directional_attenuation_factor(ma_sound_group_ptr pGroup, float directionalAttenuationFactor);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_directional_attenuation_factor(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_fade_in_pcm_frames(ma_sound_group_ptr pGroup, float volumeBeg, float volumeEnd, ma_uint64 fadeLengthInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_fade_in_milliseconds(ma_sound_group_ptr pGroup, float volumeBeg, float volumeEnd, ma_uint64 fadeLengthInMilliseconds);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_sound_group_get_current_fade_volume(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_start_time_in_pcm_frames(ma_sound_group_ptr pGroup, ma_uint64 absoluteGlobalTimeInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_start_time_in_milliseconds(ma_sound_group_ptr pGroup, ma_uint64 absoluteGlobalTimeInMilliseconds);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_stop_time_in_pcm_frames(ma_sound_group_ptr pGroup, ma_uint64 absoluteGlobalTimeInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_sound_group_set_stop_time_in_milliseconds(ma_sound_group_ptr pGroup, ma_uint64 absoluteGlobalTimeInMilliseconds);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_bool32 ma_sound_group_is_playing(ma_sound_group_ptr pGroup);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint64 ma_sound_group_get_time_in_pcm_frames(ma_sound_group_ptr pGroup);
 
         // ma_procedural_sound
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_procedural_sound_config ma_procedural_sound_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, ma_procedural_sound_proc pProceduralSoundProc, IntPtr pUserData);
+
+        // ma_spatializer_listener
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_spatializer_listener_config ma_spatializer_listener_config_init(ma_uint32 channelsOut);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_listener_get_heap_size(ref ma_spatializer_listener_config pConfig, out size_t pHeapSizeInBytes);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_listener_init_preallocated(ref ma_spatializer_listener_config pConfig, IntPtr pHeap, ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_listener_init(ref ma_spatializer_listener_config pConfig, IntPtr pAllocationCallbacks, ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_uninit(ma_spatializer_listener_ptr pListener, IntPtr pAllocationCallbacks);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_channel_ptr ma_spatializer_listener_get_channel_map(ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_set_cone(ma_spatializer_listener_ptr pListener, float innerAngleInRadians, float outerAngleInRadians, float outerGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_get_cone(ma_spatializer_listener_ptr pListener, out float pInnerAngleInRadians, out float pOuterAngleInRadians, out float pOuterGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_set_position(ma_spatializer_listener_ptr pListener, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_spatializer_listener_get_position(ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_set_direction(ma_spatializer_listener_ptr pListener, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_spatializer_listener_get_direction(ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_set_velocity(ma_spatializer_listener_ptr pListener, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_spatializer_listener_get_velocity(ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_set_speed_of_sound(ma_spatializer_listener_ptr pListener, float speedOfSound);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_listener_get_speed_of_sound(ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_set_world_up(ma_spatializer_listener_ptr pListener, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_spatializer_listener_get_world_up(ma_spatializer_listener_ptr pListener);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_listener_set_enabled(ma_spatializer_listener_ptr pListener, ma_bool32 isEnabled);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_bool32 ma_spatializer_listener_is_enabled(ma_spatializer_listener_ptr pListener);
+
+        // ma_spatializer
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_spatializer_config ma_spatializer_config_init(ma_uint32 channelsIn, ma_uint32 channelsOut);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_get_heap_size(ref ma_spatializer_config pConfig, out size_t pHeapSizeInBytes);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_init_preallocated(ref ma_spatializer_config pConfig, IntPtr pHeap, ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_init(ref ma_spatializer_config pConfig, IntPtr pAllocationCallbacks, ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_uninit(ma_spatializer_ptr pSpatializer, IntPtr pAllocationCallbacks);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_process_pcm_frames(ma_spatializer_ptr pSpatializer, ma_spatializer_listener_ptr pListener, IntPtr pFramesOut, IntPtr pFramesIn, ma_uint64 frameCount);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_set_master_volume(ma_spatializer_ptr pSpatializer, float volume);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_spatializer_get_master_volume(ma_spatializer_ptr pSpatializer, out float pVolume);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint32 ma_spatializer_get_input_channels(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint32 ma_spatializer_get_output_channels(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_attenuation_model(ma_spatializer_ptr pSpatializer, ma_attenuation_model attenuationModel);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_attenuation_model ma_spatializer_get_attenuation_model(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_positioning(ma_spatializer_ptr pSpatializer, ma_positioning positioning);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_positioning ma_spatializer_get_positioning(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_rolloff(ma_spatializer_ptr pSpatializer, float rolloff);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_get_rolloff(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_min_gain(ma_spatializer_ptr pSpatializer, float minGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_get_min_gain(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_max_gain(ma_spatializer_ptr pSpatializer, float maxGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_get_max_gain(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_min_distance(ma_spatializer_ptr pSpatializer, float minDistance);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_get_min_distance(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_max_distance(ma_spatializer_ptr pSpatializer, float maxDistance);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_get_max_distance(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_cone(ma_spatializer_ptr pSpatializer, float innerAngleInRadians, float outerAngleInRadians, float outerGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_get_cone(ma_spatializer_ptr pSpatializer, out float pInnerAngleInRadians, out float pOuterAngleInRadians, out float pOuterGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_doppler_factor(ma_spatializer_ptr pSpatializer, float dopplerFactor);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_get_doppler_factor(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_directional_attenuation_factor(ma_spatializer_ptr pSpatializer, float directionalAttenuationFactor);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_spatializer_get_directional_attenuation_factor(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_position(ma_spatializer_ptr pSpatializer, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_spatializer_get_position(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_direction(ma_spatializer_ptr pSpatializer, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_spatializer_get_direction(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_set_velocity(ma_spatializer_ptr pSpatializer, float x, float y, float z);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_vec3f ma_spatializer_get_velocity(ma_spatializer_ptr pSpatializer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_spatializer_get_relative_position_and_direction(ma_spatializer_ptr pSpatializer, ma_spatializer_listener_ptr pListener, out ma_vec3f pRelativePos, out ma_vec3f pRelativeDir);
 
         // ma_decoder
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
@@ -2522,7 +3545,7 @@ namespace MiniAudioEx.Core
         public static extern ma_result ma_decoder_seek_to_pcm_frame(ma_decoder_ptr pDecoder, ma_uint64 frameIndex);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_decoder_get_data_format(ma_decoder_ptr pDecoder, out ma_format pFormat, out ma_uint32 pChannels, out ma_uint32 pSampleRate, IntPtr pChannelMap, size_t channelMapCap);
+        public static extern ma_result ma_decoder_get_data_format(ma_decoder_ptr pDecoder, out ma_format pFormat, out ma_uint32 pChannels, out ma_uint32 pSampleRate, ma_channel_ptr pChannelMap, size_t channelMapCap);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_decoder_get_cursor_in_pcm_frames(ma_decoder_ptr pDecoder, out ma_uint64 pCursor);
@@ -2554,6 +3577,37 @@ namespace MiniAudioEx.Core
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_log_ptr ma_resource_manager_get_log(ma_resource_manager_ptr pResourceManager);
+
+        // ma_gainer
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_gainer_config ma_gainer_config_init(ma_uint32 channels, ma_uint32 smoothTimeInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_get_heap_size(ref ma_gainer_config pConfig, out size_t pHeapSizeInBytes);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_init_preallocated(ref ma_gainer_config pConfig, IntPtr pHeap, ma_gainer_ptr pGainer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_init(ref ma_gainer_config pConfig, IntPtr pAllocationCallbacks, ma_gainer_ptr pGainer);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_gainer_uninit(ma_gainer_ptr pGainer, IntPtr pAllocationCallbacks);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_process_pcm_frames(ma_gainer_ptr pGainer, IntPtr pFramesOut, IntPtr pFramesIn, ma_uint64 frameCount);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_set_gain(ma_gainer_ptr pGainer, float newGain);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_set_gains(ma_gainer_ptr pGainer, out float pNewGains);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_set_master_volume(ma_gainer_ptr pGainer, float volume);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_gainer_get_master_volume(ma_gainer_ptr pGainer, out float pVolume);
 
         // ma_libvorbis
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
