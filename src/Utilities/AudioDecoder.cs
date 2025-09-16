@@ -103,7 +103,7 @@ namespace MiniAudioEx.Utilities
         {
             if (File.Exists(filepath))
             {
-                IntPtr pResult = Library.ma_ex_decode_file(filepath, out UInt64 dataLength, out channels, out sampleRate, desiredChannels, desiredSampleRate);
+                IntPtr pResult = MiniAudioExNative.ma_ex_decode_file(filepath, out UInt64 dataLength, out channels, out sampleRate, desiredChannels, desiredSampleRate);
 
                 if (pResult != IntPtr.Zero)
                 {
@@ -119,7 +119,7 @@ namespace MiniAudioEx.Utilities
                         }
                     }
 
-                    Library.ma_ex_free(pResult);
+                    MiniAudioExNative.ma_ex_free(pResult);
                 }
                 else
                 {
@@ -151,7 +151,7 @@ namespace MiniAudioEx.Utilities
                     fixed (byte* pMemory = &memory[0])
                     {
                         IntPtr pData = new IntPtr(pMemory);
-                        pResult = Library.ma_ex_decode_memory(pData, (UInt64)memory.Length, out dataLength, out channels, out sampleRate, desiredChannels, desiredSampleRate);
+                        pResult = MiniAudioExNative.ma_ex_decode_memory(pData, (UInt64)memory.Length, out dataLength, out channels, out sampleRate, desiredChannels, desiredSampleRate);
                     }
 
                     if (pResult != IntPtr.Zero)
@@ -165,7 +165,7 @@ namespace MiniAudioEx.Utilities
                             data[i] = pData[i];
                         }
 
-                        Library.ma_ex_free(pResult);
+                        MiniAudioExNative.ma_ex_free(pResult);
                     }
                     else
                     {

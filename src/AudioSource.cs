@@ -76,7 +76,7 @@ namespace MiniAudioEx
         public event AudioReadEvent Read;
 
         private List<IntPtr> sources;
-        private IntPtr handleGroup;
+        private ma_sound_group_ptr soundGroup;
         private Vector3f previousPosition;
         private ma_sound_process_proc processCallback;
         private ma_sound_end_proc endCallback;
@@ -95,11 +95,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_pcm_position(sources[0]);
+                return MiniAudioExNative.ma_ex_audio_source_get_pcm_position(sources[0]);
             }
             set
             {
-                Library.ma_ex_audio_source_set_pcm_position(sources[0], value);
+                MiniAudioExNative.ma_ex_audio_source_set_pcm_position(sources[0], value);
             }
         }
 
@@ -111,7 +111,7 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_pcm_length(sources[0]);
+                return MiniAudioExNative.ma_ex_audio_source_get_pcm_length(sources[0]);
             }
         }
 
@@ -123,11 +123,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_sound_group_get_volume(handleGroup);
+                return MiniAudioNative.ma_sound_group_get_volume(soundGroup);
             }
             set
             {
-                Library.ma_sound_group_set_volume(handleGroup, value);
+                MiniAudioNative.ma_sound_group_set_volume(soundGroup, value);
             }
         }
 
@@ -139,11 +139,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_sound_group_get_pitch(handleGroup);
+                return MiniAudioNative.ma_sound_group_get_pitch(soundGroup);
             }
             set
             {
-                Library.ma_sound_group_set_pitch(handleGroup, value);
+                MiniAudioNative.ma_sound_group_set_pitch(soundGroup, value);
             }
         }
 
@@ -155,11 +155,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_audio_source_get_loop(sources[0]) > 0;
+                return MiniAudioExNative.ma_ex_audio_source_get_loop(sources[0]) > 0;
             }
             set
             {
-                Library.ma_ex_audio_source_set_loop(sources[0], value ? (uint)1 : 0);
+                MiniAudioExNative.ma_ex_audio_source_set_loop(sources[0], value ? (uint)1 : 0);
             }
         }
 
@@ -171,11 +171,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_sound_group_is_spatialization_enabled(handleGroup) > 0;
+                return MiniAudioNative.ma_sound_group_is_spatialization_enabled(soundGroup) > 0;
             }
             set
             {
-                Library.ma_sound_group_set_spatialization_enabled(handleGroup, value ? (uint)1 : 0);
+                MiniAudioNative.ma_sound_group_set_spatialization_enabled(soundGroup, value ? (uint)1 : 0);
             }
         }
 
@@ -187,11 +187,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_sound_group_get_doppler_factor(handleGroup);
+                return MiniAudioNative.ma_sound_group_get_doppler_factor(soundGroup);
             }
             set
             {
-                Library.ma_sound_group_set_doppler_factor(handleGroup, value);
+                MiniAudioNative.ma_sound_group_set_doppler_factor(soundGroup, value);
             }
         }
 
@@ -203,11 +203,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_sound_group_get_min_distance(handleGroup);
+                return MiniAudioNative.ma_sound_group_get_min_distance(soundGroup);
             }
             set
             {
-                Library.ma_sound_group_set_min_distance(handleGroup, value);
+                MiniAudioNative.ma_sound_group_set_min_distance(soundGroup, value);
             }
         }
 
@@ -219,11 +219,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_sound_group_get_max_distance(handleGroup);
+                return MiniAudioNative.ma_sound_group_get_max_distance(soundGroup);
             }
             set
             {
-                Library.ma_sound_group_set_max_distance(handleGroup, value);
+                MiniAudioNative.ma_sound_group_set_max_distance(soundGroup, value);
             }
         }
 
@@ -235,11 +235,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return (AttenuationModel)Library.ma_sound_group_get_attenuation_model(handleGroup);
+                return (AttenuationModel)MiniAudioNative.ma_sound_group_get_attenuation_model(soundGroup);
             }
             set
             {
-                Library.ma_sound_group_set_attenuation_model(handleGroup, (ma_attenuation_model)value);
+                MiniAudioNative.ma_sound_group_set_attenuation_model(soundGroup, (ma_attenuation_model)value);
             }
         }
 
@@ -251,16 +251,16 @@ namespace MiniAudioEx
         {
             get
             {
-                var result = Library.ma_sound_group_get_position(handleGroup);
+                var result = MiniAudioNative.ma_sound_group_get_position(soundGroup);
                 return new Vector3f(result.x, result.y, result.z);
             }
             set
             {
-                var p = Library.ma_sound_group_get_position(handleGroup);
+                var p = MiniAudioNative.ma_sound_group_get_position(soundGroup);
                 previousPosition.x = p.x;
                 previousPosition.y = p.y;
                 previousPosition.z = p.z;
-                Library.ma_sound_group_set_position(handleGroup, value.x, value.y, value.z);
+                MiniAudioNative.ma_sound_group_set_position(soundGroup, value.x, value.y, value.z);
             }
         }
 
@@ -272,12 +272,12 @@ namespace MiniAudioEx
         {
             get
             {
-                var result = Library.ma_sound_group_get_direction(handleGroup);
+                var result = MiniAudioNative.ma_sound_group_get_direction(soundGroup);
                 return new Vector3f(result.x, result.y, result.z);
             }
             set
             {
-                Library.ma_sound_group_set_direction(handleGroup, value.x, value.y, value.z);
+                MiniAudioNative.ma_sound_group_set_direction(soundGroup, value.x, value.y, value.z);
             }
         }
 
@@ -289,12 +289,12 @@ namespace MiniAudioEx
         {
             get
             {
-                var result = Library.ma_sound_group_get_velocity(handleGroup);
+                var result = MiniAudioNative.ma_sound_group_get_velocity(soundGroup);
                 return new Vector3f(result.x, result.y, result.z);
             }
             set
             {
-                Library.ma_sound_group_set_velocity(handleGroup, value.x, value.y, value.z);
+                MiniAudioNative.ma_sound_group_set_velocity(soundGroup, value.x, value.y, value.z);
             }
         }
 
@@ -306,7 +306,7 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_sound_group_is_playing(handleGroup) > 0;
+                return MiniAudioNative.ma_sound_group_is_playing(soundGroup) > 0;
             }
         }
 
@@ -332,18 +332,21 @@ namespace MiniAudioEx
             endCallback = OnEnd;
             proceduralProcessCallback = OnProceduralProcess;
 
-            handleGroup = Library.ma_ex_sound_group_init(AudioContext.NativeContext);
+            soundGroup.pointer = MiniAudioExNative.ma_ex_sound_group_init(AudioContext.NativeContext);
 
-            if (handleGroup != IntPtr.Zero)
+            if (soundGroup.pointer != IntPtr.Zero)
             {
                 AudioContext.Add(this);
 
-                Library.ma_sound_set_notifications_userdata(handleGroup, IntPtr.Zero);
-                Library.ma_sound_set_process_notification_callback(handleGroup, processCallback);
+                ma_sound_ptr s = new ma_sound_ptr();
+                s.pointer = soundGroup.pointer;
+
+                MiniAudioNative.ma_sound_set_notifications_userdata(s, IntPtr.Zero);
+                MiniAudioNative.ma_sound_set_process_notification_callback(s, processCallback);
 
                 for (int i = 0; i < MAX_SOURCES; i++)
                 {
-                    IntPtr source = Library.ma_ex_audio_source_init(AudioContext.NativeContext);
+                    IntPtr source = MiniAudioExNative.ma_ex_audio_source_init(AudioContext.NativeContext);
                     sources.Add(source);
 
                     ma_ex_audio_source_callbacks callbacks = new ma_ex_audio_source_callbacks();
@@ -352,27 +355,27 @@ namespace MiniAudioEx
                     callbacks.loadCallback = null;
                     callbacks.processCallback = null;
 
-                    Library.ma_ex_audio_source_set_callbacks(source, callbacks);
-                    Library.ma_ex_audio_source_set_group(source, handleGroup);
+                    MiniAudioExNative.ma_ex_audio_source_set_callbacks(source, callbacks);
+                    MiniAudioExNative.ma_ex_audio_source_set_group(source, soundGroup.pointer);
                 }
             }
         }
 
         internal void Destroy()
         {
-            if (handleGroup == IntPtr.Zero)
+            if (soundGroup.pointer == IntPtr.Zero)
                 return;
 
             for (int i = 0; i < sources.Count; i++)
             {
-                Library.ma_ex_audio_source_stop(sources[i]);
-                Library.ma_ex_audio_source_uninit(sources[i]);
+                MiniAudioExNative.ma_ex_audio_source_stop(sources[i]);
+                MiniAudioExNative.ma_ex_audio_source_uninit(sources[i]);
             }
 
             sources.Clear();
 
-            Library.ma_ex_sound_group_uninit(handleGroup);
-            handleGroup = IntPtr.Zero;
+            MiniAudioExNative.ma_ex_sound_group_uninit(soundGroup.pointer);
+            soundGroup.pointer = IntPtr.Zero;
 
             //Clear the queues (netstandard2.0 does not have a Clear method for ConcurrentQueue)
             while (endEventQueue.Count > 0)
@@ -398,9 +401,9 @@ namespace MiniAudioEx
         /// </summary>
         public void Play()
         {
-            if (handleGroup == IntPtr.Zero)
+            if (soundGroup.pointer == IntPtr.Zero)
                 return;
-            Library.ma_ex_audio_source_play_from_callback(sources[0], proceduralProcessCallback);
+            MiniAudioExNative.ma_ex_audio_source_play_from_callback(sources[0], proceduralProcessCallback);
         }
 
         /// <summary>
@@ -409,13 +412,13 @@ namespace MiniAudioEx
         /// <param name="clip">The AudioClip to play.</param>
         public void Play(AudioClip clip)
         {
-            if (handleGroup == IntPtr.Zero)
+            if (soundGroup.pointer == IntPtr.Zero)
                 return;
 
             if (clip.Handle != IntPtr.Zero)
-                Library.ma_ex_audio_source_play_from_memory(sources[0], clip.Handle, clip.DataSize);
+                MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[0], clip.Handle, clip.DataSize);
             else
-                Library.ma_ex_audio_source_play_from_file(sources[0], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[0], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
         }
 
         /// <summary>
@@ -424,19 +427,19 @@ namespace MiniAudioEx
         /// <param name="clip">The AudioClip to play.</param>
         public void PlayOneShot(AudioClip clip)
         {
-            if (handleGroup == IntPtr.Zero)
+            if (soundGroup.pointer == IntPtr.Zero)
                 return;
 
-            if (Library.ma_ex_audio_source_get_is_playing(sources[currentIndex]) > 0)
+            if (MiniAudioExNative.ma_ex_audio_source_get_is_playing(sources[currentIndex]) > 0)
             {
-                Library.ma_ex_audio_source_stop(sources[currentIndex]);
-                Library.ma_ex_audio_source_set_pcm_position(sources[currentIndex], 0);
+                MiniAudioExNative.ma_ex_audio_source_stop(sources[currentIndex]);
+                MiniAudioExNative.ma_ex_audio_source_set_pcm_position(sources[currentIndex], 0);
             }
 
             if (clip.Handle != IntPtr.Zero)
-                Library.ma_ex_audio_source_play_from_memory(sources[currentIndex], clip.Handle, clip.DataSize);
+                MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[currentIndex], clip.Handle, clip.DataSize);
             else
-                Library.ma_ex_audio_source_play_from_file(sources[currentIndex], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[currentIndex], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
 
             if (++currentIndex >= sources.Count - 1)
             {
@@ -449,7 +452,7 @@ namespace MiniAudioEx
         /// </summary>
         public void Stop()
         {
-            Library.ma_sound_group_stop(handleGroup);
+            MiniAudioNative.ma_sound_group_stop(soundGroup);
         }
 
         internal void Update()
@@ -576,7 +579,7 @@ namespace MiniAudioEx
         /// </summary>
         /// <param name="pUserData"></param>
         /// <param name="pSound"></param>
-        private void OnEnd(IntPtr pUserData, IntPtr pSound)
+        private void OnEnd(IntPtr pUserData, ma_sound_ptr pSound)
         {
             //This callback is called from another thread so we move the message to a queue that the main thread can safely access
             //If the audio is set to looping, this event is never triggered
@@ -591,7 +594,7 @@ namespace MiniAudioEx
         /// <param name="pFramesOut"></param>
         /// <param name="frameCount"></param>
         /// <param name="channels"></param>
-        private void OnProcess(IntPtr pUserData, IntPtr pSound, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
+        private void OnProcess(IntPtr pUserData, ma_sound_ptr pSound, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
         {
             int length = (int)(frameCount * channels);
 

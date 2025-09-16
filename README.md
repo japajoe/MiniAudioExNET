@@ -12,6 +12,7 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Callbacks for effects processing and generating audio.
 - Spatial properties like doppler effect, pitching, distance attenuation and panning.
 - Utilities for audio generation.
+- Exposes many native miniaudio API calls (work in progress, not yet included in 2.4.0).
 
 # Platforms
 - Windows x86_64
@@ -140,7 +141,7 @@ namespace MiniAudioExExample
     }
 }
 ```
-See links below for more examples. These use the `AudioApp` class which is suitable for simple console based applications.
+See links below for more examples. Most of these use the `AudioApp` class which is suitable for simple console based applications.
 
 [Playing audio from a file on disk](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example1.cs)
 
@@ -153,3 +154,5 @@ See links below for more examples. These use the `AudioApp` class which is suita
 [Generating sound, applying effects and spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example5.cs)
 
 [FM synthesis](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example6.cs)
+
+[Using the native miniaudio API.](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example7.cs)

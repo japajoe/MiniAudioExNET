@@ -109,11 +109,11 @@ namespace MiniAudioEx
         {
             get
             {
-                return Library.ma_ex_context_get_master_volume(audioContext);
+                return MiniAudioExNative.ma_ex_context_get_master_volume(audioContext);
             }
             set
             {
-                Library.ma_ex_context_set_master_volume(audioContext, value);
+                MiniAudioExNative.ma_ex_context_set_master_volume(audioContext, value);
             }
         }
 
@@ -150,12 +150,12 @@ namespace MiniAudioEx
             AudioContext.sampleRate = sampleRate;
             AudioContext.channels = channels;
 
-            ma_ex_context_config contextConfig = Library.ma_ex_context_config_init(sampleRate, (byte)channels, periodSizeInFrames, ref pDeviceInfo);
+            ma_ex_context_config contextConfig = MiniAudioExNative.ma_ex_context_config_init(sampleRate, (byte)channels, periodSizeInFrames, ref pDeviceInfo);
             
             deviceDataProc = OnDeviceDataProc;
             contextConfig.deviceDataProc = deviceDataProc;
 
-            audioContext = Library.ma_ex_context_init(ref contextConfig);
+            audioContext = MiniAudioExNative.ma_ex_context_init(ref contextConfig);
 
             if(audioContext == IntPtr.Zero)
             {
@@ -191,7 +191,7 @@ namespace MiniAudioEx
 
             audioListeners.Clear();
 
-            Library.ma_ex_context_uninit(audioContext);
+            MiniAudioExNative.ma_ex_context_uninit(audioContext);
             audioContext = IntPtr.Zero;
         }
 
@@ -221,14 +221,14 @@ namespace MiniAudioEx
         /// <returns>An array with playback devices</returns>
         public static DeviceInfo[] GetDevices()
         {
-            IntPtr pDevices = Library.ma_ex_playback_devices_get(out UInt32 count);
+            IntPtr pDevices = MiniAudioExNative.ma_ex_playback_devices_get(out UInt32 count);
 
             if(pDevices == IntPtr.Zero)
                 return null;
 
             if(count == 0)
             {
-                Library.ma_ex_playback_devices_free(pDevices, count);
+                MiniAudioExNative.ma_ex_playback_devices_free(pDevices, count);
                 return null;
             }
             
@@ -241,7 +241,7 @@ namespace MiniAudioEx
                 devices[i] = new DeviceInfo(deviceInfo.pName, deviceInfo.index, deviceInfo.isDefault > 0 ? true : false, deviceInfo.nativeDataFormats, deviceInfo.nativeDataFormatCount);
             }
 
-            Library.ma_ex_playback_devices_free(pDevices, count);
+            MiniAudioExNative.ma_ex_playback_devices_free(pDevices, count);
             
             return devices;
         }
@@ -359,10 +359,10 @@ namespace MiniAudioEx
             return false;
         }
 
-        private static void OnDeviceDataProc(IntPtr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
+        private static void OnDeviceDataProc(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
         {
-            IntPtr pEngine = Library.ma_ex_device_get_user_data(pDevice);
-            Library.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount, out _);
+            IntPtr pEngine = MiniAudioExNative.ma_ex_device_get_user_data(pDevice.pointer);
+            MiniAudioExNative.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount, out _);
 
             if(DataProcess != null)
             {
