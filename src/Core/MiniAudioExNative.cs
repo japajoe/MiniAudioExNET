@@ -152,7 +152,12 @@ namespace MiniAudioEx.Core
         }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_ex_audio_source_play_from_callback(IntPtr source, ma_procedural_sound_proc callback);
+        private static extern ma_result ma_ex_audio_source_play_from_callback(IntPtr source, IntPtr callback);
+
+        public static ma_result ma_ex_audio_source_play_from_callback(IntPtr source, ma_procedural_sound_proc callback)
+        {
+            return ma_ex_audio_source_play_from_callback(source, MarshalHelper.GetFunctionPointerForDelegate(callback));
+        }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_ex_audio_source_play_from_file(IntPtr source, string filePath, UInt32 streamFromDisk);

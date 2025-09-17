@@ -52,7 +52,7 @@ using System.Runtime.InteropServices;
 namespace MiniAudioEx.Core
 {
     // ma_typedefs
-    using size_t = UInt64;
+    using size_t = UIntPtr;
     using ma_channel = Byte;
     using ma_bool8 = Byte;
     using ma_bool32 = UInt32;
@@ -162,6 +162,24 @@ namespace MiniAudioEx.Core
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate ma_result ma_backend_device_get_info_proc(ma_device_ptr pDevice, ma_device_type type, ma_device_info_ptr pDeviceInfo);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_data_source_vtable_read_proc(ma_data_source_ptr pDataSource, IntPtr pFramesOut, ma_uint64 frameCount, IntPtr pFramesRead);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_data_source_vtable_seek_proc(ma_data_source_ptr pDataSource, ma_uint64 frameIndex);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_data_source_vtable_get_data_format_proc(ma_data_source_ptr pDataSource, ref ma_format pFormat, ref ma_uint32 pChannels, ref ma_uint32 pSampleRate, ref ma_channel pChannelMap, size_t channelMapCap);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_data_source_vtable_get_cursor_proc(ma_data_source_ptr pDataSource, IntPtr pCursor);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_data_source_vtable_get_length_proc(ma_data_source_ptr pDataSource, IntPtr pLength);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_data_source_vtable_set_looping_proc(ma_data_source_ptr pDataSource, ma_bool32 isLooping);
 
     // ma_enums
     public enum ma_result
@@ -435,6 +453,8 @@ namespace MiniAudioEx.Core
         ma_allocation_type_channel,
         ma_allocation_type_context,
         ma_allocation_type_data_source,
+        ma_allocation_type_data_source_node,
+        ma_allocation_type_data_source_vtable,
         ma_allocation_type_decoder,
         ma_allocation_type_device,
         ma_allocation_type_device_id,
@@ -637,11 +657,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_biquad_coefficient Get()
+		public ma_biquad_coefficient* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_biquad_coefficient>(pointer);
+				return null;
+			return (ma_biquad_coefficient*)pointer;
 		}
 	}
 
@@ -732,6 +752,77 @@ namespace MiniAudioEx.Core
 		}
 	}
 
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_data_source_node_ptr
+    {
+        public IntPtr pointer;
+        public ma_data_source_node_ptr() { }
+        public ma_data_source_node_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_data_source_node_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_data_source_node);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        public ma_data_source_node* Get()
+        {
+            if(pointer == IntPtr.Zero)
+                return null;
+            return (ma_data_source_node*)pointer;
+        }
+	}
+
+    //
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_data_source_vtable_ptr
+    {
+        public IntPtr pointer;
+        public ma_data_source_vtable_ptr() { }
+        public ma_data_source_vtable_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_data_source_vtable_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_data_source_vtable);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        public ma_data_source_vtable* Get()
+        {
+            if (pointer == IntPtr.Zero)
+                return null;
+            return (ma_data_source_vtable*)pointer;
+        }
+	}
+
 	[StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_decoder_ptr
 	{
@@ -760,11 +851,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_decoder Get()
+		public ma_decoder* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_decoder>(pointer);
+				return null;
+            return (ma_decoder*)pointer;
 		}
 	}
 
@@ -796,11 +887,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_device Get()
+		public ma_device* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_device>(pointer);
+				return null;
+			return (ma_device*)pointer;
 		}
 	}
 
@@ -832,11 +923,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_device_id Get()
+		public ma_device_id* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_device_id>(pointer);
+				return null;
+			return (ma_device_id*)pointer;
 		}
 	}
 
@@ -896,11 +987,11 @@ namespace MiniAudioEx.Core
                 pointer = IntPtr.Zero;
             }
         }
-        public ma_device_descriptor Get()
+        public ma_device_descriptor* Get()
         {
             if (pointer == IntPtr.Zero)
-                return default;
-            return Marshal.PtrToStructure<ma_device_descriptor>(pointer);            
+                return null;
+            return (ma_device_descriptor*)pointer;            
         }
 	}
 
@@ -931,11 +1022,11 @@ namespace MiniAudioEx.Core
 				pointer = IntPtr.Zero;
 			}
 		}
-        public ma_device_info Get()
+        public ma_device_info* Get()
         {
             if (pointer == IntPtr.Zero)
-                return default;
-            return Marshal.PtrToStructure<ma_device_info>(pointer);
+                return null;
+            return (ma_device_info*)pointer;
         }
 	}
 
@@ -1024,11 +1115,11 @@ namespace MiniAudioEx.Core
                 pointer = IntPtr.Zero;
             }
         }
-        public ma_gainer Get()
+        public ma_gainer* Get()
         {
             if (pointer == IntPtr.Zero)
-                return default;
-            return Marshal.PtrToStructure<ma_gainer>(pointer);
+                return null;
+            return (ma_gainer*)pointer;
         }
 	}
 
@@ -1059,6 +1150,12 @@ namespace MiniAudioEx.Core
 				pointer = IntPtr.Zero;
 			}
 		}
+        public ma_log* Get()
+        {
+            if (pointer == IntPtr.Zero)
+                return null;
+            return (ma_log*)pointer;
+        }
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -1089,11 +1186,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_lpf1 Get()
+		public ma_lpf1* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_lpf1>(pointer);
+				return null;
+			return (ma_lpf1*)pointer;
 		}
 	}
 
@@ -1125,11 +1222,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_lpf2 Get()
+		public ma_lpf2* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_lpf2>(pointer);
+				return null;
+			return (ma_lpf2*)pointer;
 		}
 	}
 
@@ -1190,11 +1287,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_node_graph Get()
+		public ma_node_graph* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_node_graph>(pointer);
+				return null;
+			return (ma_node_graph*)pointer;
 		}
 	}
 
@@ -1226,11 +1323,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_node_input_bus Get()
+		public ma_node_input_bus* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_node_input_bus>(pointer);
+				return null;
+			return (ma_node_input_bus*)pointer;
 		}
 	}
 
@@ -1262,11 +1359,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_node_output_bus Get()
+		public ma_node_output_bus* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_node_output_bus>(pointer);
+				return null;
+			return (ma_node_output_bus*)pointer;
 		}
 	}
 
@@ -1298,11 +1395,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_node_vtable Get()
+		public ma_node_vtable* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_node_vtable>(pointer);
+				return null;
+			return (ma_node_vtable*)pointer;
 		}
 	}
 
@@ -1479,11 +1576,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_spatializer_listener Get()
+		public ma_spatializer_listener* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_spatializer_listener>(pointer);
+				return null;
+			return (ma_spatializer_listener*)pointer;
 		}
 	}
 
@@ -1515,11 +1612,11 @@ namespace MiniAudioEx.Core
 			}
 		}
 
-		public ma_stack Get()
+		public ma_stack* Get()
 		{
 			if(pointer == IntPtr.Zero)
-				return default;
-			return Marshal.PtrToStructure<ma_stack>(pointer);
+				return null;
+			return (ma_stack*)pointer;
 		}
 	}
 
@@ -1680,6 +1777,15 @@ namespace MiniAudioEx.Core
         {
             onLog = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_log
+    {
+        public fixed byte callbacks[MiniAudioNative.MA_MAX_LOG_CALLBACKS * 16];
+        public ma_uint32 callbackCount;
+        public ma_allocation_callbacks allocationCallbacks; /* Need to store these persistently because ma_log_postv() might need to allocate a buffer on the heap. */
+        //There is a mutex here but the size depends on platform
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2275,6 +2381,68 @@ namespace MiniAudioEx.Core
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_data_source_vtable
+    {
+        public IntPtr onRead;
+        public IntPtr onSeek;
+        public IntPtr onGetDataFormat;
+        public IntPtr onGetCursor;
+        public IntPtr onGetLength;
+        public IntPtr onSetLooping;
+        public ma_uint32 flags;
+        
+        public void SetReadProc(ma_data_source_vtable_read_proc callback)
+        {
+            onRead = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetSeekProc(ma_data_source_vtable_seek_proc callback)
+        {
+            onSeek = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetGetDataFormatProc(ma_data_source_vtable_get_data_format_proc callback)
+        {
+            onGetDataFormat = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetGetCursorProc(ma_data_source_vtable_get_cursor_proc callback)
+        {
+            onGetCursor = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetGetLengthProc(ma_data_source_vtable_get_length_proc callback)
+        {
+            onGetLength = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetSetLoopingProc(ma_data_source_vtable_set_looping_proc callback)
+        {
+            onSetLooping = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }        
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_data_source_config
+    {
+        public ma_data_source_vtable_ptr vtable;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_data_source_node_config
+    {
+        public ma_node_config nodeConfig;
+        public ma_data_source_ptr pDataSource;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_data_source_node
+    {
+        public ma_node_base baseNode;
+        public ma_data_source_ptr pDataSource;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_data_source_base
     {
         public IntPtr vtable;
@@ -2530,6 +2698,17 @@ namespace MiniAudioEx.Core
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_node_config
+    {
+        public ma_node_vtable_ptr vtable;          /* Should never be null. Initialization of the node will fail if so. */
+        public ma_node_state initialState;         /* Defaults to ma_node_state_started. */
+        public ma_uint32 inputBusCount;            /* Only used if the vtable specifies an input bus count of `MA_NODE_BUS_COUNT_UNKNOWN`, otherwise must be set to `MA_NODE_BUS_COUNT_UNKNOWN` (default). */
+        public ma_uint32 outputBusCount;           /* Only used if the vtable specifies an output bus count of `MA_NODE_BUS_COUNT_UNKNOWN`, otherwise  be set to `MA_NODE_BUS_COUNT_UNKNOWN` (default). */
+        public IntPtr pInputChannels;          /* The number of elements are determined by the input bus count as determined by the vtable, or `inputBusCount` if the vtable specifies `MA_NODE_BUS_COUNT_UNKNOWN`. */
+        public IntPtr pOutputChannels;         /* The number of elements are determined by the output bus count as determined by the vtable, or `outputBusCount` if the vtable specifies `MA_NODE_BUS_COUNT_UNKNOWN`. */
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_node_vtable
     {
         /*
@@ -2701,6 +2880,14 @@ namespace MiniAudioEx.Core
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_node_graph_config
+    {
+        public ma_uint32 channels;
+        public ma_uint32 processingSizeInFrames;   /* This is the preferred processing size for node processing callbacks unless overridden by a node itself. Can be 0 in which case it will be based on the frame count passed into ma_node_graph_read_pcm_frames(), but will not be well defined. */
+        public size_t preMixStackSizeInBytes;      /* Defaults to 512KB per channel. Reducing this will save memory, but the depth of your node graph will be more restricted. */
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_node_graph
     {
         /* Immutable. */
@@ -2761,33 +2948,33 @@ namespace MiniAudioEx.Core
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_spatializer
     {
-        ma_uint32 channelsIn;
-        ma_uint32 channelsOut;
-        ma_channel_ptr pChannelMapIn;
-        ma_attenuation_model attenuationModel;
-        ma_positioning positioning;
-        ma_handedness handedness;           /* Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis. */
-        float minGain;
-        float maxGain;
-        float minDistance;
-        float maxDistance;
-        float rolloff;
-        float coneInnerAngleInRadians;
-        float coneOuterAngleInRadians;
-        float coneOuterGain;
-        float dopplerFactor;                /* Set to 0 to disable doppler effect. */
-        float directionalAttenuationFactor; /* Set to 0 to disable directional attenuation. */
-        ma_uint32 gainSmoothTimeInFrames;   /* When the gain of a channel changes during spatialization, the transition will be linearly interpolated over this number of frames. */
-        ma_atomic_vec3f position;
-        ma_atomic_vec3f direction;
-        ma_atomic_vec3f velocity;  /* For doppler effect. */
-        float dopplerPitch; /* Will be updated by ma_spatializer_process_pcm_frames() and can be used by higher level functions to apply a pitch shift for doppler effect. */
-        float minSpatializationChannelGain;
-        ma_gainer gainer;   /* For smooth gain transitions. */
-        IntPtr pNewChannelGainsOut; /* An offset of _pHeap. Used by ma_spatializer_process_pcm_frames() to store new channel gains. The number of elements in this array is equal to config.channelsOut. */
+        public ma_uint32 channelsIn;
+        public ma_uint32 channelsOut;
+        public ma_channel_ptr pChannelMapIn;
+        public ma_attenuation_model attenuationModel;
+        public ma_positioning positioning;
+        public ma_handedness handedness;           /* Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis. */
+        public float minGain;
+        public float maxGain;
+        public float minDistance;
+        public float maxDistance;
+        public float rolloff;
+        public float coneInnerAngleInRadians;
+        public float coneOuterAngleInRadians;
+        public float coneOuterGain;
+        public float dopplerFactor;                /* Set to 0 to disable doppler effect. */
+        public float directionalAttenuationFactor; /* Set to 0 to disable directional attenuation. */
+        public ma_uint32 gainSmoothTimeInFrames;   /* When the gain of a channel changes during spatialization, the transition will be linearly interpolated over this number of frames. */
+        public ma_atomic_vec3f position;
+        public ma_atomic_vec3f direction;
+        public ma_atomic_vec3f velocity;  /* For doppler effect. */
+        public float dopplerPitch; /* Will be updated by ma_spatializer_process_pcm_frames() and can be used by higher level functions to apply a pitch shift for doppler effect. */
+        public float minSpatializationChannelGain;
+        public ma_gainer gainer;   /* For smooth gain transitions. */
+        public IntPtr pNewChannelGainsOut; /* An offset of _pHeap. Used by ma_spatializer_process_pcm_frames() to store new channel gains. The number of elements in this array is equal to config.channelsOut. */
         /* Memory management. */
-        void* _pHeap;
-        ma_bool32 _ownsHeap;
+        public IntPtr _pHeap;
+        public ma_bool32 _ownsHeap;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -3852,6 +4039,352 @@ namespace MiniAudioEx.Core
         // ma_libvorbis
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static unsafe extern ma_decoding_backend_vtable* ma_libvorbis_get_decoding_backend();
+
+        // ma_log
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern ma_log_callback ma_log_callback_init(IntPtr onLog, IntPtr pUserData);
+
+        public static ma_log_callback ma_log_callback_init(ma_log_callback_proc onLog, IntPtr pUserData)
+        {
+            return ma_log_callback_init(MarshalHelper.GetFunctionPointerForDelegate(onLog), pUserData);
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe ma_result ma_log_init(ma_allocation_callbacks* pAllocationCallbacks, ma_log_ptr pLog);
+
+        public static ma_result ma_log_init(ma_log_ptr pLog)
+        {
+            unsafe
+            {
+                return ma_log_init(null, pLog);
+            }
+        }
+
+        public static ma_result ma_log_init(ref ma_allocation_callbacks pAllocationCallbacks, ma_log_ptr pLog)
+        {
+            unsafe
+            {
+                fixed (ma_allocation_callbacks* pCallbacks = &pAllocationCallbacks)
+                {
+                    return ma_log_init(pCallbacks, pLog);
+                }
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_log_uninit(ma_log_ptr pLog);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_log_register_callback(ma_log_ptr pLog, ma_log_callback callback);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_log_unregister_callback(ma_log_ptr pLog, ma_log_callback callback);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_log_post(ma_log_ptr pLog, ma_uint32 level, string pMessage);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern string ma_log_level_to_string(ma_uint32 logLevel);
+
+        // ma_node_graph
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_node_graph_config ma_node_graph_config_init(ma_uint32 channels);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe ma_result ma_node_graph_init(ref ma_node_graph_config pConfig, ma_allocation_callbacks* pAllocationCallbacks, ma_node_graph_ptr pNodeGraph);
+
+        public static ma_result ma_node_graph_init(ref ma_node_graph_config pConfig, ref ma_allocation_callbacks pAllocationCallbacks, ma_node_graph_ptr pNodeGraph)
+        {
+            unsafe
+            {
+                fixed (ma_allocation_callbacks* pCallbacks = &pAllocationCallbacks)
+                {
+                    return ma_node_graph_init(ref pConfig, pCallbacks, pNodeGraph);
+                }
+            }
+        }
+
+        public static ma_result ma_node_graph_init(ref ma_node_graph_config pConfig, ma_node_graph_ptr pNodeGraph)
+        {
+            unsafe
+            {
+                return ma_node_graph_init(ref pConfig, null, pNodeGraph);
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe void ma_node_graph_uninit(ma_node_graph_ptr pNodeGraph, ma_allocation_callbacks* pAllocationCallbacks);
+
+        public static void ma_node_graph_uninit(ma_node_graph_ptr pNodeGraph, ref ma_allocation_callbacks pAllocationCallbacks)
+        {
+            unsafe
+            {
+                fixed (ma_allocation_callbacks* pCallbacks = &pAllocationCallbacks)
+                {
+                    ma_node_graph_uninit(pNodeGraph, pCallbacks);
+                }
+            }
+        }
+
+        public static void ma_node_graph_uninit(ma_node_graph_ptr pNodeGraph)
+        {
+            unsafe
+            {
+                ma_node_graph_uninit(pNodeGraph, null);
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_node_ptr ma_node_graph_get_endpoint(ma_node_graph_ptr pNodeGraph);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_graph_read_pcm_frames(ma_node_graph_ptr pNodeGraph, IntPtr pFramesOut, ma_uint64 frameCount, IntPtr pFramesRead);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint32 ma_node_graph_get_channels(ma_node_graph_ptr pNodeGraph);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint64 ma_node_graph_get_time(ma_node_graph_ptr pNodeGraph);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_graph_set_time(ma_node_graph_ptr pNodeGraph, ma_uint64 globalTime);
+
+        // ma_node
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_node_config ma_node_config_init();
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_get_heap_size(ma_node_graph_ptr pNodeGraph, ref ma_node_config pConfig, out size_t pHeapSizeInBytes);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_init_preallocated(ma_node_graph_ptr pNodeGraph, ref ma_node_config pConfig, IntPtr pHeap, ma_node_ptr pNode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe ma_result ma_node_init(ma_node_graph_ptr pNodeGraph, ref ma_node_config pConfig, ma_allocation_callbacks* pAllocationCallbacks, ma_node_ptr pNode);
+
+        public static ma_result ma_node_init(ma_node_graph_ptr pNodeGraph, ref ma_node_config pConfig, ref ma_allocation_callbacks pAllocationCallbacks, ma_node_ptr pNode)
+        {
+            unsafe
+            {
+                fixed (ma_allocation_callbacks* pCallbacks = &pAllocationCallbacks)
+                {
+                    return ma_node_init(pNodeGraph, ref pConfig, pCallbacks, pNode);
+                }
+            }
+        }
+
+        public static ma_result ma_node_init(ma_node_graph_ptr pNodeGraph, ref ma_node_config pConfig, ma_node_ptr pNode)
+        {
+            unsafe
+            {
+                return ma_node_init(pNodeGraph, ref pConfig, null, pNode);
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe void ma_node_uninit(ma_node_ptr pNode, ma_allocation_callbacks* pAllocationCallbacks);
+
+        public static void ma_node_uninit(ma_node_ptr pNode, ref ma_allocation_callbacks pAllocationCallbacks)
+        {
+            unsafe
+            {
+                fixed (ma_allocation_callbacks* pCallbacks = &pAllocationCallbacks)
+                {
+                    ma_node_uninit(pNode, pCallbacks);
+                }
+            }
+        }
+
+        public static void ma_node_uninit(ma_node_ptr pNode)
+        {
+            unsafe
+            {
+                ma_node_uninit(pNode, null);
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_node_graph_ptr ma_node_get_node_graph(ma_node_ptr pNode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint32 ma_node_get_input_bus_count(ma_node_ptr pNode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint32 ma_node_get_output_bus_count(ma_node_ptr pNode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint32 ma_node_get_input_channels(ma_node_ptr pNode, ma_uint32 inputBusIndex);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint32 ma_node_get_output_channels(ma_node_ptr pNode, ma_uint32 outputBusIndex);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_attach_output_bus(ma_node_ptr pNode, ma_uint32 outputBusIndex, ma_node_ptr pOtherNode, ma_uint32 otherNodeInputBusIndex);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_detach_output_bus(ma_node_ptr pNode, ma_uint32 outputBusIndex);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_detach_all_output_buses(ma_node_ptr pNode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_set_output_bus_volume(ma_node_ptr pNode, ma_uint32 outputBusIndex, float volume);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_node_get_output_bus_volume(ma_node_ptr pNode, ma_uint32 outputBusIndex);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_set_state(ma_node_ptr pNode, ma_node_state state);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_node_state ma_node_get_state(ma_node_ptr pNode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_set_state_time(ma_node_ptr pNode, ma_node_state state, ma_uint64 globalTime);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint64 ma_node_get_state_time(ma_node_ptr pNode, ma_node_state state);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_node_state ma_node_get_state_by_time(ma_node_ptr pNode, ma_uint64 globalTime);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_node_state ma_node_get_state_by_time_range(ma_node_ptr pNode, ma_uint64 globalTimeBeg, ma_uint64 globalTimeEnd);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_uint64 ma_node_get_time(ma_node_ptr pNode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_node_set_time(ma_node_ptr pNode, ma_uint64 localTime);
+
+        // ma_data_source
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_data_source_config ma_data_source_config_init();
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_init(ref ma_data_source_config pConfig, ma_data_source_ptr pDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_data_source_uninit(ma_data_source_ptr pDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_read_pcm_frames(ma_data_source_ptr pDataSource, IntPtr pFramesOut, ma_uint64 frameCount, IntPtr pFramesRead);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_seek_pcm_frames(ma_data_source_ptr pDataSource, ma_uint64 frameCount, out ma_uint64 pFramesSeeked);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_seek_to_pcm_frame(ma_data_source_ptr pDataSource, ma_uint64 frameIndex);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_seek_seconds(ma_data_source_ptr pDataSource, float secondCount, out float pSecondsSeeked);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_seek_to_second(ma_data_source_ptr pDataSource, float seekPointInSeconds);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_get_data_format(ma_data_source_ptr pDataSource, out ma_format pFormat, out ma_uint32 pChannels, out ma_uint32 pSampleRate, ma_channel_ptr pChannelMap, size_t channelMapCap);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_get_cursor_in_pcm_frames(ma_data_source_ptr pDataSource, out ma_uint64 pCursor);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_get_length_in_pcm_frames(ma_data_source_ptr pDataSource, out ma_uint64 pLength);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_get_cursor_in_seconds(ma_data_source_ptr pDataSource, out float pCursor);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_get_length_in_seconds(ma_data_source_ptr pDataSource, out float pLength);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_set_looping(ma_data_source_ptr pDataSource, ma_bool32 isLooping);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_bool32 ma_data_source_is_looping(ma_data_source_ptr pDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_set_range_in_pcm_frames(ma_data_source_ptr pDataSource, ma_uint64 rangeBegInFrames, ma_uint64 rangeEndInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_data_source_get_range_in_pcm_frames(ma_data_source_ptr pDataSource, out ma_uint64 pRangeBegInFrames, out ma_uint64 pRangeEndInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_set_loop_point_in_pcm_frames(ma_data_source_ptr pDataSource, ma_uint64 loopBegInFrames, ma_uint64 loopEndInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_data_source_get_loop_point_in_pcm_frames(ma_data_source_ptr pDataSource, out ma_uint64 pLoopBegInFrames, out ma_uint64 pLoopEndInFrames);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_set_current(ma_data_source_ptr pDataSource, ma_data_source_ptr pCurrentDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_data_source_ptr ma_data_source_get_current(ma_data_source_ptr pDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_set_next(ma_data_source_ptr pDataSource, ma_data_source_ptr pNextDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_data_source_ptr ma_data_source_get_next(ma_data_source_ptr pDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_set_next_callback(ma_data_source_ptr pDataSource, ma_data_source_get_next_proc onGetNext);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_data_source_get_next_proc ma_data_source_get_next_callback(ma_data_source_ptr pDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_data_source_node_config ma_data_source_node_config_init(ma_data_source_ptr pDataSource);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe ma_result ma_data_source_node_init(ma_node_graph_ptr pNodeGraph, ref ma_data_source_node_config pConfig, ma_allocation_callbacks* pAllocationCallbacks, ma_data_source_node_ptr pDataSourceNode);
+
+        public static ma_result ma_data_source_node_init(ma_node_graph_ptr pNodeGraph, ref ma_data_source_node_config pConfig, ref ma_allocation_callbacks pAllocationCallbacks, ma_data_source_node_ptr pDataSourceNode)
+        {
+            unsafe
+            {
+                fixed (ma_allocation_callbacks* pCallbacks = &pAllocationCallbacks)
+                {
+                    return ma_data_source_node_init(pNodeGraph, ref pConfig, pCallbacks, pDataSourceNode);
+                }
+            }
+        }
+
+        public static ma_result ma_data_source_node_init(ma_node_graph_ptr pNodeGraph, ref ma_data_source_node_config pConfig, ma_data_source_node_ptr pDataSourceNode)
+        {
+            unsafe
+            {
+                return ma_data_source_node_init(pNodeGraph, ref pConfig, null, pDataSourceNode);
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern unsafe void ma_data_source_node_uninit(ma_data_source_node_ptr pDataSourceNode, ma_allocation_callbacks* pAllocationCallbacks);
+
+        public static void ma_data_source_node_uninit(ma_data_source_node_ptr pDataSourceNode, ref ma_allocation_callbacks pAllocationCallbacks)
+        {
+            unsafe
+            {
+                fixed (ma_allocation_callbacks* pCallbacks = &pAllocationCallbacks)
+                {
+                    ma_data_source_node_uninit(pDataSourceNode, pCallbacks);
+                }
+            }
+        }
+
+        public static unsafe void ma_data_source_node_uninit(ma_data_source_node_ptr pDataSourceNode)
+        {
+            unsafe
+            {
+                ma_data_source_node_uninit(pDataSourceNode, null);
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_data_source_node_set_looping(ma_data_source_node_ptr pDataSourceNode, ma_bool32 isLooping);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_bool32 ma_data_source_node_is_looping(ma_data_source_node_ptr pDataSourceNode);
     }
 
     public static class MarshalHelper
