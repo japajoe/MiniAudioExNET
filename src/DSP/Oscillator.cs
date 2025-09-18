@@ -47,6 +47,7 @@
 // SOFTWARE.
 
 using System;
+using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioEx.DSP
 {

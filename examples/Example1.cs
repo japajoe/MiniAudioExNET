@@ -1,6 +1,6 @@
 //Playing audio from a file on disk.
 
-using MiniAudioEx;
+using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioExExamples
 {

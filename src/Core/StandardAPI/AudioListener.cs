@@ -47,9 +47,9 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioEx.Core;
+using MiniAudioEx.Native;
 
-namespace MiniAudioEx
+namespace MiniAudioEx.Core.StandardAPI
 {
     /// <summary>
     /// This class represents a point in the 3D space where audio is perceived or heard.

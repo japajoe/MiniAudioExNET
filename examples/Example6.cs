@@ -1,7 +1,7 @@
 //An example of FM synthesis.
 
 using System;
-using MiniAudioEx;
+using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.DSP;
 
 namespace MiniAudioExExamples

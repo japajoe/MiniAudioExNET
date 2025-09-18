@@ -2,7 +2,7 @@
 //You need to compile this with AllowUnsafeBlocks
 
 using System;
-using MiniAudioEx.Core;
+using MiniAudioEx.Native;
 
 namespace MiniAudioExExamples
 {

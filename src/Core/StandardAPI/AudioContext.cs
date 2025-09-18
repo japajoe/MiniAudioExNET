@@ -49,9 +49,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using MiniAudioEx.Core;
+using MiniAudioEx.Native;
 
-namespace MiniAudioEx
+namespace MiniAudioEx.Core.StandardAPI
 {
     public delegate void DeviceDataEvent(AudioBuffer<float> data, UInt32 frameCount);
 

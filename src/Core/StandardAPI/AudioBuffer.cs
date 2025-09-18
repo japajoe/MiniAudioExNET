@@ -47,49 +47,62 @@
 // SOFTWARE.
 
 using System;
-using System.Threading;
 
-namespace MiniAudioEx
+namespace MiniAudioEx.Core.StandardAPI
 {
-    public sealed class AudioApp
+    public unsafe ref struct AudioBuffer<T> where T : unmanaged
     {
-        public delegate void UpdateEvent(float deltaTime);
-        public delegate void CloseEvent();
-        public delegate void LoadEvent();
+        internal void* _pointer;
+        /// <summary>The number of elements this Span contains.</summary>
+        private readonly int _length;
 
-        public event LoadEvent Loaded;
-        public event UpdateEvent Update;
-        public event CloseEvent Closing;
-
-        private UInt32 sampleRate;
-        private UInt32 channels;
-
-        public AudioApp(UInt32 sampleRate, UInt32 channels)
+        public int Length
         {
-            this.sampleRate = sampleRate;
-            this.channels = channels;
-        }
-
-        public void Run()
-        {
-            Console.CancelKeyPress += OnExit;
-
-            AudioContext.Initialize(sampleRate, channels);
-
-            Loaded?.Invoke();
-
-            while(true)
+            get
             {
-                AudioContext.Update();
-                Update?.Invoke(AudioContext.DeltaTime);
-                Thread.Sleep(10);
+                return _length;
             }
         }
 
-        private void OnExit(object sender, ConsoleCancelEventArgs e)
+        public bool IsEmpty
         {
-            Closing?.Invoke();
-            AudioContext.Deinitialize();
+            get
+            {
+                return 0 >= (uint)_length;
+            } 
+        }
+
+        public IntPtr Pointer
+        {
+            get
+            {
+                return new IntPtr(_pointer);
+            }
+        }
+
+        public ref T this[int index]
+        {
+            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (index >= _length || index < 0)
+                    new System.IndexOutOfRangeException();
+                return ref ((T*)_pointer)[index];
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public AudioBuffer(void* pointer, int length)
+        {
+            _pointer = pointer;
+            _length = length;
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public AudioBuffer(System.IntPtr pointer, int length)
+        {
+            _pointer = pointer.ToPointer();
+            _length = length;
         }
     }
 }

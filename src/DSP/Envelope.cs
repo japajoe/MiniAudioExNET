@@ -51,6 +51,7 @@
 // C# Port 2024 W.M.R Jap-A-Joe
 
 using System;
+using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioEx.DSP
 {

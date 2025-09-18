@@ -49,7 +49,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace MiniAudioEx
+namespace MiniAudioEx.Core.StandardAPI
 {
     /// <summary>
     /// Represents audio data that can be played back or streamed by an AudioSource. Supported file types are WAV/MP3/FlAC/OGG.

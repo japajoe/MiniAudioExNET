@@ -12,7 +12,7 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Callbacks for effects processing and generating audio.
 - Spatial properties like doppler effect, pitching, distance attenuation and panning.
 - Utilities for audio generation.
-- Exposes many native miniaudio API calls (work in progress, not yet included in 2.4.0).
+- Exposes many native miniaudio API calls (work in progress).
 
 # Platforms
 - Windows x86_64
@@ -25,8 +25,15 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.4.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.5.0
 ```
+
+# Changes in 2.5.0
+- Added low level API for directly using miniaudio functionality.
+- Added some managed types that use the low level API (MaEngine/MaContext/MaSound etc).
+- Added 2 new namespaces: `MiniAudioEx.Core.StandardAPI` and `MiniAudioEx.Core.AdvancedAPI`.
+- Moved AudioContext/AudioSource/AudioClip and other related types into `MiniAudioEx.Core.StandardAPI`.
+- Updated the examples.
 
 # Changes in 2.4.0
 - New AudioSource implementation that allows playing multiple sounds simultaneously. With this comes a new method called `PlayOneShot` which is suitable in scenarios where you need to rapidly play sounds (for example think of gun shots) without having to stop an already playing sound and thus cutting it off. An additional benefit is that all these sounds are processed in the same FX chain.
@@ -107,7 +114,7 @@ Initializing MiniAudioEx and playing audio from a file on disk.
 ```cs
 using System;
 using System.Threading;
-using MiniAudioEx;
+using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioExExample
 {
@@ -156,3 +163,5 @@ See links below for more examples. Most of these use the `AudioApp` class which 
 [FM synthesis](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example6.cs)
 
 [Using the native miniaudio API.](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example7.cs)
+
+[Using the advanced API.](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example8.cs)

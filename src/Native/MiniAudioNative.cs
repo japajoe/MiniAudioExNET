@@ -49,7 +49,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace MiniAudioEx.Core
+namespace MiniAudioEx.Native
 {
     // ma_typedefs
     using size_t = UIntPtr;
@@ -267,150 +267,150 @@ namespace MiniAudioEx.Core
 
     public enum ma_device_notification_type
     {
-        ma_device_notification_type_started,
-        ma_device_notification_type_stopped,
-        ma_device_notification_type_rerouted,
-        ma_device_notification_type_interruption_began,
-        ma_device_notification_type_interruption_ended,
-        ma_device_notification_type_unlocked
+        started,
+        stopped,
+        rerouted,
+        interruption_began,
+        interruption_ended,
+        unlocked
     }
 
     public enum ma_seek_origin
     {
-        ma_seek_origin_start,
-        ma_seek_origin_current,
-        ma_seek_origin_end  /* Not used by decoders. */
+        start,
+        current,
+        end  /* Not used by decoders. */
     }
 
     public enum ma_performance_profile
     {
-        ma_performance_profile_low_latency = 0,
-        ma_performance_profile_conservative
+        low_latency = 0,
+        conservative
     }
 
     public enum ma_channel_mix_mode
     {
-        ma_channel_mix_mode_rectangular = 0,   /* Simple averaging based on the plane(s) the channel is sitting on. */
-        ma_channel_mix_mode_simple,            /* Drop excess channels; zeroed out extra channels. */
-        ma_channel_mix_mode_custom_weights,    /* Use custom weights specified in ma_channel_converter_config. */
-        ma_channel_mix_mode_default = ma_channel_mix_mode_rectangular
+        rectangular = 0,   /* Simple averaging based on the plane(s) the channel is sitting on. */
+        simple,            /* Drop excess channels; zeroed out extra channels. */
+        custom_weights,    /* Use custom weights specified in ma_channel_converter_config. */
+        standard = rectangular // Actually called 'ma_channel_mix_mode_default' but 'default' is a reserved keyword in C#
     }
 
     public enum ma_wasapi_usage
     {
-        ma_wasapi_usage_default = 0,
-        ma_wasapi_usage_games,
-        ma_wasapi_usage_pro_audio,
+        standard = 0, // Actually called 'ma_wasapi_usage_default' but 'default' is a reserved keyword in C#
+        games,
+        pro_audio,
     }
 
     public enum ma_opensl_stream_type
     {
-        ma_opensl_stream_type_default = 0,              /* Leaves the stream type unset. */
-        ma_opensl_stream_type_voice,                    /* SL_ANDROID_STREAM_VOICE */
-        ma_opensl_stream_type_system,                   /* SL_ANDROID_STREAM_SYSTEM */
-        ma_opensl_stream_type_ring,                     /* SL_ANDROID_STREAM_RING */
-        ma_opensl_stream_type_media,                    /* SL_ANDROID_STREAM_MEDIA */
-        ma_opensl_stream_type_alarm,                    /* SL_ANDROID_STREAM_ALARM */
-        ma_opensl_stream_type_notification              /* SL_ANDROID_STREAM_NOTIFICATION */
+        standard = 0,              /* Leaves the stream type unset. */
+        voice,                    /* SL_ANDROID_STREAM_VOICE */
+        system,                   /* SL_ANDROID_STREAM_SYSTEM */
+        ring,                     /* SL_ANDROID_STREAM_RING */
+        media,                    /* SL_ANDROID_STREAM_MEDIA */
+        alarm,                    /* SL_ANDROID_STREAM_ALARM */
+        notification              /* SL_ANDROID_STREAM_NOTIFICATION */
     }
 
     public enum ma_opensl_recording_preset
     {
-        ma_opensl_recording_preset_default = 0,         /* Leaves the input preset unset. */
-        ma_opensl_recording_preset_generic,             /* SL_ANDROID_RECORDING_PRESET_GENERIC */
-        ma_opensl_recording_preset_camcorder,           /* SL_ANDROID_RECORDING_PRESET_CAMCORDER */
-        ma_opensl_recording_preset_voice_recognition,   /* SL_ANDROID_RECORDING_PRESET_VOICE_RECOGNITION */
-        ma_opensl_recording_preset_voice_communication, /* SL_ANDROID_RECORDING_PRESET_VOICE_COMMUNICATION */
-        ma_opensl_recording_preset_voice_unprocessed    /* SL_ANDROID_RECORDING_PRESET_UNPROCESSED */
+        standard = 0,         /* Leaves the input preset unset. */
+        generic,             /* SL_ANDROID_RECORDING_PRESET_GENERIC */
+        camcorder,           /* SL_ANDROID_RECORDING_PRESET_CAMCORDER */
+        voice_recognition,   /* SL_ANDROID_RECORDING_PRESET_VOICE_RECOGNITION */
+        voice_communication, /* SL_ANDROID_RECORDING_PRESET_VOICE_COMMUNICATION */
+        voice_unprocessed    /* SL_ANDROID_RECORDING_PRESET_UNPROCESSED */
     }
 
     public enum ma_aaudio_usage
     {
-        ma_aaudio_usage_default = 0,                    /* Leaves the usage type unset. */
-        ma_aaudio_usage_media,                          /* AAUDIO_USAGE_MEDIA */
-        ma_aaudio_usage_voice_communication,            /* AAUDIO_USAGE_VOICE_COMMUNICATION */
-        ma_aaudio_usage_voice_communication_signalling, /* AAUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING */
-        ma_aaudio_usage_alarm,                          /* AAUDIO_USAGE_ALARM */
-        ma_aaudio_usage_notification,                   /* AAUDIO_USAGE_NOTIFICATION */
-        ma_aaudio_usage_notification_ringtone,          /* AAUDIO_USAGE_NOTIFICATION_RINGTONE */
-        ma_aaudio_usage_notification_event,             /* AAUDIO_USAGE_NOTIFICATION_EVENT */
-        ma_aaudio_usage_assistance_accessibility,       /* AAUDIO_USAGE_ASSISTANCE_ACCESSIBILITY */
-        ma_aaudio_usage_assistance_navigation_guidance, /* AAUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE */
-        ma_aaudio_usage_assistance_sonification,        /* AAUDIO_USAGE_ASSISTANCE_SONIFICATION */
-        ma_aaudio_usage_game,                           /* AAUDIO_USAGE_GAME */
-        ma_aaudio_usage_assitant,                       /* AAUDIO_USAGE_ASSISTANT */
-        ma_aaudio_usage_emergency,                      /* AAUDIO_SYSTEM_USAGE_EMERGENCY */
-        ma_aaudio_usage_safety,                         /* AAUDIO_SYSTEM_USAGE_SAFETY */
-        ma_aaudio_usage_vehicle_status,                 /* AAUDIO_SYSTEM_USAGE_VEHICLE_STATUS */
-        ma_aaudio_usage_announcement                    /* AAUDIO_SYSTEM_USAGE_ANNOUNCEMENT */
+        standard = 0,                    /* Leaves the usage type unset. */
+        media,                          /* AAUDIO_USAGE_MEDIA */
+        voice_communication,            /* AAUDIO_USAGE_VOICE_COMMUNICATION */
+        voice_communication_signalling, /* AAUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING */
+        alarm,                          /* AAUDIO_USAGE_ALARM */
+        notification,                   /* AAUDIO_USAGE_NOTIFICATION */
+        notification_ringtone,          /* AAUDIO_USAGE_NOTIFICATION_RINGTONE */
+        notification_event,             /* AAUDIO_USAGE_NOTIFICATION_EVENT */
+        assistance_accessibility,       /* AAUDIO_USAGE_ASSISTANCE_ACCESSIBILITY */
+        assistance_navigation_guidance, /* AAUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE */
+        assistance_sonification,        /* AAUDIO_USAGE_ASSISTANCE_SONIFICATION */
+        game,                           /* AAUDIO_USAGE_GAME */
+        assitant,                       /* AAUDIO_USAGE_ASSISTANT */
+        emergency,                      /* AAUDIO_SYSTEM_USAGE_EMERGENCY */
+        safety,                         /* AAUDIO_SYSTEM_USAGE_SAFETY */
+        vehicle_status,                 /* AAUDIO_SYSTEM_USAGE_VEHICLE_STATUS */
+        announcement                    /* AAUDIO_SYSTEM_USAGE_ANNOUNCEMENT */
     }
 
     public enum ma_aaudio_content_type
     {
-        ma_aaudio_content_type_default = 0,             /* Leaves the content type unset. */
-        ma_aaudio_content_type_speech,                  /* AAUDIO_CONTENT_TYPE_SPEECH */
-        ma_aaudio_content_type_music,                   /* AAUDIO_CONTENT_TYPE_MUSIC */
-        ma_aaudio_content_type_movie,                   /* AAUDIO_CONTENT_TYPE_MOVIE */
-        ma_aaudio_content_type_sonification             /* AAUDIO_CONTENT_TYPE_SONIFICATION */
+        standard = 0,             /* Leaves the content type unset. */
+        speech,                  /* AAUDIO_CONTENT_TYPE_SPEECH */
+        music,                   /* AAUDIO_CONTENT_TYPE_MUSIC */
+        movie,                   /* AAUDIO_CONTENT_TYPE_MOVIE */
+        sonification             /* AAUDIO_CONTENT_TYPE_SONIFICATION */
     }
 
     public enum ma_aaudio_input_preset
     {
-        ma_aaudio_input_preset_default = 0,             /* Leaves the input preset unset. */
-        ma_aaudio_input_preset_generic,                 /* AAUDIO_INPUT_PRESET_GENERIC */
-        ma_aaudio_input_preset_camcorder,               /* AAUDIO_INPUT_PRESET_CAMCORDER */
-        ma_aaudio_input_preset_voice_recognition,       /* AAUDIO_INPUT_PRESET_VOICE_RECOGNITION */
-        ma_aaudio_input_preset_voice_communication,     /* AAUDIO_INPUT_PRESET_VOICE_COMMUNICATION */
-        ma_aaudio_input_preset_unprocessed,             /* AAUDIO_INPUT_PRESET_UNPROCESSED */
-        ma_aaudio_input_preset_voice_performance        /* AAUDIO_INPUT_PRESET_VOICE_PERFORMANCE */
+        standard = 0,             /* Leaves the input preset unset. */
+        generic,                 /* AAUDIO_INPUT_PRESET_GENERIC */
+        camcorder,               /* AAUDIO_INPUT_PRESET_CAMCORDER */
+        voice_recognition,       /* AAUDIO_INPUT_PRESET_VOICE_RECOGNITION */
+        voice_communication,     /* AAUDIO_INPUT_PRESET_VOICE_COMMUNICATION */
+        unprocessed,             /* AAUDIO_INPUT_PRESET_UNPROCESSED */
+        voice_performance        /* AAUDIO_INPUT_PRESET_VOICE_PERFORMANCE */
     }
 
     public enum ma_aaudio_allowed_capture_policy
     {
-        ma_aaudio_allow_capture_default = 0,            /* Leaves the allowed capture policy unset. */
-        ma_aaudio_allow_capture_by_all,                 /* AAUDIO_ALLOW_CAPTURE_BY_ALL */
-        ma_aaudio_allow_capture_by_system,              /* AAUDIO_ALLOW_CAPTURE_BY_SYSTEM */
-        ma_aaudio_allow_capture_by_none                 /* AAUDIO_ALLOW_CAPTURE_BY_NONE */
+        standard = 0,            /* Leaves the allowed capture policy unset. */
+        by_all,                 /* AAUDIO_ALLOW_CAPTURE_BY_ALL */
+        by_system,              /* AAUDIO_ALLOW_CAPTURE_BY_SYSTEM */
+        by_none                 /* AAUDIO_ALLOW_CAPTURE_BY_NONE */
     }
 
     public enum ma_resample_algorithm
     {
-        ma_resample_algorithm_linear = 0,    /* Fastest, lowest quality. Optional low-pass filtering. Default. */
-        ma_resample_algorithm_custom,
+        linear = 0,    /* Fastest, lowest quality. Optional low-pass filtering. Default. */
+        custom,
     }
 
     public enum ma_share_mode
     {
-        ma_share_mode_shared = 0,
-        ma_share_mode_exclusive
+        shared = 0,
+        exclusive
     }
 
     public enum ma_attenuation_model
     {
-        ma_attenuation_model_none,          /* No distance attenuation and no spatialization. */
-        ma_attenuation_model_inverse,       /* Equivalent to OpenAL's AL_INVERSE_DISTANCE_CLAMPED. */
-        ma_attenuation_model_linear,        /* Linear attenuation. Equivalent to OpenAL's AL_LINEAR_DISTANCE_CLAMPED. */
-        ma_attenuation_model_exponential    /* Exponential attenuation. Equivalent to OpenAL's AL_EXPONENT_DISTANCE_CLAMPED. */
+        none,          /* No distance attenuation and no spatialization. */
+        inverse,       /* Equivalent to OpenAL's AL_INVERSE_DISTANCE_CLAMPED. */
+        linear,        /* Linear attenuation. Equivalent to OpenAL's AL_LINEAR_DISTANCE_CLAMPED. */
+        exponential    /* Exponential attenuation. Equivalent to OpenAL's AL_EXPONENT_DISTANCE_CLAMPED. */
     }
 
     /* Backend enums must be in priority order. */
     public enum ma_backend
     {
-        ma_backend_wasapi,
-        ma_backend_dsound,
-        ma_backend_winmm,
-        ma_backend_coreaudio,
-        ma_backend_sndio,
-        ma_backend_audio4,
-        ma_backend_oss,
-        ma_backend_pulseaudio,
-        ma_backend_alsa,
-        ma_backend_jack,
-        ma_backend_aaudio,
-        ma_backend_opensl,
-        ma_backend_webaudio,
-        ma_backend_custom,  /* <-- Custom backend, with callbacks defined by the context config. */
-        ma_backend_null     /* <-- Must always be the last item. Lowest priority, and used as the terminator for backend enumeration. */
+        wasapi,
+        dsound,
+        winmm,
+        coreaudio,
+        sndio,
+        audio4,
+        oss,
+        pulseaudio,
+        alsa,
+        jack,
+        aaudio,
+        opensl,
+        webaudio,
+        custom,  /* <-- Custom backend, with callbacks defined by the context config. */
+        nill     /* <-- Must always be the last item. Lowest priority, and used as the terminator for backend enumeration. */
     }
 
     public enum ma_format
@@ -419,184 +419,185 @@ namespace MiniAudioEx.Core
         I like to keep these explicitly defined because they're used as a key into a lookup table. When items are
         added to this, make sure there are no gaps and that they're added to the lookup table in ma_get_bytes_per_sample().
         */
-        ma_format_unknown = 0,     /* Mainly used for indicating an error, but also used as the default for the output format for decoders. */
-        ma_format_u8 = 1,
-        ma_format_s16 = 2,     /* Seems to be the most widely supported format. */
-        ma_format_s24 = 3,     /* Tightly packed. 3 bytes per sample. */
-        ma_format_s32 = 4,
-        ma_format_f32 = 5,
-        ma_format_count
+        unknown = 0,     /* Mainly used for indicating an error, but also used as the default for the output format for decoders. */
+        u8 = 1,
+        s16 = 2,     /* Seems to be the most widely supported format. */
+        s24 = 3,     /* Tightly packed. 3 bytes per sample. */
+        s32 = 4,
+        f32 = 5,
+        count
     }
 
     public enum ma_pan_mode
     {
-        ma_pan_mode_balance = 0,    /* Does not blend one side with the other. Technically just a balance. Compatible with other popular audio engines and therefore the default. */
-        ma_pan_mode_pan             /* A true pan. The sound from one side will "move" to the other side and blend with it. */
+        balance = 0,    /* Does not blend one side with the other. Technically just a balance. Compatible with other popular audio engines and therefore the default. */
+        pan             /* A true pan. The sound from one side will "move" to the other side and blend with it. */
     }
 
     public enum ma_positioning
     {
-        ma_positioning_absolute,
-        ma_positioning_relative
+        absolute,
+        relative
     }
 
     public enum ma_handedness
     {
-        ma_handedness_right,
-        ma_handedness_left
+        right,
+        left
     }
 
     public enum ma_allocation_type
     {
-        ma_allocation_type_async_notification,
-        ma_allocation_type_biquad_coefficient,
-        ma_allocation_type_channel,
-        ma_allocation_type_context,
-        ma_allocation_type_data_source,
-        ma_allocation_type_data_source_node,
-        ma_allocation_type_data_source_vtable,
-        ma_allocation_type_decoder,
-        ma_allocation_type_device,
-        ma_allocation_type_device_id,
-        ma_allocation_type_device_notification,
-        ma_allocation_type_device_descriptor,
-        ma_allocation_type_device_info,
-        ma_allocation_type_engine,
-        ma_allocation_type_fence,
-        ma_allocation_type_gainer,
-        ma_allocation_type_log,
-        ma_allocation_type_lpf1,
-        ma_allocation_type_lpf2,
-        ma_allocation_type_node,
-        ma_allocation_type_node_graph,
-        ma_allocation_type_node_input_bus,
-        ma_allocation_type_node_output_bus,
-        ma_allocation_type_node_vtable,
-        ma_allocation_type_resampling_backend_vtable,
-        ma_allocation_type_resource_manager,
-        ma_allocation_type_sound,
-        ma_allocation_type_sound_group,
-        ma_allocation_type_spatializer,
-        ma_allocation_type_spatializer_listener,
-        ma_allocation_type_stack,
-        ma_allocation_type_vfs
+        async_notification,
+        biquad_coefficient,
+        channel,
+        context,
+        data_source,
+        data_source_node,
+        data_source_vtable,
+        decoder,
+        decoding_backend_vtable,
+        device,
+        device_id,
+        device_notification,
+        device_descriptor,
+        device_info,
+        engine,
+        fence,
+        gainer,
+        log,
+        lpf1,
+        lpf2,
+        node,
+        node_graph,
+        node_input_bus,
+        node_output_bus,
+        node_vtable,
+        resampling_backend_vtable,
+        resource_manager,
+        sound,
+        sound_group,
+        spatializer,
+        spatializer_listener,
+        stack,
+        vfs
     }
 
     public enum ma_device_type
     {
-        ma_device_type_playback = 1,
-        ma_device_type_capture = 2,
-        ma_device_type_duplex = ma_device_type_playback | ma_device_type_capture, /* 3 */
-        ma_device_type_loopback = 4
+        playback = 1,
+        capture = 2,
+        duplex = playback | capture, /* 3 */
+        loopback = 4
     }
 
     public enum ma_mono_expansion_mode
     {
-        ma_mono_expansion_mode_duplicate = 0,   /* The default. */
-        ma_mono_expansion_mode_average,         /* Average the mono channel across all channels. */
-        ma_mono_expansion_mode_stereo_only,     /* Duplicate to the left and right channels only and ignore the others. */
-        ma_mono_expansion_mode_default = ma_mono_expansion_mode_duplicate
+        duplicate = 0,   /* The default. */
+        average,         /* Average the mono channel across all channels. */
+        stereo_only,     /* Duplicate to the left and right channels only and ignore the others. */
+        standard = duplicate
     }
 
     public enum ma_thread_priority
     {
-        ma_thread_priority_idle = -5,
-        ma_thread_priority_lowest = -4,
-        ma_thread_priority_low = -3,
-        ma_thread_priority_normal = -2,
-        ma_thread_priority_high = -1,
-        ma_thread_priority_highest = 0,
-        ma_thread_priority_realtime = 1,
-        ma_thread_priority_default = 0
+        idle = -5,
+        lowest = -4,
+        low = -3,
+        normal = -2,
+        high = -1,
+        highest = 0,
+        realtime = 1,
+        standard = 0
     }
 
     public enum ma_ios_session_category
     {
-        ma_ios_session_category_default = 0,        /* AVAudioSessionCategoryPlayAndRecord. */
-        ma_ios_session_category_none,               /* Leave the session category unchanged. */
-        ma_ios_session_category_ambient,            /* AVAudioSessionCategoryAmbient */
-        ma_ios_session_category_solo_ambient,       /* AVAudioSessionCategorySoloAmbient */
-        ma_ios_session_category_playback,           /* AVAudioSessionCategoryPlayback */
-        ma_ios_session_category_record,             /* AVAudioSessionCategoryRecord */
-        ma_ios_session_category_play_and_record,    /* AVAudioSessionCategoryPlayAndRecord */
-        ma_ios_session_category_multi_route         /* AVAudioSessionCategoryMultiRoute */
+        standard = 0,        /* AVAudioSessionCategoryPlayAndRecord. */
+        none,               /* Leave the session category unchanged. */
+        ambient,            /* AVAudioSessionCategoryAmbient */
+        solo_ambient,       /* AVAudioSessionCategorySoloAmbient */
+        playback,           /* AVAudioSessionCategoryPlayback */
+        record,             /* AVAudioSessionCategoryRecord */
+        play_and_record,    /* AVAudioSessionCategoryPlayAndRecord */
+        multi_route         /* AVAudioSessionCategoryMultiRoute */
     }
 
     public enum ma_dither_mode
     {
-        ma_dither_mode_none = 0,
-        ma_dither_mode_rectangle,
-        ma_dither_mode_triangle
+        none = 0,
+        rectangle,
+        triangle
     }
 
     public enum ma_encoding_format
     {
-        ma_encoding_format_unknown = 0,
-        ma_encoding_format_wav,
-        ma_encoding_format_flac,
-        ma_encoding_format_mp3,
-        ma_encoding_format_vorbis
+        unknown = 0,
+        wav,
+        flac,
+        mp3,
+        vorbis
     }
 
     public enum ma_data_converter_execution_path
     {
-        ma_data_converter_execution_path_passthrough,       /* No conversion. */
-        ma_data_converter_execution_path_format_only,       /* Only format conversion. */
-        ma_data_converter_execution_path_channels_only,     /* Only channel conversion. */
-        ma_data_converter_execution_path_resample_only,     /* Only resampling. */
-        ma_data_converter_execution_path_resample_first,    /* All conversions, but resample as the first step. */
-        ma_data_converter_execution_path_channels_first     /* All conversions, but channels as the first step. */
+        passthrough,       /* No conversion. */
+        format_only,       /* Only format conversion. */
+        channels_only,     /* Only channel conversion. */
+        resample_only,     /* Only resampling. */
+        resample_first,    /* All conversions, but resample as the first step. */
+        channels_first     /* All conversions, but channels as the first step. */
     }
 
     public enum ma_channel_conversion_path
     {
-        ma_channel_conversion_path_unknown,
-        ma_channel_conversion_path_passthrough,
-        ma_channel_conversion_path_mono_out,    /* Converting to mono. */
-        ma_channel_conversion_path_mono_in,     /* Converting from mono. */
-        ma_channel_conversion_path_shuffle,     /* Simple shuffle. Will use this when all channels are present in both input and output channel maps, but just in a different order. */
-        ma_channel_conversion_path_weights      /* Blended based on weights. */
+        unknown,
+        passthrough,
+        mono_out,    /* Converting to mono. */
+        mono_in,     /* Converting from mono. */
+        shuffle,     /* Simple shuffle. Will use this when all channels are present in both input and output channel maps, but just in a different order. */
+        weights      /* Blended based on weights. */
     }
 
     public enum ma_device_state
     {
-        ma_device_state_uninitialized = 0,
-        ma_device_state_stopped = 1,  /* The device's default state after initialization. */
-        ma_device_state_started = 2,  /* The device is started and is requesting and/or delivering audio data. */
-        ma_device_state_starting = 3,  /* Transitioning from a stopped state to started. */
-        ma_device_state_stopping = 4   /* Transitioning from a started state to stopped. */
+        uninitialized = 0,
+        stopped = 1,  /* The device's default state after initialization. */
+        started = 2,  /* The device is started and is requesting and/or delivering audio data. */
+        starting = 3,  /* Transitioning from a stopped state to started. */
+        stopping = 4   /* Transitioning from a started state to stopped. */
     }
 
     [Flags]
     public enum ma_sound_flags
     {
-        MA_SOUND_FLAG_STREAM = 0x00000001,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM */
-        MA_SOUND_FLAG_DECODE = 0x00000002,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE */
-        MA_SOUND_FLAG_ASYNC = 0x00000004,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC */
-        MA_SOUND_FLAG_WAIT_INIT = 0x00000008,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_WAIT_INIT */
-        MA_SOUND_FLAG_UNKNOWN_LENGTH = 0x00000010,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_UNKNOWN_LENGTH */
-        MA_SOUND_FLAG_LOOPING = 0x00000020,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING */
+        STREAM = 0x00000001,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM */
+        DECODE = 0x00000002,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE */
+        ASYNC = 0x00000004,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC */
+        WAIT_INIT = 0x00000008,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_WAIT_INIT */
+        UNKNOWN_LENGTH = 0x00000010,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_UNKNOWN_LENGTH */
+        LOOPING = 0x00000020,   /* MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING */
 
         /* ma_sound specific flags. */
-        MA_SOUND_FLAG_NO_DEFAULT_ATTACHMENT = 0x00001000,   /* Do not attach to the endpoint by default. Useful for when setting up nodes in a complex graph system. */
-        MA_SOUND_FLAG_NO_PITCH = 0x00002000,   /* Disable pitch shifting with ma_sound_set_pitch() and ma_sound_group_set_pitch(). This is an optimization. */
-        MA_SOUND_FLAG_NO_SPATIALIZATION = 0x00004000    /* Disable spatialization. */
+        NO_DEFAULT_ATTACHMENT = 0x00001000,   /* Do not attach to the endpoint by default. Useful for when setting up nodes in a complex graph system. */
+        NO_PITCH = 0x00002000,   /* Disable pitch shifting with ma_sound_set_pitch() and ma_sound_group_set_pitch(). This is an optimization. */
+        NO_SPATIALIZATION = 0x00004000    /* Disable spatialization. */
     }
 
     public enum ma_node_state
     {
-        ma_node_state_started = 0,
-        ma_node_state_stopped = 1
+        started = 0,
+        stopped = 1
     }
 
     [Flags]
     public enum ma_node_flags
     {
-        MA_NODE_FLAG_PASSTHROUGH = 0x00000001,
-        MA_NODE_FLAG_CONTINUOUS_PROCESSING = 0x00000002,
-        MA_NODE_FLAG_ALLOW_NULL_INPUT = 0x00000004,
-        MA_NODE_FLAG_DIFFERENT_PROCESSING_RATES = 0x00000008,
-        MA_NODE_FLAG_SILENT_OUTPUT = 0x00000010
+        PASSTHROUGH = 0x00000001,
+        CONTINUOUS_PROCESSING = 0x00000002,
+        ALLOW_NULL_INPUT = 0x00000004,
+        DIFFERENT_PROCESSING_RATES = 0x00000008,
+        SILENT_OUTPUT = 0x00000010
     }
 
     // ma_pointer_types
@@ -616,7 +617,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_async_notification);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.async_notification);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -645,7 +646,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_biquad_coefficient);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.biquad_coefficient);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -681,7 +682,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_channel);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.channel);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -710,7 +711,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_context);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.context);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -739,7 +740,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_data_source);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.data_source);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -768,7 +769,7 @@ namespace MiniAudioEx.Core
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_data_source_node);
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.data_source_node);
             return pointer != IntPtr.Zero;
         }
         public void Free()
@@ -804,7 +805,7 @@ namespace MiniAudioEx.Core
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_data_source_vtable);
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.data_source_vtable);
             return pointer != IntPtr.Zero;
         }
         public void Free()
@@ -839,7 +840,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_decoder);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.decoder);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -859,6 +860,42 @@ namespace MiniAudioEx.Core
 		}
 	}
 
+    //
+	public unsafe struct ma_decoding_backend_vtable_ptr
+	{
+		public IntPtr pointer;
+		public ma_decoding_backend_vtable_ptr() { }
+		public ma_decoding_backend_vtable_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_decoding_backend_vtable_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.decoding_backend_vtable);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+
+		public ma_decoding_backend_vtable* Get()
+		{
+			if(pointer == IntPtr.Zero)
+				return null;
+            return (ma_decoding_backend_vtable*)pointer;
+		}
+	}
+
 	[StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_device_ptr
 	{
@@ -875,7 +912,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -911,7 +948,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_id);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_id);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -947,7 +984,7 @@ namespace MiniAudioEx.Core
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_notification);
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_notification);
             return pointer != IntPtr.Zero;
         }
         public void Free()
@@ -976,7 +1013,7 @@ namespace MiniAudioEx.Core
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_descriptor);
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_descriptor);
             return pointer != IntPtr.Zero;
         }
         public void Free()
@@ -1011,7 +1048,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_device_info);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_info);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1046,7 +1083,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_engine);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.engine);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1075,7 +1112,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_fence);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.fence);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1104,7 +1141,7 @@ namespace MiniAudioEx.Core
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_gainer);
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.gainer);
             return pointer != IntPtr.Zero;
         }
         public void Free()
@@ -1139,7 +1176,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_log);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.log);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1174,7 +1211,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_lpf1);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.lpf1);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1210,7 +1247,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_lpf2);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.lpf2);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1246,7 +1283,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1275,7 +1312,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_graph);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_graph);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1311,7 +1348,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_input_bus);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_input_bus);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1347,7 +1384,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_output_bus);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_output_bus);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1383,7 +1420,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_node_vtable);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_vtable);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1419,7 +1456,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_resampling_backend_vtable);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.resampling_backend_vtable);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1448,7 +1485,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_resource_manager);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.resource_manager);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1477,7 +1514,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_sound);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.sound);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1506,7 +1543,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_sound_group);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.sound_group);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1535,7 +1572,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_spatializer);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.spatializer);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1564,7 +1601,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_spatializer_listener);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.spatializer_listener);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1600,7 +1637,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_stack);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.stack);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1636,7 +1673,7 @@ namespace MiniAudioEx.Core
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.ma_allocation_type_vfs);
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.vfs);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
@@ -1700,6 +1737,11 @@ namespace MiniAudioEx.Core
             this.x = x;
             this.y = y;
             this.z = z;
+        }
+
+        public override string ToString()
+        {
+            return "(" + x + ", " +  y + ", " + z + ")";
         }
     }
 
@@ -4400,6 +4442,30 @@ namespace MiniAudioEx.Core
             if (d == null)
                 return IntPtr.Zero;
             return Marshal.GetFunctionPointerForDelegate(d);
+        }
+
+        /// <summary>
+        /// Helper method that supports netstandard 2.0. Converts a pointer to an UTF8 string.
+        /// </summary>
+        /// <param name="p">The pointer with the string to convert</param>
+        /// <returns>A UTF8 encoded string</returns>
+        public static string PtrToStringUTF8(IntPtr p)
+        {
+            if (p == IntPtr.Zero)
+                return null;
+
+            int length = 0;
+
+            while (Marshal.ReadByte(p, length) != 0)
+            {
+                length++;
+            }
+
+            byte[] bytes = new byte[length];
+            Marshal.Copy(p, bytes, 0, length);
+
+
+            return System.Text.Encoding.UTF8.GetString(bytes);
         }
     }
 }

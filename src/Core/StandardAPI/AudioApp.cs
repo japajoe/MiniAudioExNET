@@ -47,62 +47,49 @@
 // SOFTWARE.
 
 using System;
+using System.Threading;
 
-namespace MiniAudioEx
+namespace MiniAudioEx.Core.StandardAPI
 {
-    public unsafe ref struct AudioBuffer<T> where T : unmanaged
+    public sealed class AudioApp
     {
-        internal void* _pointer;
-        /// <summary>The number of elements this Span contains.</summary>
-        private readonly int _length;
+        public delegate void UpdateEvent(float deltaTime);
+        public delegate void CloseEvent();
+        public delegate void LoadEvent();
 
-        public int Length
+        public event LoadEvent Loaded;
+        public event UpdateEvent Update;
+        public event CloseEvent Closing;
+
+        private UInt32 sampleRate;
+        private UInt32 channels;
+
+        public AudioApp(UInt32 sampleRate, UInt32 channels)
         {
-            get
+            this.sampleRate = sampleRate;
+            this.channels = channels;
+        }
+
+        public void Run()
+        {
+            Console.CancelKeyPress += OnExit;
+
+            AudioContext.Initialize(sampleRate, channels);
+
+            Loaded?.Invoke();
+
+            while(true)
             {
-                return _length;
+                AudioContext.Update();
+                Update?.Invoke(AudioContext.DeltaTime);
+                Thread.Sleep(10);
             }
         }
 
-        public bool IsEmpty
+        private void OnExit(object sender, ConsoleCancelEventArgs e)
         {
-            get
-            {
-                return 0 >= (uint)_length;
-            } 
-        }
-
-        public IntPtr Pointer
-        {
-            get
-            {
-                return new IntPtr(_pointer);
-            }
-        }
-
-        public ref T this[int index]
-        {
-            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (index >= _length || index < 0)
-                    new System.IndexOutOfRangeException();
-                return ref ((T*)_pointer)[index];
-            }
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public AudioBuffer(void* pointer, int length)
-        {
-            _pointer = pointer;
-            _length = length;
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public AudioBuffer(System.IntPtr pointer, int length)
-        {
-            _pointer = pointer.ToPointer();
-            _length = length;
+            Closing?.Invoke();
+            AudioContext.Deinitialize();
         }
     }
 }

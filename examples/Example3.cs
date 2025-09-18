@@ -1,6 +1,6 @@
 //A minimal example of spatial audio.
 
-using MiniAudioEx;
+using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioExExamples
 {

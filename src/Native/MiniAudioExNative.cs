@@ -49,7 +49,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace MiniAudioEx.Core
+namespace MiniAudioEx.Native
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct ma_ex_native_data_format

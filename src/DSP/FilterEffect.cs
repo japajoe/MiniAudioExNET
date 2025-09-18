@@ -46,6 +46,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using MiniAudioEx.Core.StandardAPI;
+
 namespace MiniAudioEx.DSP
 {
     public sealed class FilterEffect: IAudioEffect

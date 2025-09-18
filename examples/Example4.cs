@@ -1,7 +1,7 @@
 //Using the 'End' callback to play audio from a playlist.
 
 using System.Collections.Generic;
-using MiniAudioEx;
+using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioExExamples
 {

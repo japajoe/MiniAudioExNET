@@ -49,9 +49,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using MiniAudioEx.Core;
+using MiniAudioEx.Native;
 
-namespace MiniAudioEx
+namespace MiniAudioEx.Core.StandardAPI
 {
     public delegate void AudioEndEvent();
     public delegate void AudioProcessEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);

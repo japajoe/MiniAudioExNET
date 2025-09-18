@@ -1,7 +1,7 @@
 //An example of how to procedurally generate sound with the 'Read' callback.
 
 using System;
-using MiniAudioEx;
+using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioExExamples
 {
