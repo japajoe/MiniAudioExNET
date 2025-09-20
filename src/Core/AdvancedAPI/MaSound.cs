@@ -90,20 +90,16 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 		public ma_result InitializeFromFile(MaEngine engine, string filePath, ma_sound_flags flags, MaSoundGroup group = null)
 		{
-			if (engine == null)
-				return ma_result.invalid_args;
+			ma_result result = IsInitialized(engine);
 
-			if (engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.invalid_args;
-
-			if (handle.pointer == IntPtr.Zero || engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.error;
+			if (result != ma_result.success)
+				return result;
 
 			Unload();
 
 			ma_sound_group_ptr pGroup = group == null ? default : group.Handle;
 
-			ma_result result = MiniAudioNative.ma_sound_init_from_file(engine.Handle, filePath, flags, pGroup, default, handle);
+			result = MiniAudioNative.ma_sound_init_from_file(engine.Handle, filePath, flags, pGroup, default, handle);
 
 			if (result != ma_result.success)
 				return result;
@@ -115,20 +111,16 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 		public ma_result InitializeFromMemory(MaEngine engine, IntPtr data, UInt64 dataSize, ma_sound_flags flags, MaSoundGroup group = null)
 		{
-			if (engine == null)
-				return ma_result.invalid_args;
+			ma_result result = IsInitialized(engine);
 
-			if (engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.invalid_args;
-
-			if (handle.pointer == IntPtr.Zero || engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.error;
+			if (result != ma_result.success)
+				return result;
 
 			Unload();
 
 			ma_sound_group_ptr pGroup = group == null ? default : group.Handle;
 
-			ma_result result = MiniAudioNative.ma_sound_init_from_memory(engine.Handle, data, dataSize, flags, pGroup, default, handle);
+			result = MiniAudioNative.ma_sound_init_from_memory(engine.Handle, data, dataSize, flags, pGroup, default, handle);
 
 			if (result != ma_result.success)
 				return result;
@@ -140,14 +132,10 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 		public ma_result InitializeFromCallback(MaEngine engine, UInt32 channels, UInt32 sampleRate, ma_procedural_sound_proc callback, IntPtr userData, MaSoundGroup group = null)
 		{
-			if (engine == null)
-				return ma_result.invalid_args;
+			ma_result result = IsInitialized(engine);
 
-			if (engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.invalid_args;
-
-			if (handle.pointer == IntPtr.Zero || engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.error;
+			if (result != ma_result.success)
+				return result;
 
 			Unload();
 
@@ -157,7 +145,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 			ma_procedural_sound_config config = MiniAudioNative.ma_procedural_sound_config_init(ma_format.f32, channels, sampleRate, callback, userData);
 
-			ma_result result = MiniAudioNative.ma_sound_init_from_callback(engine.Handle, ref config, flags, pGroup, default, handle);
+			result = MiniAudioNative.ma_sound_init_from_callback(engine.Handle, ref config, flags, pGroup, default, handle);
 
 			if (result != ma_result.success)
 				return result;
@@ -169,20 +157,16 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 		public ma_result InitializeFromDataSource(MaEngine engine, ma_data_source_ptr pDataSource, ma_sound_flags flags, MaSoundGroup group = null)
 		{
-			if (engine == null)
-				return ma_result.invalid_args;
+			ma_result result = IsInitialized(engine);
 
-			if (engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.invalid_args;
-
-			if (handle.pointer == IntPtr.Zero || engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.error;
+			if (result != ma_result.success)
+				return result;
 
 			Unload();
 
 			ma_sound_group_ptr pGroup = group == null ? default : group.Handle;
 
-			ma_result result = MiniAudioNative.ma_sound_init_from_data_source(engine.Handle, pDataSource, flags, pGroup, handle);
+			result = MiniAudioNative.ma_sound_init_from_data_source(engine.Handle, pDataSource, flags, pGroup, handle);
 
 			if (result != ma_result.success)
 				return result;
@@ -345,6 +329,20 @@ namespace MiniAudioEx.Core.AdvancedAPI
 		public ma_result SetProcessNotificationCallback(ma_sound_process_proc callback)
 		{
 			return MiniAudioNative.ma_sound_set_process_notification_callback(handle, callback);
+		}
+
+		private ma_result IsInitialized(MaEngine engine)
+		{
+			if (engine == null)
+				return ma_result.invalid_args;
+
+			if (engine.Handle.pointer == IntPtr.Zero)
+				return ma_result.invalid_args;
+
+			if (handle.pointer == IntPtr.Zero || engine.Handle.pointer == IntPtr.Zero)
+				return ma_result.error;
+
+			return ma_result.success;
 		}
 
 		private void Unload()

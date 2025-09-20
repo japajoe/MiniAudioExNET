@@ -100,7 +100,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			return MiniAudioNative.ma_sound_group_init(engine.Handle, flags, parent, handle);
 		}
 
-		public ma_result Play()
+		public ma_result Start()
 		{
 			return MiniAudioNative.ma_sound_group_start(handle);
 		}

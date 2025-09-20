@@ -2464,7 +2464,6 @@ namespace MiniAudioEx.Native
             public ma_native_data_format ndf61;
             public ma_native_data_format ndf62;
             public ma_native_data_format ndf63;
-
             public ref ma_native_data_format this[int index]
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
