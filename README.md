@@ -12,7 +12,7 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Callbacks for effects processing and generating audio.
 - Spatial properties like doppler effect, pitching, distance attenuation and panning.
 - Utilities for audio generation.
-- Exposes many native miniaudio API calls (work in progress).
+- Exposes many native miniaudio API calls.
 
 # Platforms
 - Windows x86_64
@@ -25,8 +25,12 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.5.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.5.1
 ```
+
+# Changes in 2.5.1
+- Made AdvancedAPI types more reflective of their native counterparts.
+- Removed redundant prefixes in native enum types.
 
 # Changes in 2.5.0
 - Added low level API for directly using miniaudio functionality.

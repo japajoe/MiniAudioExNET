@@ -54,29 +54,49 @@ namespace MiniAudioEx.Core.AdvancedAPI
 	public sealed class MaContext : IDisposable
 	{
 		private ma_context_ptr handle;
+		private ma_enum_devices_callback_proc enumDevicesCallback;
 
 		public ma_context_ptr Handle
 		{
 			get => handle;
 		}
 
-		public MaContext(MaLog log = null)
+		public MaContext()
 		{
 			handle = new ma_context_ptr(true);
 
 			if (handle.pointer == IntPtr.Zero)
 				throw new OutOfMemoryException();
+		}
 
-			ma_context_config config = MiniAudioNative.ma_context_config_init();
-			config.pLog = log == null ? default : log.Handle;
-
-			ma_result result = MiniAudioNative.ma_context_init(null, ref config, handle);
-
-			if (result != ma_result.MA_SUCCESS)
+		public void Dispose()
+		{
+			if (handle.pointer != IntPtr.Zero)
 			{
-				Dispose();
-				throw new Exception("Failed to initialize MaContext");
+				MiniAudioNative.ma_context_uninit(handle);
+				handle.Free();
 			}
+		}
+
+		public ma_context_config GetConfig()
+		{
+			return MiniAudioNative.ma_context_config_init();
+		}
+
+		public ma_result Initialize()
+		{
+			ma_context_config config = MiniAudioNative.ma_context_config_init();
+			return Initialize(null, config);
+		}
+
+		public ma_result Initialize(ma_backend[] backends, ma_context_config config)
+		{
+			return MiniAudioNative.ma_context_init(backends, ref config, handle);
+		}
+
+		public ma_log_ptr GetLog()
+		{
+			return MiniAudioNative.ma_context_get_log(handle);
 		}
 
 		public MaDeviceInfo GetDefaultPlaybackDevice()
@@ -102,9 +122,9 @@ namespace MiniAudioEx.Core.AdvancedAPI
 		{
 			if (GetDevices(out _, out MaDeviceInfo[] captureDevices))
 			{
-				if(captureDevices == null)
+				if (captureDevices == null)
 					return default;
-					
+
 				for (int i = 0; i < captureDevices.Length; i++)
 				{
 					if (captureDevices[i].deviceInfo.isDefault > 0)
@@ -124,7 +144,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 			ma_result result = MiniAudioNative.ma_context_get_devices(handle, out ma_device_info_ex[] ppPlaybackDeviceInfos, out ma_device_info_ex[] ppCaptureDeviceInfos);
 
-			if (result != ma_result.MA_SUCCESS)
+			if (result != ma_result.success)
 				return false;
 
 			if (ppPlaybackDeviceInfos?.Length > 0)
@@ -154,13 +174,20 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			return true;
 		}
 
-		public void Dispose()
+		public ma_result EnumerateDevices(ma_enum_devices_callback_proc callback, IntPtr pUserData)
 		{
-			if (handle.pointer != IntPtr.Zero)
-			{
-				MiniAudioNative.ma_context_uninit(handle);
-				handle.Free();
-			}
+			enumDevicesCallback = callback;
+			return MiniAudioNative.ma_context_enumerate_devices(handle, enumDevicesCallback, pUserData);
+		}
+
+		public ma_result GetDeviceInfo(ma_device_type deviceType, ma_device_id_ptr pDeviceID, out ma_device_info pDeviceInfo)
+		{
+			return MiniAudioNative.ma_context_get_device_info(handle, deviceType, pDeviceID, out pDeviceInfo);
+		}
+
+		public bool IsLoopBackSupported()
+		{
+			return MiniAudioNative.ma_context_is_loopback_supported(handle) > 0;
 		}
 	}
 }

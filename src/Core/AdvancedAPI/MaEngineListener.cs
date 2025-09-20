@@ -56,68 +56,10 @@ namespace MiniAudioEx.Core.AdvancedAPI
 		private MaEngine engine;
 		private UInt32 index;
 
-		public bool Enabled
+		public MaEngineListener()
 		{
-			get => MiniAudioNative.ma_engine_listener_is_enabled(engine.Handle, index) > 0;
-			set => MiniAudioNative.ma_engine_listener_set_enabled(engine.Handle, index, value ? (UInt32)1 : 0);
-		}
-
-		public ma_vec3f Position
-		{
-			get => MiniAudioNative.ma_engine_listener_get_position(engine.Handle, index);
-			set => MiniAudioNative.ma_engine_listener_set_position(engine.Handle, index, value.x, value.y, value.z);
-		}
-
-		public ma_vec3f Direction
-		{
-			get => MiniAudioNative.ma_engine_listener_get_direction(engine.Handle, index);
-			set => MiniAudioNative.ma_engine_listener_set_direction(engine.Handle, index, value.x, value.y, value.z);
-		}
-
-		public ma_vec3f Velocity
-		{
-			get => MiniAudioNative.ma_engine_listener_get_velocity(engine.Handle, index);
-			set => MiniAudioNative.ma_engine_listener_set_velocity(engine.Handle, index, value.x, value.y, value.z);
-		}
-
-		public ma_vec3f WorldUp
-		{
-			get => MiniAudioNative.ma_engine_listener_get_world_up(engine.Handle, index);
-			set => MiniAudioNative.ma_engine_listener_set_world_up(engine.Handle, index, value.x, value.y, value.z);
-		}
-
-		public ConeSettings Cone
-		{
-			get
-			{
-				ConeSettings c = new ConeSettings();
-				MiniAudioNative.ma_engine_listener_get_cone(engine.Handle, index, out c.innerAngleInRadians, out c.outerAngleInRadians, out c.outerGain);
-				return c;
-			}
-			set
-			{
-				MiniAudioNative.ma_engine_listener_set_world_up(engine.Handle, index, value.innerAngleInRadians, value.outerAngleInRadians, value.outerGain);
-			}
-		}
-
-		public MaEngineListener(MaEngine engine, UInt32 index)
-		{
-			if (engine.Handle.pointer == IntPtr.Zero)
-				throw new ArgumentException("engine isn't initialized");
-
-			this.engine = engine;
-			this.index = index;
-
-			const float coneInnerAngleInRadians = (float)(2 * Math.PI);
-			const float coneOuterAngleInRadians = (float)(2 * Math.PI);
-			const float coneOuterGain = 0.0f;
-
-			MiniAudioNative.ma_engine_listener_set_position(engine.Handle, index, 0, 0, 0);
-			MiniAudioNative.ma_engine_listener_set_direction(engine.Handle, index, 0, 0, -1);
-			MiniAudioNative.ma_engine_listener_set_velocity(engine.Handle, index, 0, 0, 0);
-			MiniAudioNative.ma_engine_listener_set_world_up(engine.Handle, index, 0, 1, 0);
-			MiniAudioNative.ma_engine_listener_set_cone(engine.Handle, index, coneInnerAngleInRadians, coneOuterAngleInRadians, coneOuterGain);
-			MiniAudioNative.ma_engine_listener_set_enabled(engine.Handle, index, 1);
+			engine = null;
+			index = 0;
 		}
 
 		public void Dispose()
@@ -132,11 +74,89 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			}
 		}
 
-		public struct ConeSettings
+		public ma_result Initialize(MaEngine engine, UInt32 index)
 		{
-			public float innerAngleInRadians;
-			public float outerAngleInRadians;
-			public float outerGain;
+			if (engine == null)
+				return ma_result.invalid_args;
+
+			if (engine.Handle.pointer == IntPtr.Zero)
+				return ma_result.error;
+
+			this.engine = engine;
+			this.index = index;
+
+			const float coneInnerAngleInRadians = (float)(2 * Math.PI);
+			const float coneOuterAngleInRadians = (float)(2 * Math.PI);
+			const float coneOuterGain = 0.0f;
+
+			MiniAudioNative.ma_engine_listener_set_position(engine.Handle, index, 0, 0, 0);
+			MiniAudioNative.ma_engine_listener_set_direction(engine.Handle, index, 0, 0, -1);
+			MiniAudioNative.ma_engine_listener_set_velocity(engine.Handle, index, 0, 0, 0);
+			MiniAudioNative.ma_engine_listener_set_world_up(engine.Handle, index, 0, 1, 0);
+			MiniAudioNative.ma_engine_listener_set_cone(engine.Handle, index, coneInnerAngleInRadians, coneOuterAngleInRadians, coneOuterGain);
+			MiniAudioNative.ma_engine_listener_set_enabled(engine.Handle, index, 1);
+
+			return ma_result.success;
+		}
+
+		public bool IsEnabled()
+		{
+			return MiniAudioNative.ma_engine_listener_is_enabled(engine.Handle, index) > 0;
+		}
+
+		public void SetEnabled(bool enabled)
+		{
+			MiniAudioNative.ma_engine_listener_set_enabled(engine.Handle, index, enabled ? (UInt32)1 : 0);
+		}
+
+		public ma_vec3f GetPosition()
+		{
+			return MiniAudioNative.ma_engine_listener_get_position(engine.Handle, index);
+		}
+
+		public void SetPosition(ma_vec3f position)
+		{
+			MiniAudioNative.ma_engine_listener_set_position(engine.Handle, index, position.x, position.y, position.z);
+		}
+
+		public ma_vec3f GetDirection()
+		{
+			return MiniAudioNative.ma_engine_listener_get_direction(engine.Handle, index);
+		}
+
+		public void SetDirection(ma_vec3f direction)
+		{
+			MiniAudioNative.ma_engine_listener_set_direction(engine.Handle, index, direction.x, direction.y, direction.z);
+		}
+
+		public ma_vec3f GetVelocity()
+		{
+			return MiniAudioNative.ma_engine_listener_get_velocity(engine.Handle, index);
+		}
+
+		public void SetVelocity(ma_vec3f velocity)
+		{
+			MiniAudioNative.ma_engine_listener_set_velocity(engine.Handle, index, velocity.x, velocity.y, velocity.z);
+		}
+
+		public ma_vec3f GetWorldUp()
+		{
+			return MiniAudioNative.ma_engine_listener_get_world_up(engine.Handle, index);
+		}
+
+		public void SetWorldUp(ma_vec3f worldUp)
+		{
+			MiniAudioNative.ma_engine_listener_set_world_up(engine.Handle, index, worldUp.x, worldUp.y, worldUp.z);
+		}
+
+		public void GetCone(out float innerAngleInRadians, out float outerAngleInRadians, out float outerGain)
+		{
+			MiniAudioNative.ma_engine_listener_get_cone(engine.Handle, index, out innerAngleInRadians, out outerAngleInRadians, out outerGain);
+		}
+
+		public void SetCone(float innerAngleInRadians, float outerAngleInRadians, float outerGain)
+		{
+			MiniAudioNative.ma_engine_listener_set_world_up(engine.Handle, index, innerAngleInRadians, outerAngleInRadians, outerGain);
 		}
 	}
 }

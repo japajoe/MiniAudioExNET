@@ -54,71 +54,18 @@ namespace MiniAudioEx.Core.AdvancedAPI
 	public sealed class MaDevice : IDisposable
 	{
 		private ma_device_ptr handle;
-		private ma_device_data_proc deviceDataCallback;
 
 		public ma_device_ptr Handle
 		{
 			get => handle;
 		}
 
-		public MaDevice(MaContext context, MaDeviceInfo deviceInfo, ma_format playbackFormat, UInt32 channels, UInt32 sampleRate, UInt32 periodSizeInFrames, ma_device_data_proc deviceCallback)
+		public MaDevice()
 		{
-			if (context.Handle.pointer == IntPtr.Zero)
-				throw new ArgumentException("context isn't initialized");
-
 			handle = new ma_device_ptr(true);
 
 			if (handle.pointer == IntPtr.Zero)
 				throw new OutOfMemoryException();
-
-			ma_device_config deviceConfig = MiniAudioNative.ma_device_config_init(ma_device_type.playback);
-			deviceConfig.playback.format = playbackFormat;
-			deviceConfig.playback.channels = channels;
-			deviceConfig.sampleRate = sampleRate;
-			deviceConfig.periodSizeInFrames = periodSizeInFrames;
-
-			if (deviceInfo.pDeviceId.pointer != IntPtr.Zero)
-				deviceConfig.playback.pDeviceID = deviceInfo.pDeviceId;
-
-			if (deviceCallback != null)
-			{
-				deviceConfig.SetDataCallback(deviceCallback);
-			}
-			else
-			{
-				deviceDataCallback = OnDeviceData;
-				deviceConfig.SetDataCallback(deviceDataCallback);
-			}
-
-			ma_result result = MiniAudioNative.ma_device_init(context.Handle, ref deviceConfig, handle);
-
-			if (result != ma_result.MA_SUCCESS)
-			{
-				Dispose();
-				throw new Exception("Failed to initialize MaDevice");
-			}
-		}
-
-		public void Start()
-		{
-			MiniAudioNative.ma_device_start(handle);
-		}
-
-		public void Stop()
-		{
-			MiniAudioNative.ma_device_stop(handle);
-		}
-
-		public void SetEngine(MaEngine engine)
-		{
-			if (handle.pointer == IntPtr.Zero)
-				return;
-
-			unsafe
-			{
-				ma_device* device = (ma_device*)handle.pointer;
-				device->pUserData = engine.Handle.pointer;
-			}
 		}
 
 		public void Dispose()
@@ -129,20 +76,68 @@ namespace MiniAudioEx.Core.AdvancedAPI
 				handle.Free();
 			}
 		}
-		
-        private static unsafe void OnDeviceData(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
-        {
-            ma_device* device = (ma_device*)pDevice.pointer;
 
-            if (device == null)
-                return;
+		public ma_device_config GetConfig(ma_device_type deviceType)
+		{
+			return MiniAudioNative.ma_device_config_init(deviceType);
+		}
 
-            if (device->pUserData == IntPtr.Zero)
-                return;
+		public ma_result Initialize(ma_device_config config)
+		{
+			return Initialize(null, config);
+		}
 
-            ma_engine_ptr pEngine = new ma_engine_ptr(device->pUserData);
+		public ma_result Initialize(MaContext context, ma_device_config config)
+		{
+			if (handle.pointer == IntPtr.Zero)
+				return ma_result.error;
 
-            MiniAudioNative.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount);
-        }
+			return MiniAudioNative.ma_device_init(context != null ? context.Handle : default, ref config, handle);
+		}
+
+		public ma_context_ptr GetContext()
+		{
+			return MiniAudioNative.ma_device_get_context(handle);
+		}
+
+		public ma_result Start()
+		{
+			return MiniAudioNative.ma_device_start(handle);
+		}
+
+		public ma_result Stop()
+		{
+			return MiniAudioNative.ma_device_stop(handle);
+		}
+
+		public bool IsStarted()
+		{
+			return MiniAudioNative.ma_device_is_started(handle) > 0;
+		}
+
+		public ma_device_state GetState()
+		{
+			return MiniAudioNative.ma_device_get_state(handle);
+		}
+
+		public ma_result GetMasterVolume(out float volume)
+		{
+			return MiniAudioNative.ma_device_get_master_volume(handle, out volume);
+		}
+
+		public ma_result SetMasterVolume(float volume)
+		{
+			return MiniAudioNative.ma_device_set_master_volume(handle, volume);
+		}
+
+		public ma_result GetMasterVolumeDB(out float gainDB)
+		{
+			return MiniAudioNative.ma_device_get_master_volume_db(handle, out gainDB);
+		}
+
+		public ma_result SetMasterVolumeDB(float gainDB)
+		{
+			return MiniAudioNative.ma_device_set_master_volume_db(handle, gainDB);
+		}
 	}
 }

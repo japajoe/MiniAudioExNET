@@ -51,26 +51,47 @@ using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.AdvancedAPI
 {
-	public struct MaDecodingBackendVTable
+	public sealed class MaNodeGraph : MaNode, IDisposable
 	{
-		public IntPtr vtable;
+		private ma_node_graph_ptr handle;
 
-		public MaDecodingBackendVTable()
+		public ma_node_graph_ptr Handle
 		{
-			vtable = IntPtr.Zero;
+			get => handle;
 		}
 
-		public MaDecodingBackendVTable(IntPtr vtable)
+		public MaNodeGraph() : base()
 		{
-			this.vtable = vtable;
+			handle = new ma_node_graph_ptr(true);
+
+			if (handle.pointer == IntPtr.Zero)
+				throw new OutOfMemoryException();
+
+			nodeHandle = new ma_node_ptr(handle.pointer);
 		}
 
-		public static MaDecodingBackendVTable CreateFromLibVorbis()
+		public void Dispose()
 		{
-			unsafe
+			if (handle.pointer != IntPtr.Zero)
 			{
-				return new MaDecodingBackendVTable(new IntPtr(MiniAudioNative.ma_libvorbis_get_decoding_backend()));
+				MiniAudioNative.ma_node_graph_uninit(handle);
+				handle.Free();
 			}
+
+			nodeHandle.pointer = IntPtr.Zero;
+		}
+
+		public ma_node_graph_config GetConfig(UInt32 channels)
+		{
+			return MiniAudioNative.ma_node_graph_config_init(channels);
+		}
+
+		public ma_result Initialize(ma_node_graph_config config)
+		{
+			if (handle.pointer == IntPtr.Zero)
+				return ma_result.error;
+
+			return MiniAudioNative.ma_node_graph_init(ref config, handle);
 		}
 	}
 }

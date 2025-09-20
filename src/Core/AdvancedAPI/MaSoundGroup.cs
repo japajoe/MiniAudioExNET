@@ -51,7 +51,7 @@ using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.AdvancedAPI
 {
-	public sealed class MaSoundGroup : IDisposable
+	public sealed class MaSoundGroup : MaNode, IDisposable
 	{
 		private ma_sound_group_ptr handle;
 
@@ -60,119 +60,14 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			get => handle;
 		}
 
-		public bool IsPlaying
+		public MaSoundGroup() : base()
 		{
-			get => MiniAudioNative.ma_sound_group_is_playing(handle) > 0;
-		}
-
-		public bool Spatial
-		{
-			get => MiniAudioNative.ma_sound_group_is_spatialization_enabled(handle) > 0;
-			set => MiniAudioNative.ma_sound_group_set_spatialization_enabled(handle, value ? (uint)1 : 0);
-		}
-
-		public float Volume
-		{
-			get => MiniAudioNative.ma_sound_group_get_volume(handle);
-			set => MiniAudioNative.ma_sound_group_set_volume(handle, value);
-		}
-
-		public float Pan
-		{
-			get => MiniAudioNative.ma_sound_group_get_pan(handle);
-			set => MiniAudioNative.ma_sound_group_set_pan(handle, value);
-		}
-
-		public ma_pan_mode PanMode
-		{
-			get => MiniAudioNative.ma_sound_group_get_pan_mode(handle);
-			set => MiniAudioNative.ma_sound_group_set_pan_mode(handle, value);
-		}
-
-		public float Pitch
-		{
-			get => MiniAudioNative.ma_sound_group_get_pitch(handle);
-			set => MiniAudioNative.ma_sound_group_set_pitch(handle, value);
-		}
-
-		public float DopplerFactor
-		{
-			get => MiniAudioNative.ma_sound_group_get_doppler_factor(handle);
-			set => MiniAudioNative.ma_sound_group_set_doppler_factor(handle, value);
-		}
-
-		public ma_vec3f Position
-		{
-			get => MiniAudioNative.ma_sound_group_get_position(handle);
-			set => MiniAudioNative.ma_sound_group_set_position(handle, value.x, value.y, value.z);
-		}
-
-		public ma_vec3f Direction
-		{
-			get => MiniAudioNative.ma_sound_group_get_direction(handle);
-			set => MiniAudioNative.ma_sound_group_set_direction(handle, value.x, value.y, value.z);
-		}
-
-		public ma_vec3f Velocity
-		{
-			get => MiniAudioNative.ma_sound_group_get_velocity(handle);
-			set => MiniAudioNative.ma_sound_group_set_velocity(handle, value.x, value.y, value.z);
-		}
-
-		public ma_attenuation_model AttenuationModel
-		{
-			get => MiniAudioNative.ma_sound_group_get_attenuation_model(handle);
-			set => MiniAudioNative.ma_sound_group_set_attenuation_model(handle, value);
-		}
-
-		public MaSoundGroup(MaEngine engine)
-		{
-			if (engine.Handle.pointer == IntPtr.Zero)
-				throw new ArgumentException("engine isn't initialized");
-
 			handle = new ma_sound_group_ptr(true);
 
 			if (handle.pointer == IntPtr.Zero)
 				throw new OutOfMemoryException();
 
-			ma_sound_flags flags = (ma_sound_flags)0;
-
-			ma_result result = MiniAudioNative.ma_sound_group_init(engine.Handle, flags, default, handle);
-
-			if (result != ma_result.MA_SUCCESS)
-			{
-				Dispose();
-				throw new Exception("Failed to initialize MaSoundGroup");
-			}
-		}
-
-		public MaSoundGroup(MaEngine engine, ma_sound_flags flags, MaSoundGroup parentGroup = null)
-		{
-			if (engine.Handle.pointer == IntPtr.Zero)
-				throw new ArgumentException("engine isn't initialized");
-
-			handle = new ma_sound_group_ptr(true);
-
-			if (handle.pointer == IntPtr.Zero)
-				throw new OutOfMemoryException();
-
-			if (parentGroup != null)
-			{
-				if (parentGroup.handle.pointer == IntPtr.Zero)
-				{
-					Dispose();
-					throw new ArgumentException("parentGroup isn't initialized");
-				}
-			}
-			
-			ma_sound_group_ptr parent = parentGroup == null ? default : parentGroup.handle;
-			ma_result result = MiniAudioNative.ma_sound_group_init(engine.Handle, flags, parent, handle);
-
-			if (result != ma_result.MA_SUCCESS)
-			{
-				Dispose();
-				throw new Exception("Failed to initialize MaSoundGroup");
-			}
+			nodeHandle = new ma_node_ptr(handle.pointer);
 		}
 
 		public void Dispose()
@@ -182,52 +77,166 @@ namespace MiniAudioEx.Core.AdvancedAPI
 				MiniAudioNative.ma_sound_group_uninit(handle);
 				handle.Free();
 			}
+			nodeHandle.pointer = IntPtr.Zero;
 		}
 
-		public void Play()
+		public ma_result Initialize(MaEngine engine)
 		{
-			if (handle.pointer == IntPtr.Zero)
-				return;
-			MiniAudioNative.ma_sound_group_start(handle);
+			return Initialize(engine, (ma_sound_flags)0, null);
 		}
 
-		public void Stop()
+		public ma_result Initialize(MaEngine engine, ma_sound_flags flags, MaSoundGroup parentGroup = null)
 		{
+			if (engine == null)
+				return ma_result.invalid_args;
+
+			if (engine.Handle.pointer == IntPtr.Zero)
+				return ma_result.invalid_args;
+
 			if (handle.pointer == IntPtr.Zero)
-				return;
-			MiniAudioNative.ma_sound_group_stop(handle);
+				return ma_result.error;
+
+			ma_sound_group_ptr parent = parentGroup == null ? default : parentGroup.handle;
+			return MiniAudioNative.ma_sound_group_init(engine.Handle, flags, parent, handle);
 		}
 
-		public void SetNotificationsUserData(IntPtr userData)
+		public ma_result Play()
 		{
-			if (handle.pointer == IntPtr.Zero)
-				return;
+			return MiniAudioNative.ma_sound_group_start(handle);
+		}
+
+		public ma_result Stop()
+		{
+			return MiniAudioNative.ma_sound_group_stop(handle);
+		}
+
+		public bool IsPlaying()
+		{
+			return MiniAudioNative.ma_sound_group_is_playing(handle) > 0;
+		}
+
+		public bool IsSpatialializationEnabled()
+		{
+			return MiniAudioNative.ma_sound_group_is_spatialization_enabled(handle) > 0;
+		}
+
+		public void SetSpatialializationEnabled(bool enabled)
+		{
+			MiniAudioNative.ma_sound_group_set_spatialization_enabled(handle, enabled ? (uint)1 : 0);
+		}
+
+		public float GetVolume()
+		{
+			return MiniAudioNative.ma_sound_group_get_volume(handle);
+		}
+
+		public void SetVolume(float volume)
+		{
+			MiniAudioNative.ma_sound_group_set_volume(handle, volume);
+		}
+
+		public float GetPan()
+		{
+			return MiniAudioNative.ma_sound_group_get_pan(handle);
+		}
+
+		public void SetPan(float pan)
+		{
+			MiniAudioNative.ma_sound_group_set_pan(handle, pan);
+		}
+
+		public ma_pan_mode GetPanMode()
+		{
+			return MiniAudioNative.ma_sound_group_get_pan_mode(handle);
+		}
+
+		public void SetPanMode(ma_pan_mode panMode)
+		{
+			MiniAudioNative.ma_sound_group_set_pan_mode(handle, panMode);
+		}
+
+		public float GetPitch()
+		{
+			return MiniAudioNative.ma_sound_group_get_pitch(handle);
+		}
+
+		public void SetPitch(float pitch)
+		{
+			MiniAudioNative.ma_sound_group_set_pitch(handle, pitch);
+		}
+
+		public float GetyDopplerFactor()
+		{
+			return MiniAudioNative.ma_sound_group_get_doppler_factor(handle);
+		}
+
+		public void SetDopplerFactor(float dopplerFactor)
+		{
+			MiniAudioNative.ma_sound_group_set_doppler_factor(handle, dopplerFactor);
+		}
+
+		public ma_vec3f GetPosition()
+		{
+			return MiniAudioNative.ma_sound_group_get_position(handle);
+		}
+
+		public void SetPosition(ma_vec3f position)
+		{
+			MiniAudioNative.ma_sound_group_set_position(handle, position.x, position.y, position.z);
+		}
+
+		public ma_vec3f GetDirection()
+		{
+			return MiniAudioNative.ma_sound_group_get_direction(handle);
+		}
+
+		public void SetDirection(ma_vec3f direction)
+		{
+			MiniAudioNative.ma_sound_group_set_direction(handle, direction.x, direction.y, direction.z);
+		}
+
+		public ma_vec3f GetVelocity()
+		{
+			return MiniAudioNative.ma_sound_group_get_velocity(handle);
+		}
+
+		public void SetVelocity(ma_vec3f velocity)
+		{
+			MiniAudioNative.ma_sound_group_set_velocity(handle, velocity.x, velocity.y, velocity.z);
+		}
+
+		public ma_attenuation_model GetAttenuationModel()
+		{
+			return MiniAudioNative.ma_sound_group_get_attenuation_model(handle);
+		}
+
+		public void SetAttenuationModel(ma_attenuation_model attenuationModel)
+		{
+			MiniAudioNative.ma_sound_group_set_attenuation_model(handle, attenuationModel);
+		}
+
+		public ma_result SetNotificationsUserData(IntPtr userData)
+		{
 			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			MiniAudioNative.ma_sound_set_notifications_userdata(s, userData);
+			return MiniAudioNative.ma_sound_set_notifications_userdata(s, userData);
 		}
 
-		public void SetLoadNotificationCallback(ma_sound_load_proc callback)
+		public ma_result SetLoadNotificationCallback(ma_sound_load_proc callback)
 		{
-			if (handle.pointer == IntPtr.Zero)
-				return;
 			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			MiniAudioNative.ma_sound_set_load_notification_callback(s, callback);
+			return MiniAudioNative.ma_sound_set_load_notification_callback(s, callback);
 		}
 
-		public void SetEndNotificationCallback(ma_sound_end_proc callback)
+		public ma_result SetEndNotificationCallback(ma_sound_end_proc callback)
 		{
-			if (handle.pointer == IntPtr.Zero)
-				return;
 			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			MiniAudioNative.ma_sound_set_end_notification_callback(s, callback);
+			return MiniAudioNative.ma_sound_set_end_notification_callback(s, callback);
 		}
 
-		public void SetProcessNotificationCallback(ma_sound_process_proc callback)
+		public ma_result SetProcessNotificationCallback(ma_sound_process_proc callback)
 		{
-			if (handle.pointer == IntPtr.Zero)
-				return;
 			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			MiniAudioNative.ma_sound_set_process_notification_callback(s, callback);
+			return MiniAudioNative.ma_sound_set_process_notification_callback(s, callback);
 		}
 	}
 }

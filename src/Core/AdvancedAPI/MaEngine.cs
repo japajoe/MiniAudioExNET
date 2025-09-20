@@ -60,27 +60,12 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			get => handle;
 		}
 
-		public MaEngine(MaDevice device = null, MaResourceManager resourceManager = null)
+		public MaEngine()
 		{
 			handle = new ma_engine_ptr(true);
 
 			if (handle.pointer == IntPtr.Zero)
 				throw new OutOfMemoryException();
-
-            ma_engine_config engineConfig = MiniAudioNative.ma_engine_config_init();
-            engineConfig.listenerCount = MiniAudioNative.MA_ENGINE_MAX_LISTENERS;
-            engineConfig.pDevice = device == null ? default : device.Handle;
-
-			if (resourceManager != null)
-				engineConfig.pResourceManager = resourceManager.Handle;
-
-			ma_result result = MiniAudioNative.ma_engine_init(ref engineConfig, handle);
-			
-			if (result != ma_result.MA_SUCCESS)
-			{
-				Dispose();
-				throw new Exception("Failed to initialize MaEngine");
-			}
 		}
 
 		public void Dispose()
@@ -90,6 +75,135 @@ namespace MiniAudioEx.Core.AdvancedAPI
 				MiniAudioNative.ma_engine_uninit(handle);
 				handle.Free();
 			}
+		}
+
+		public ma_engine_config GetConfig()
+		{
+			return MiniAudioNative.ma_engine_config_init();
+		}
+
+		public ma_result Initialize()
+		{
+			ma_engine_config config = MiniAudioNative.ma_engine_config_init();
+			return Initialize(config);
+		}
+
+		public ma_result Initialize(ma_engine_config config)
+		{
+			if (handle.pointer == IntPtr.Zero)
+				return ma_result.error;
+
+			return MiniAudioNative.ma_engine_init(ref config, handle);
+		}
+
+		public ma_node_graph_ptr GetNodeGraph()
+		{
+			return MiniAudioNative.ma_engine_get_node_graph(handle);
+		}
+
+		public ma_resource_manager_ptr GetResourceManager()
+		{
+			return MiniAudioNative.ma_engine_get_resource_manager(handle);
+		}
+
+		public ma_device_ptr GetDevice()
+		{
+			return MiniAudioNative.ma_engine_get_device(handle);
+		}
+
+		public ma_log_ptr GetLog()
+		{
+			return MiniAudioNative.ma_engine_get_log(handle);
+		}
+
+		public ma_node_ptr GetEndPoint()
+		{
+			return MiniAudioNative.ma_engine_get_endpoint(handle);
+		}
+
+		public UInt64 GetTimeInMilliseconds()
+		{
+        	return MiniAudioNative.ma_engine_get_time_in_milliseconds(handle);
+		}
+
+		public ma_result SetTimeInMilliseconds(UInt64 globalTime)
+		{
+        	return MiniAudioNative.ma_engine_set_time_in_milliseconds(handle, globalTime);
+		}
+
+		public UInt64 GetTimeInPCMFrames()
+		{
+			return MiniAudioNative.ma_engine_get_time_in_pcm_frames(handle);
+		}
+
+		public ma_result SetTimeInPCMFrames(UInt64 globalTime)
+		{
+			return MiniAudioNative.ma_engine_set_time_in_pcm_frames(handle, globalTime);
+		}
+
+		public UInt32 GetChannels()
+		{
+			return MiniAudioNative.ma_engine_get_channels(handle);
+		}
+
+		public UInt32 GetSampleRate()
+		{
+			return MiniAudioNative.ma_engine_get_sample_rate(handle);
+		}
+
+		public ma_result Start()
+		{
+			return MiniAudioNative.ma_engine_start(handle);
+		}
+
+		public ma_result Stop()
+		{
+			return MiniAudioNative.ma_engine_stop(handle);
+		}
+
+		public ma_result PlaySound(string filePath, MaSoundGroup group = null)
+		{
+			return MiniAudioNative.ma_engine_play_sound(handle, filePath, group == null ? default : group.Handle);
+		}
+
+		public ma_result PlaySoundEx(string filePath, MaNode node, UInt32 nodeInputBusIndex)
+		{
+			return PlaySoundEx(filePath, node == null ? default : node.NodeHandle, nodeInputBusIndex);
+		}
+
+		public ma_result PlaySoundEx(string filePath, ma_node_ptr pNode, UInt32 nodeInputBusIndex)
+		{
+			return MiniAudioNative.ma_engine_play_sound_ex(handle, filePath, pNode, nodeInputBusIndex);
+		}
+
+		public float GetVolume()
+		{
+			return MiniAudioNative.ma_engine_get_volume(handle);
+		}
+
+		public ma_result SetVolume(float volume)
+		{
+			return MiniAudioNative.ma_engine_set_volume(handle, volume);
+		}
+
+		public float GetGainDB()
+		{
+			return MiniAudioNative.ma_engine_get_gain_db(handle);
+		}
+
+		public ma_result SetGainDB(float gainDB)
+		{
+			return MiniAudioNative.ma_engine_set_gain_db(handle, gainDB);
+		}
+
+		public UInt32 GetListenerCount()
+		{
+			return MiniAudioNative.ma_engine_get_listener_count(handle);
+		}
+
+		public UInt32 FindClosestListener(float absolutePosX, float absolutePosY, float absolutePosZ)
+		{
+			return MiniAudioNative.ma_engine_find_closest_listener(handle, absolutePosX, absolutePosY, absolutePosZ);
 		}
 	}
 }

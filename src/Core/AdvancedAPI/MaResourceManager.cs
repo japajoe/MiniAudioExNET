@@ -47,7 +47,6 @@
 // SOFTWARE.
 
 using System;
-using System.Runtime.InteropServices;
 using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.AdvancedAPI
@@ -61,35 +60,12 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			get => handle;
 		}
 
-		public MaResourceManager(MaDecodingBackendVTable[] decodingBackendVTable = null)
+		public MaResourceManager()
 		{
 			handle = new ma_resource_manager_ptr(true);
 
 			if (handle.pointer == IntPtr.Zero)
 				throw new OutOfMemoryException();
-
-			ma_resource_manager_config resourceManagerConfig = MiniAudioNative.ma_resource_manager_config_init();
-
-			IntPtr vtableMemory = AllocVTableArray(decodingBackendVTable, out int vtableCount);
-
-			if (vtableCount > 0)
-			{
-				resourceManagerConfig.ppCustomDecodingBackendVTables = vtableMemory;
-				resourceManagerConfig.customDecodingBackendCount = (UInt32)vtableCount;
-			}
-
-			ma_result result = MiniAudioNative.ma_resource_manager_init(ref resourceManagerConfig, handle);
-
-			if (vtableMemory != IntPtr.Zero)
-			{
-				Marshal.FreeHGlobal(vtableMemory);
-			}
-
-			if (result != ma_result.MA_SUCCESS)
-			{
-				Dispose();
-				throw new Exception("Failed to initialize MaEngine");
-			}
 		}
 
 		public void Dispose()
@@ -101,37 +77,27 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			}
 		}
 
-		private unsafe IntPtr AllocVTableArray(MaDecodingBackendVTable[] decodingBackendVTable, out int count)
+		public ma_resource_manager_config GetConfig()
 		{
-			count = 0;
+			return MiniAudioNative.ma_resource_manager_config_init();
+		}
 
-			if (decodingBackendVTable != null)
-			{
-				for (int i = 0; i < decodingBackendVTable.Length; i++)
-				{
-					if (decodingBackendVTable[i].vtable != IntPtr.Zero)
-						count++;
-				}
-			}
+		public ma_result Initialize()
+		{
+			ma_resource_manager_config config = MiniAudioNative.ma_resource_manager_config_init();
+			return Initialize(config);
+		}
 
-			IntPtr vtableMemory = IntPtr.Zero;
+		public ma_result Initialize(ma_resource_manager_config config)
+		{
+			if (handle.pointer == IntPtr.Zero)
+				return ma_result.error;
+			return MiniAudioNative.ma_resource_manager_init(ref config, handle);
+		}
 
-			if (count > 0)
-			{
-				vtableMemory = Marshal.AllocHGlobal(sizeof(IntPtr) * count);
-
-				ma_decoding_backend_vtable** pCustomBackendVTables = (ma_decoding_backend_vtable**)vtableMemory;
-
-				int index = 0;
-
-				for (int i = 0; i < decodingBackendVTable.Length; i++)
-				{
-					if (decodingBackendVTable[i].vtable != IntPtr.Zero)
-						pCustomBackendVTables[index++] = (ma_decoding_backend_vtable*)decodingBackendVTable[i].vtable;
-				}
-			}
-
-			return vtableMemory;
+		public ma_log_ptr GetLog()
+		{
+			return MiniAudioNative.ma_resource_manager_get_log(handle);
 		}
 	}
 }

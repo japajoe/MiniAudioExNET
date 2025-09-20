@@ -51,58 +51,108 @@ using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.AdvancedAPI
 {
-	public delegate void MaLogEventHandler(UInt32 level, string message);
-
-	public sealed class MaLog : IDisposable
+	public abstract class MaNode
 	{
-		public event MaLogEventHandler Message;
+		protected ma_node_ptr nodeHandle;
 
-		private ma_log_ptr handle;
-		private ma_log_callback_proc onLog;
-
-		public ma_log_ptr Handle
+		public ma_node_ptr NodeHandle
 		{
-			get => handle;
+			get => nodeHandle;
 		}
 
-		public MaLog()
+		public MaNode()
 		{
-			handle = new ma_log_ptr(true);
-
-			if (handle.pointer == IntPtr.Zero)
-				throw new OutOfMemoryException();
-
-			onLog = OnLog;
+			nodeHandle = new ma_node_ptr(IntPtr.Zero);
 		}
 
-		public void Dispose()
+		public ma_node_graph_ptr GetNodeGraph()
 		{
-			if (handle.pointer != IntPtr.Zero)
-			{
-				MiniAudioNative.ma_log_uninit(handle);
-				handle.Free();
-			}
+			return MiniAudioNative.ma_node_get_node_graph(nodeHandle);
 		}
-
-		public ma_result Initialize()
+		
+		public UInt32 GetInputBusCount()
 		{
-			if (handle.pointer == IntPtr.Zero)
-				return ma_result.error;
-
-			ma_result result = MiniAudioNative.ma_log_init(handle);
-
-			if (result != ma_result.success)
-				return result;
-
-			ma_log_callback callback = new ma_log_callback();
-			callback.SetLogCallback(onLog);
-			return MiniAudioNative.ma_log_register_callback(handle, callback);
+			return MiniAudioNative.ma_node_get_input_bus_count(nodeHandle);
 		}
-
-		private void OnLog(IntPtr pUserData, UInt32 level, IntPtr pMessage)
+		
+		public UInt32 GetOutputBusCount()
 		{
-			string message = MarshalHelper.PtrToStringUTF8(pMessage);
-			Message?.Invoke(level, message);
+			return MiniAudioNative.ma_node_get_output_bus_count(nodeHandle);
+		}
+		
+		public UInt32 GetInputChannels(UInt32 inputBusIndex)
+		{
+			return MiniAudioNative.ma_node_get_input_channels(nodeHandle, inputBusIndex);
+		}
+		
+		public UInt32 GetOutputChannels(UInt32 outputBusIndex)
+		{
+			return MiniAudioNative.ma_node_get_output_channels(nodeHandle, outputBusIndex);
+		}
+		
+		public ma_result AttachOutputBus(UInt32 outputBusIndex, ma_node_ptr pOtherNode, UInt32 otherNodeInputBusIndex)
+		{
+			return MiniAudioNative.ma_node_attach_output_bus(nodeHandle, outputBusIndex, pOtherNode, otherNodeInputBusIndex);
+		}
+		
+		public ma_result DetachOutputBus(UInt32 outputBusIndex)
+		{
+			return MiniAudioNative.ma_node_detach_output_bus(nodeHandle, outputBusIndex);
+		}
+		
+		public ma_result DetachAllOutputBuses()
+		{
+			return MiniAudioNative.ma_node_detach_all_output_buses(nodeHandle);
+		}
+		
+		public ma_result SetOutputBusVolume(UInt32 outputBusIndex, float volume)
+		{
+			return MiniAudioNative.ma_node_set_output_bus_volume(nodeHandle, outputBusIndex, volume);
+		}
+		
+		public float GetOutputBusVolume(UInt32 outputBusIndex)
+		{
+			return MiniAudioNative.ma_node_get_output_bus_volume(nodeHandle, outputBusIndex);
+		}
+		
+		public ma_result SetState(ma_node_state state)
+		{
+			return MiniAudioNative.ma_node_set_state(nodeHandle, state);
+		}
+		
+		public ma_node_state GetState()
+		{
+			return MiniAudioNative.ma_node_get_state(nodeHandle);
+		}
+		
+		public ma_result SetStateTime(ma_node_state state, UInt64 globalTime)
+		{
+			return MiniAudioNative.ma_node_set_state_time(nodeHandle, state, globalTime);
+		}
+		
+		public UInt64 GetStateTime(ma_node_state state)
+		{
+			return MiniAudioNative.ma_node_get_state_time(nodeHandle, state);
+		}
+		
+		public ma_node_state GetStateByTime(UInt64 globalTime)
+		{
+			return MiniAudioNative.ma_node_get_state_by_time(nodeHandle, globalTime);
+		}
+		
+		public ma_node_state GetStateByTimeRange(UInt64 globalTimeBeg, UInt64 globalTimeEnd)
+		{
+			return MiniAudioNative.ma_node_get_state_by_time_range(nodeHandle, globalTimeBeg, globalTimeEnd);
+		}
+		
+		public UInt64 GetTime()
+		{
+			return MiniAudioNative.ma_node_get_time(nodeHandle);
+		}
+		
+		public ma_result SetTime(UInt64 localTime)
+		{
+			return MiniAudioNative.ma_node_set_time(nodeHandle, localTime);
 		}
 	}
 }

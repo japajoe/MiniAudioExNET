@@ -51,58 +51,120 @@ using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.AdvancedAPI
 {
-	public delegate void MaLogEventHandler(UInt32 level, string message);
-
-	public sealed class MaLog : IDisposable
+	public sealed class MaDecoder : IDisposable
 	{
-		public event MaLogEventHandler Message;
-
-		private ma_log_ptr handle;
-		private ma_log_callback_proc onLog;
-
-		public ma_log_ptr Handle
+		private ma_decoder_ptr handle;
+		private bool isLoaded;
+		
+		public ma_decoder_ptr Handle
 		{
 			get => handle;
 		}
 
-		public MaLog()
+		public MaDecoder()
 		{
-			handle = new ma_log_ptr(true);
+			handle = new ma_decoder_ptr(true);
 
 			if (handle.pointer == IntPtr.Zero)
 				throw new OutOfMemoryException();
 
-			onLog = OnLog;
+			isLoaded = false;
 		}
 
 		public void Dispose()
 		{
 			if (handle.pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_log_uninit(handle);
+				if (isLoaded)
+				{
+					MiniAudioNative.ma_decoder_uninit(handle);
+				}
+
 				handle.Free();
+				isLoaded = false;
 			}
 		}
 
-		public ma_result Initialize()
+		public ma_decoder_config GetConfig()
+		{
+			return MiniAudioNative.ma_decoder_config_init_default();
+		}
+
+		public ma_decoder_config GetConfig(ma_format outputFormat, UInt32 outputChannels, UInt32 outputSampleRate)
+		{
+			return MiniAudioNative.ma_decoder_config_init(outputFormat, outputChannels, outputSampleRate);
+		}
+
+		public ma_result InitializeFromFile(string filePath)
+		{
+			ma_decoder_config config = MiniAudioNative.ma_decoder_config_init_default();
+			return InitializeFromFile(filePath, config);
+		}
+
+		public ma_result InitializeFromFile(string filePath, ma_decoder_config config)
 		{
 			if (handle.pointer == IntPtr.Zero)
 				return ma_result.error;
 
-			ma_result result = MiniAudioNative.ma_log_init(handle);
+			if (isLoaded)
+				Unload();
 
-			if (result != ma_result.success)
-				return result;
-
-			ma_log_callback callback = new ma_log_callback();
-			callback.SetLogCallback(onLog);
-			return MiniAudioNative.ma_log_register_callback(handle, callback);
+			return MiniAudioNative.ma_decoder_init_file(filePath, ref config, handle);
 		}
 
-		private void OnLog(IntPtr pUserData, UInt32 level, IntPtr pMessage)
+		public ma_result IntializeFromMemory(IntPtr pData, UInt64 dataSize)
 		{
-			string message = MarshalHelper.PtrToStringUTF8(pMessage);
-			Message?.Invoke(level, message);
+			ma_decoder_config config = MiniAudioNative.ma_decoder_config_init_default();
+			return IntializeFromMemory(pData, dataSize, config);
+		}
+
+		public ma_result IntializeFromMemory(IntPtr pData, UInt64 dataSize, ma_decoder_config config)
+		{
+			if (handle.pointer == IntPtr.Zero)
+				return ma_result.error;
+
+			if (isLoaded)
+				Unload();
+
+			return MiniAudioNative.ma_decoder_init_memory(pData, new UIntPtr(dataSize), ref config, handle);
+		}
+
+		public ma_result SeekToPCMFrame(UInt64 frameIndex)
+		{
+			return MiniAudioNative.ma_decoder_seek_to_pcm_frame(handle, frameIndex);
+		}
+
+		public ma_result GetDataFormat(out ma_format pFormat, out UInt32 pChannels, out UInt32 pSampleRate, ma_channel_ptr pChannelMap, UInt64 channelMapCap)
+		{
+			return MiniAudioNative.ma_decoder_get_data_format(handle, out pFormat, out pChannels, out pSampleRate, pChannelMap, new UIntPtr(channelMapCap));
+		}
+
+		public ma_result GetCursorInPCMFrames(out UInt64 cursor)
+		{
+			return MiniAudioNative.ma_decoder_get_cursor_in_pcm_frames(handle, out cursor);
+		}
+
+		public ma_result GetLengthInPCMFrames(out UInt64 length)
+		{
+			return MiniAudioNative.ma_decoder_get_cursor_in_pcm_frames(handle, out length);
+		}
+
+		public ma_result GetAvailableFrames(out UInt64 availableFrames)
+		{
+			return MiniAudioNative.ma_decoder_get_available_frames(handle, out availableFrames);
+		}
+
+		private void Unload()
+		{
+			if (handle.pointer == IntPtr.Zero)
+				return;
+
+			if (!isLoaded)
+				return;
+
+			MiniAudioNative.ma_decoder_uninit(handle);
+
+			isLoaded = false;
 		}
 	}
 }
