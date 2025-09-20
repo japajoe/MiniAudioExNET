@@ -93,5 +93,20 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 			return MiniAudioNative.ma_node_graph_init(ref config, handle);
 		}
+
+		public UInt64 GetTime(bool nodeGraphTime)
+		{
+			if (nodeGraphTime)
+				return MiniAudioNative.ma_node_graph_get_time(handle);
+			return GetTime();
+		}
+
+		public void SetTime(UInt64 localTime, bool nodeGraphTime)
+		{
+			if (nodeGraphTime)
+				MiniAudioNative.ma_node_graph_set_time(handle, localTime);
+			else
+				SetTime(localTime);
+		}
 	}
 }

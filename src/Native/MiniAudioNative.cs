@@ -1080,32 +1080,37 @@ namespace MiniAudioEx.Native
 	}
 
     [StructLayout(LayoutKind.Sequential)]
-	public unsafe struct ma_engine_ptr
-	{
-		public IntPtr pointer;
-		public ma_engine_ptr() { }
-		public ma_engine_ptr(IntPtr handle)
-		{
-			pointer = handle;
-		}
-		public ma_engine_ptr(bool allocate)
-		{
-			if (allocate)
-				Allocate();
-		}
-		public bool Allocate()
-		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.engine);
-			return pointer != IntPtr.Zero;
-		}
-		public void Free()
-		{
-			if (pointer != IntPtr.Zero)
-			{
-				MiniAudioNative.ma_deallocate_type(pointer);
-				pointer = IntPtr.Zero;
-			}
-		}
+    public unsafe struct ma_engine_ptr
+    {
+        public IntPtr pointer;
+        public ma_engine_ptr() { }
+        public ma_engine_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_engine_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.engine);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_engine* Get()
+        {
+            return (ma_engine*)pointer;
+        }
 	}
 
     [StructLayout(LayoutKind.Sequential)]
@@ -1981,6 +1986,58 @@ namespace MiniAudioEx.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_engine
+    {
+        public ma_node_graph nodeGraph;                        /* An engine is a node graph. It should be able to be plugged into any ma_node_graph API (with a cast) which means this must be the first member of this struct. */
+        public ma_resource_manager_ptr pResourceManager;
+        public ma_device_ptr pDevice;                             /* Optionally set via the config, otherwise allocated by the engine in ma_engine_init(). */
+        public ma_log_ptr pLog;
+        public ma_uint32 sampleRate;
+        public ma_uint32 listenerCount;
+        public ma_spatializer_listener_array listeners;
+        public ma_allocation_callbacks allocationCallbacks;
+        public ma_bool8 ownsResourceManager;
+        public ma_bool8 ownsDevice;
+        public ma_spinlock inlinedSoundLock;                   /* For synchronizing access to the inlined sound list. */
+        public ma_sound_inlined_ptr pInlinedSoundHead;            /* The first inlined sound. Inlined sounds are tracked in a linked list. */
+        public UInt32 inlinedSoundCount;      /* The total number of allocated inlined sound objects. Used for debugging. */
+        public ma_uint32 gainSmoothTimeInFrames;               /* The number of frames to interpolate the gain of spatialized sounds across. */
+        public ma_uint32 defaultVolumeSmoothTimeInPCMFrames;
+        public ma_mono_expansion_mode monoExpansionMode;
+        public IntPtr onProcess;
+        public IntPtr pProcessUserData;
+
+        public void SetProcessProc(ma_engine_process_proc callback)
+        {
+            onProcess = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct ma_spatializer_listener_array
+        {
+            public ma_spatializer_listener l0;
+            public ma_spatializer_listener l1;
+            public ma_spatializer_listener l2;
+            public ma_spatializer_listener l3;
+            public ref ma_spatializer_listener this[int index]
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    if (index < 0 || index >= MiniAudioNative.MA_ENGINE_MAX_LISTENERS)
+                    {
+                        throw new IndexOutOfRangeException("Index must be between 0 and 3.");
+                    }
+                    fixed (ma_spatializer_listener* p = &l0)
+                    {
+                        return ref p[index];
+                    }
+                }
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_procedural_sound_config
     {
         public ma_format format;
@@ -2027,10 +2084,34 @@ namespace MiniAudioEx.Native
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_log
     {
-        public fixed byte callbacks[MiniAudioNative.MA_MAX_LOG_CALLBACKS * 16];
+        public ma_log_callback_array callbacks;
         public ma_uint32 callbackCount;
         public ma_allocation_callbacks allocationCallbacks; /* Need to store these persistently because ma_log_postv() might need to allocate a buffer on the heap. */
         //There is a mutex here but the size depends on platform
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct ma_log_callback_array
+        {
+            public ma_log_callback cb0;
+            public ma_log_callback cb1;
+            public ma_log_callback cb2;
+            public ma_log_callback cb3;
+            public ref ma_log_callback this[int index]
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    if (index < 0 || index >= MiniAudioNative.MA_MAX_LOG_CALLBACKS)
+                    {
+                        throw new IndexOutOfRangeException("Index must be between 0 and 3.");
+                    }
+                    fixed (ma_log_callback* p = &cb0)
+                    {
+                        return ref p[index];
+                    }
+                }
+            }
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2296,7 +2377,7 @@ namespace MiniAudioEx.Native
         public fixed byte name[MiniAudioNative.MA_MAX_DEVICE_NAME_LENGTH + 1];
         public ma_bool32 isDefault;
         public ma_uint32 nativeDataFormatCount;
-        private fixed byte nativeDataFormats[4 * 4 * 64];
+        public ma_native_data_format_array nativeDataFormats;
 
         public string GetName()
         {
@@ -2316,31 +2397,89 @@ namespace MiniAudioEx.Native
             }
         }
 
-        public ma_native_data_format[] GetNativeDataFormats()
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct ma_native_data_format_array
         {
-            if (nativeDataFormatCount == 0)
-                return Array.Empty<ma_native_data_format>();
-            if (nativeDataFormatCount > 64)
-                nativeDataFormatCount = 64;
+            public ma_native_data_format ndf0;
+            public ma_native_data_format ndf1;
+            public ma_native_data_format ndf2;
+            public ma_native_data_format ndf3;
+            public ma_native_data_format ndf4;
+            public ma_native_data_format ndf5;
+            public ma_native_data_format ndf6;
+            public ma_native_data_format ndf7;
+            public ma_native_data_format ndf8;
+            public ma_native_data_format ndf9;
+            public ma_native_data_format ndf10;
+            public ma_native_data_format ndf11;
+            public ma_native_data_format ndf12;
+            public ma_native_data_format ndf13;
+            public ma_native_data_format ndf14;
+            public ma_native_data_format ndf15;
+            public ma_native_data_format ndf16;
+            public ma_native_data_format ndf17;
+            public ma_native_data_format ndf18;
+            public ma_native_data_format ndf19;
+            public ma_native_data_format ndf20;
+            public ma_native_data_format ndf21;
+            public ma_native_data_format ndf22;
+            public ma_native_data_format ndf23;
+            public ma_native_data_format ndf24;
+            public ma_native_data_format ndf25;
+            public ma_native_data_format ndf26;
+            public ma_native_data_format ndf27;
+            public ma_native_data_format ndf28;
+            public ma_native_data_format ndf29;
+            public ma_native_data_format ndf30;
+            public ma_native_data_format ndf31;
+            public ma_native_data_format ndf32;
+            public ma_native_data_format ndf33;
+            public ma_native_data_format ndf34;
+            public ma_native_data_format ndf35;
+            public ma_native_data_format ndf36;
+            public ma_native_data_format ndf37;
+            public ma_native_data_format ndf38;
+            public ma_native_data_format ndf39;
+            public ma_native_data_format ndf40;
+            public ma_native_data_format ndf41;
+            public ma_native_data_format ndf42;
+            public ma_native_data_format ndf43;
+            public ma_native_data_format ndf44;
+            public ma_native_data_format ndf45;
+            public ma_native_data_format ndf46;
+            public ma_native_data_format ndf47;
+            public ma_native_data_format ndf48;
+            public ma_native_data_format ndf49;
+            public ma_native_data_format ndf50;
+            public ma_native_data_format ndf51;
+            public ma_native_data_format ndf52;
+            public ma_native_data_format ndf53;
+            public ma_native_data_format ndf54;
+            public ma_native_data_format ndf55;
+            public ma_native_data_format ndf56;
+            public ma_native_data_format ndf57;
+            public ma_native_data_format ndf58;
+            public ma_native_data_format ndf59;
+            public ma_native_data_format ndf60;
+            public ma_native_data_format ndf61;
+            public ma_native_data_format ndf62;
+            public ma_native_data_format ndf63;
 
-            var result = new ma_native_data_format[nativeDataFormatCount];
-
-            unsafe
+            public ref ma_native_data_format this[int index]
             {
-                fixed (byte* pFormats = nativeDataFormats)
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
                 {
-                    byte* ptr = pFormats;
-                    for (int i = 0; i < result.Length; i++, ptr += 16)
+                    if (index < 0 || index >= 64)
                     {
-                        result[i].format = *(uint*)(ptr + 0);
-                        result[i].channels = *(uint*)(ptr + 4);
-                        result[i].sampleRate = *(uint*)(ptr + 8);
-                        result[i].flags = *(uint*)(ptr + 12);
+                        throw new IndexOutOfRangeException("Index must be between 0 and 63.");
+                    }
+                    fixed (ma_native_data_format* p = &ndf0)
+                    {
+                        return ref p[index];
                     }
                 }
             }
-
-            return result;
         }
     }
 
@@ -3168,64 +3307,52 @@ namespace MiniAudioEx.Native
         public ma_uint64 localTime;          /* The node's local clock. This is just a running sum of the number of output frames that have been processed. Can be modified by any thread with `ma_node_set_time()`. */
 
         /* Memory management. */
-        public fixed byte _inputBuses[72 * MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT];
-        public fixed byte _outputBuses[56 * MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT];
+        public ma_node_input_bus_array _inputBuses;
+        public ma_node_output_bus_array _outputBuses;
         public IntPtr _pHeap;   /* A heap allocation for internal use only. pInputBuses and/or pOutputBuses will point to this if the bus count exceeds MA_MAX_NODE_LOCAL_BUS_COUNT. */
         public ma_bool32 _ownsHeap;    /* If set to true, the node owns the heap allocation and _pHeap will be freed in ma_node_uninit(). */
 
-        public ma_node_input_bus GetInputBus(int index)
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct ma_node_input_bus_array
         {
-            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
-                throw new IndexOutOfRangeException();
-
-            int offset = index * 72;
-
-            fixed (byte* pBus = &_inputBuses[offset])
+            public ma_node_input_bus b0;
+            public ma_node_input_bus b1;
+            public ref ma_node_input_bus this[int index]
             {
-                ma_node_input_bus* pInputBus = (ma_node_input_bus*)pBus;
-                return *pInputBus;
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    if (index < 0 || index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                    {
+                        throw new IndexOutOfRangeException("Index must be between 0 and 1.");
+                    }
+                    fixed (ma_node_input_bus* p = &b0)
+                    {
+                        return ref p[index];
+                    }
+                }
             }
         }
 
-        public void SetInputBus(ma_node_input_bus inputBus, int index)
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct ma_node_output_bus_array
         {
-            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
-                throw new IndexOutOfRangeException();
-
-            int offset = index * 72;
-
-            fixed (byte* pBus = &_inputBuses[offset])
+            public ma_node_output_bus b0;
+            public ma_node_output_bus b1;
+            public ref ma_node_output_bus this[int index]
             {
-                ma_node_input_bus* pInputBus = (ma_node_input_bus*)pBus;
-                *pInputBus = inputBus;
-            }
-        }
-
-        public ma_node_output_bus GetOutputBus(int index)
-        {
-            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
-                throw new IndexOutOfRangeException();
-
-            int offset = index * 56;
-
-            fixed (byte* pBus = &_outputBuses[offset])
-            {
-                ma_node_output_bus* pOutputBus = (ma_node_output_bus*)pBus;
-                return *pOutputBus;
-            }
-        }
-
-        public void SetOutputBus(ma_node_output_bus outputBus, int index)
-        {
-            if (index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
-                throw new IndexOutOfRangeException();
-
-            int offset = index * 56;
-
-            fixed (byte* pBus = &_outputBuses[offset])
-            {
-                ma_node_output_bus* pOutputBus = (ma_node_output_bus*)pBus;
-                *pOutputBus = outputBus;
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    if (index < 0 || index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                    {
+                        throw new IndexOutOfRangeException("Index must be between 0 and 1.");
+                    }
+                    fixed (ma_node_output_bus* p = &b0)
+                    {
+                        return ref p[index];
+                    }
+                }
             }
         }
     }

@@ -192,7 +192,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			return result;
 		}
 
-		public ma_result Play()
+		public ma_result Start()
 		{
 			return MiniAudioNative.ma_sound_start(handle);
 		}
