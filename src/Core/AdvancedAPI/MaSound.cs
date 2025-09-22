@@ -155,6 +155,17 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			return result;
 		}
 
+		public ma_result InitializeFromDataSource(MaEngine engine, MaDataSource dataSource, ma_sound_flags flags, MaSoundGroup group = null)
+		{
+			if (dataSource == null)
+				return ma_result.invalid_args;
+
+			if (dataSource.Handle.pointer == IntPtr.Zero)
+				return ma_result.invalid_args;
+
+			return InitializeFromDataSource(engine, dataSource.Handle, flags, group);
+		}
+
 		public ma_result InitializeFromDataSource(MaEngine engine, ma_data_source_ptr pDataSource, ma_sound_flags flags, MaSoundGroup group = null)
 		{
 			ma_result result = IsInitialized(engine);
