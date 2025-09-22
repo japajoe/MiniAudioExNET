@@ -48,6 +48,7 @@
 
 using System;
 using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
 namespace MiniAudioEx.DSP
 {
@@ -158,7 +159,7 @@ namespace MiniAudioEx.DSP
             return output;
         }
 
-        public void Process(AudioBuffer<float> framesOut, ulong frameCount, int channels)
+        public void Process(NativeArray<float> framesOut, ulong frameCount, int channels)
         {
             float output = 0.0f;
             float currentSample = 0.0f;

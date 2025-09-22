@@ -54,8 +54,8 @@ using MiniAudioEx.Native;
 namespace MiniAudioEx.Core.StandardAPI
 {
     public delegate void AudioEndEvent();
-    public delegate void AudioProcessEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
-    public delegate void AudioReadEvent(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioProcessEvent(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioReadEvent(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
 
     /// <summary>
     /// This class is used to play sounds.
@@ -598,7 +598,7 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             int length = (int)(frameCount * channels);
 
-            AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut, length);
+            NativeArray<float> framesOut = new NativeArray<float>(pFramesOut, length);
 
             for (int i = 0; i < effects.Count; i++)
             {
@@ -619,7 +619,7 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             int length = (int)(frameCount * channels);
 
-            AudioBuffer<float> framesOut = new AudioBuffer<float>(pFramesOut, length);
+            NativeArray<float> framesOut = new NativeArray<float>(pFramesOut, length);
 
             for (int i = 0; i < generators.Count; i++)
             {
@@ -635,7 +635,7 @@ namespace MiniAudioEx.Core.StandardAPI
     /// </summary>
     public interface IAudioEffect
     {
-        void OnProcess(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
+        void OnProcess(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
         void OnDestroy();
     }
 
@@ -644,7 +644,7 @@ namespace MiniAudioEx.Core.StandardAPI
     /// </summary>
     public interface IAudioGenerator
     {
-        void OnGenerate(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels);
+        void OnGenerate(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
         void OnDestroy();
     }
 }

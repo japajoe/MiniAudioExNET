@@ -53,7 +53,7 @@ using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.StandardAPI
 {
-    public delegate void DeviceDataEvent(AudioBuffer<float> data, UInt32 frameCount);
+    public delegate void DeviceDataEvent(NativeArray<float> data, UInt32 frameCount);
 
     /// <summary>
     /// This class is responsible for managing the audio context.
@@ -366,7 +366,7 @@ namespace MiniAudioEx.Core.StandardAPI
 
             if(DataProcess != null)
             {
-                AudioBuffer<float> buffer = new AudioBuffer<float>(pOutput, (Int32)(frameCount * channels));
+                NativeArray<float> buffer = new NativeArray<float>(pOutput, (Int32)(frameCount * channels));
                 DataProcess.Invoke(buffer, frameCount);
             }
         }

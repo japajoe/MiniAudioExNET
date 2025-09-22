@@ -47,6 +47,7 @@
 // SOFTWARE.
 
 using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
 namespace MiniAudioEx.DSP
 {
@@ -117,7 +118,7 @@ namespace MiniAudioEx.DSP
             }
         }
 
-        public void OnGenerate(AudioBuffer<float> framesOut, ulong frameCount, int channels)
+        public void OnGenerate(NativeArray<float> framesOut, ulong frameCount, int channels)
         {
             float sample = 0;
 

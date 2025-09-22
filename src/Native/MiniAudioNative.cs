@@ -53,7 +53,6 @@ using System.Runtime.InteropServices;
 namespace MiniAudioEx.Native
 {
     // ma_typedefs
-    using size_t = UIntPtr;
     using ma_channel = Byte;
     using ma_bool8 = Byte;
     using ma_bool32 = UInt32;
@@ -492,6 +491,7 @@ namespace MiniAudioEx.Native
         lpf1,
         lpf2,
         node,
+        node_base,
         node_graph,
         node_input_bus,
         node_output_bus,
@@ -619,14 +619,49 @@ namespace MiniAudioEx.Native
     [Flags]
     public enum ma_node_flags
     {
-        PASSTHROUGH = 0x00000001,
-        CONTINUOUS_PROCESSING = 0x00000002,
-        ALLOW_NULL_INPUT = 0x00000004,
-        DIFFERENT_PROCESSING_RATES = 0x00000008,
-        SILENT_OUTPUT = 0x00000010
+        passthrough = 0x00000001,
+        continuous_processing = 0x00000002,
+        allow_null_input = 0x00000004,
+        different_processing_rates = 0x00000008,
+        silent_output = 0x00000010
     }
 
     // ma_pointer_types
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_uint32_ptr
+    {
+        public IntPtr pointer;
+        public ma_uint32_ptr() { }
+        public ma_uint32_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_uint32_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate(Marshal.SizeOf<UInt32>());
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_uint32* Get()
+		{
+			return (ma_uint32*)pointer;
+		}
+	}
+
+
     [StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_async_notification_ptr
 	{
@@ -811,7 +846,6 @@ namespace MiniAudioEx.Native
         }
 	}
 
-    //
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_data_source_vtable_ptr
     {
@@ -1342,6 +1376,40 @@ namespace MiniAudioEx.Native
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_node_base_ptr
+	{
+		public IntPtr pointer;
+		public ma_node_base_ptr() { }
+		public ma_node_base_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_node_base_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_base);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_node_base* Get()
+		{
+			return (ma_node_base*)pointer;
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_node_graph_ptr
 	{
 		public IntPtr pointer;
@@ -1667,62 +1735,73 @@ namespace MiniAudioEx.Native
 		}
 	}
 
-	[StructLayout(LayoutKind.Sequential)]
-	public unsafe struct ma_sound_group_ptr
-	{
-		public IntPtr pointer;
-		public ma_sound_group_ptr() { }
-		public ma_sound_group_ptr(IntPtr handle)
-		{
-			pointer = handle;
-		}
-		public ma_sound_group_ptr(bool allocate)
-		{
-			if (allocate)
-				Allocate();
-		}
-		public bool Allocate()
-		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.sound_group);
-			return pointer != IntPtr.Zero;
-		}
-		public void Free()
-		{
-			if (pointer != IntPtr.Zero)
-			{
-				MiniAudioNative.ma_deallocate_type(pointer);
-				pointer = IntPtr.Zero;
-			}
-		}
-	}
+    [StructLayout(LayoutKind.Sequential)]
+    // ma_sound_group is an alias for ma_sound
+    public unsafe struct ma_sound_group_ptr
+    {
+        public IntPtr pointer;
+        public ma_sound_group_ptr() { }
+        public ma_sound_group_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_sound_group_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.sound_group);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_sound* Get()
+        {
+            return (ma_sound*)pointer;
+        }
+    }
 
-	[StructLayout(LayoutKind.Sequential)]
-	public unsafe struct ma_spatializer_ptr
-	{
-		public IntPtr pointer;
-		public ma_spatializer_ptr() { }
-		public ma_spatializer_ptr(IntPtr handle)
-		{
-			pointer = handle;
-		}
-		public ma_spatializer_ptr(bool allocate)
-		{
-			if (allocate)
-				Allocate();
-		}
-		public bool Allocate()
-		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.spatializer);
-			return pointer != IntPtr.Zero;
-		}
-		public void Free()
-		{
-			if (pointer != IntPtr.Zero)
-			{
-				MiniAudioNative.ma_deallocate_type(pointer);
-				pointer = IntPtr.Zero;
-			}
-		}
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_spatializer_ptr
+    {
+        public IntPtr pointer;
+        public ma_spatializer_ptr() { }
+        public ma_spatializer_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_spatializer_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.spatializer);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_spatializer* Get()
+        {
+            return (ma_spatializer*)pointer;
+        }
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -1821,6 +1900,211 @@ namespace MiniAudioEx.Native
 			}
 		}
 	}
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct size_t
+    {
+        private UIntPtr value;
+
+        public size_t(UIntPtr value)
+        {
+            this.value = value;
+        }
+
+        public static implicit operator size_t(UIntPtr value)
+        {
+            return new size_t(value);
+        }
+
+        public static implicit operator UIntPtr(size_t size)
+        {
+            return size.value;
+        }
+
+        public static implicit operator size_t(int value)
+        {
+            return new size_t((UIntPtr)(uint)value);
+        }
+
+        public static implicit operator size_t(uint value)
+        {
+            return new size_t((UIntPtr)value);
+        }
+
+        public static implicit operator size_t(long value)
+        {
+            return new size_t((UIntPtr)(ulong)value);
+        }
+
+        public static implicit operator size_t(ulong value)
+        {
+            return new size_t((UIntPtr)value);
+        }
+
+        public static size_t operator +(size_t a, size_t b)
+        {
+            return new size_t((UIntPtr)(a.ToUInt64() + b.ToUInt64()));
+        }
+
+        public static size_t operator -(size_t a, size_t b)
+        {
+            return new size_t((UIntPtr)(a.ToUInt64() - b.ToUInt64()));
+        }
+
+        public static size_t operator *(size_t a, size_t b)
+        {
+            return new size_t((UIntPtr)(a.ToUInt64() * b.ToUInt64()));
+        }
+
+        public static size_t operator /(size_t a, size_t b)
+        {
+            if (b.value == UIntPtr.Zero)
+                throw new DivideByZeroException();
+            return new size_t((UIntPtr)(a.ToUInt64() / b.ToUInt64()));
+        }
+
+        public static bool operator ==(size_t a, size_t b)
+        {
+            return a.value == b.value;
+        }
+
+        public static bool operator !=(size_t a, size_t b)
+        {
+            return a.value != b.value;
+        }
+
+        public static bool operator <(size_t a, size_t b)
+        {
+            return a.ToUInt64() < b.ToUInt64();
+        }
+
+        public static bool operator >(size_t a, size_t b)
+        {
+            return a.ToUInt64() > b.ToUInt64();
+        }
+
+        public static bool operator <=(size_t a, size_t b)
+        {
+            return a.ToUInt64() <= b.ToUInt64();
+        }
+
+        public static bool operator >=(size_t a, size_t b)
+        {
+            return a.ToUInt64() >= b.ToUInt64();
+        }
+
+        public static size_t operator +(size_t a, ulong b)
+        {
+            return new size_t((UIntPtr)(a.value.ToUInt64() + b));
+        }
+
+        public static size_t operator -(size_t a, ulong b)
+        {
+            return new size_t((UIntPtr)(a.value.ToUInt64() - b));
+        }
+
+        public static size_t operator *(size_t a, ulong b)
+        {
+            return new size_t((UIntPtr)(a.ToUInt64() * b));
+        }
+
+        public static size_t operator /(size_t a, ulong b)
+        {
+            if (b == 0)
+                throw new DivideByZeroException();
+            return new size_t((UIntPtr)(a.ToUInt64() / b));
+        }
+
+        public static size_t operator +(ulong a, size_t b)
+        {
+            return new size_t((UIntPtr)(a + b.ToUInt64()));
+        }
+
+        public static size_t operator -(ulong a, size_t b)
+        {
+            return new size_t((UIntPtr)(a - b.ToUInt64()));
+        }
+
+        public static size_t operator *(ulong a, size_t b)
+        {
+            return new size_t((UIntPtr)(a * b.ToUInt64()));
+        }
+
+        public static size_t operator /(ulong a, size_t b)
+        {
+            if (b.value == UIntPtr.Zero)
+                throw new DivideByZeroException();
+            return new size_t((UIntPtr)(a / b.ToUInt64()));
+        }
+
+        public static size_t operator +(size_t a, uint b)
+        {
+            return new size_t((UIntPtr)(a.value.ToUInt64() + b));
+        }
+
+        public static size_t operator -(size_t a, uint b)
+        {
+            return new size_t((UIntPtr)(a.value.ToUInt64() - b));
+        }
+
+        public static size_t operator *(size_t a, uint b)
+        {
+            return new size_t((UIntPtr)(a.ToUInt64() * b));
+        }
+
+        public static size_t operator /(size_t a, uint b)
+        {
+            if (b == 0)
+                throw new DivideByZeroException();
+            return new size_t((UIntPtr)(a.ToUInt64() / b));
+        }
+
+        public static size_t operator +(uint a, size_t b)
+        {
+            return new size_t((UIntPtr)(a + b.ToUInt64()));
+        }
+
+        public static size_t operator -(uint a, size_t b)
+        {
+            return new size_t((UIntPtr)(a - b.ToUInt64()));
+        }
+
+        public static size_t operator *(uint a, size_t b)
+        {
+            return new size_t((UIntPtr)(a * b.ToUInt64()));
+        }
+
+        public static size_t operator /(uint a, size_t b)
+        {
+            if (b.value == UIntPtr.Zero)
+                throw new DivideByZeroException();
+            return new size_t((UIntPtr)(a / b.ToUInt64()));
+        }
+
+        public ulong ToUInt64()
+        {
+            return value.ToUInt64();
+        }
+
+        public uint ToUInt32()
+        {
+            return value.ToUInt32();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is size_t)
+            {
+                return this == (size_t)obj;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return value.GetHashCode();
+        }
+    }
 
     // ma_structures
     [StructLayout(LayoutKind.Sequential)]
@@ -3238,7 +3522,7 @@ namespace MiniAudioEx.Native
         Flags describing characteristics of the node. This is currently just a placeholder for some
         ideas for later on.
         */
-        public ma_uint32 flags;
+        public ma_node_flags flags;
 
         public void SetOnProcess(ma_node_vtable_process_proc callback)
         {
@@ -3496,23 +3780,13 @@ namespace MiniAudioEx.Native
         public static extern IntPtr ma_allocate_type(ma_allocation_type type);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr ma_allocate(size_t size);
-
-        public static IntPtr ma_allocate_ex(UInt64 size)
-        {
-            return ma_allocate((size_t)size);
-        }
+        public static extern IntPtr ma_allocate(size_t size);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern void ma_deallocate_type(IntPtr pData);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern size_t ma_get_size_of_type(ma_allocation_type type);
-
-        public static UInt64 ma_get_size_of_type_ex(ma_allocation_type type)
-        {
-            return (UInt64)ma_get_size_of_type(type);
-        }
+        public static extern size_t ma_get_size_of_type(ma_allocation_type type);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_engine_config ma_engine_config_init();

@@ -47,6 +47,7 @@
 // SOFTWARE.
 
 using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
 namespace MiniAudioEx.DSP
 {
@@ -103,7 +104,7 @@ namespace MiniAudioEx.DSP
             filter = new Filter(type, frequency, q, gainDB, AudioContext.SampleRate);
         }
 
-        public void OnProcess(AudioBuffer<float> framesOut, ulong frameCount, int channels)
+        public void OnProcess(NativeArray<float> framesOut, ulong frameCount, int channels)
         {
             filter.Process(framesOut, frameCount, channels);
         }

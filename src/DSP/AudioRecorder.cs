@@ -49,6 +49,7 @@
 using System;
 using System.IO;
 using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
 namespace MiniAudioEx.DSP
 {
@@ -89,7 +90,7 @@ namespace MiniAudioEx.DSP
             CloseFile();
         }
 
-        public void OnProcess(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels)
+        public void OnProcess(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels)
         {
             WriteHeader();
             WriteData(framesOut, frameCount, channels);
@@ -173,7 +174,7 @@ namespace MiniAudioEx.DSP
             SetState(State.WriteData);
         }
 
-        private void WriteData(AudioBuffer<float> framesOut, UInt64 frameCount, Int32 channels)
+        private void WriteData(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels)
         {
             if(GetState() != State.WriteData)
                 return;

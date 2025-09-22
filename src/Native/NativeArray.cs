@@ -48,12 +48,12 @@
 
 using System;
 
-namespace MiniAudioEx.Core.StandardAPI
+namespace MiniAudioEx.Native
 {
-    public unsafe ref struct AudioBuffer<T> where T : unmanaged
+    public unsafe ref struct NativeArray<T> where T : unmanaged
     {
         internal void* _pointer;
-        /// <summary>The number of elements this Span contains.</summary>
+        /// <summary>The number of elements this NativeArray contains.</summary>
         private readonly int _length;
 
         public int Length
@@ -69,7 +69,7 @@ namespace MiniAudioEx.Core.StandardAPI
             get
             {
                 return 0 >= (uint)_length;
-            } 
+            }
         }
 
         public IntPtr Pointer
@@ -92,17 +92,31 @@ namespace MiniAudioEx.Core.StandardAPI
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public AudioBuffer(void* pointer, int length)
+        public NativeArray(void* pointer, int length)
         {
             _pointer = pointer;
             _length = length;
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public AudioBuffer(System.IntPtr pointer, int length)
+        public NativeArray(System.IntPtr pointer, int length)
         {
             _pointer = pointer.ToPointer();
             _length = length;
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public void CopyTo(NativeArray<T> destination)
+        {
+            if ((uint)_length <= (uint)destination.Length)
+            {
+                long byteCount = _length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+                Buffer.MemoryCopy(_pointer, (void*)destination.Pointer, byteCount, byteCount);
+            }
+            else
+            {
+                throw new ArgumentException("Destination is too short.", "destination");
+            }
         }
     }
 }

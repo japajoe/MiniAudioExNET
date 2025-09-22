@@ -112,7 +112,7 @@ namespace MiniAudioEx.Utilities
 
                     unsafe
                     {
-                        AudioBuffer<float> pData = new AudioBuffer<float>(pResult.ToPointer(), (int)dataLength);
+                        NativeArray<float> pData = new NativeArray<float>(pResult.ToPointer(), (int)dataLength);
 
                         for (int i = 0; i < pData.Length; i++)
                         {
@@ -159,7 +159,7 @@ namespace MiniAudioEx.Utilities
                     {
                         data = new float[dataLength];
 
-                        AudioBuffer<float> pData = new AudioBuffer<float>(pResult.ToPointer(), (int)dataLength);
+                        NativeArray<float> pData = new NativeArray<float>(pResult.ToPointer(), (int)dataLength);
 
                         for (int i = 0; i < pData.Length; i++)
                         {
