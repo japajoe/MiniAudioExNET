@@ -1,21 +1,20 @@
 //An example of using the native miniaudio API.
 //You need to compile this with AllowUnsafeBlocks
-
 using System;
 using MiniAudioEx.Native;
 
 namespace MiniAudioExExamples
 {
-    class Example7
+    public class NativeAPIExample
     {
-        private static ma_engine_ptr pEngine;
-        private static ma_context_ptr pContext;
-        private static ma_device_ptr pDevice;
-        private static ma_resource_manager_ptr pResourceManager;
-        private static ma_device_data_proc deviceDataProc;
-        private static ma_sound_ptr pSound;
+        private ma_engine_ptr pEngine;
+        private ma_context_ptr pContext;
+        private ma_device_ptr pDevice;
+        private ma_resource_manager_ptr pResourceManager;
+        private ma_device_data_proc deviceDataProc;
+        private ma_sound_ptr pSound;
 
-        public static void Main(string[] args)
+        public NativeAPIExample()
         {
             pEngine = new ma_engine_ptr(true);
             pContext = new ma_context_ptr(true);
@@ -23,7 +22,10 @@ namespace MiniAudioExExamples
             pResourceManager = new ma_resource_manager_ptr(true);
             pSound = new ma_sound_ptr(true);
             deviceDataProc = OnDeviceData;
+        }
 
+		public void Run()
+		{
             if (MiniAudioNative.ma_context_init(null, pContext) != ma_result.success)
             {
                 Console.WriteLine("Failed to create context");
@@ -107,7 +109,7 @@ namespace MiniAudioExExamples
                 return;
             }
 
-            if (MiniAudioNative.ma_sound_init_from_file(pEngine, "some_file.ogg", ma_sound_flags.stream, default, default, pSound) != ma_result.success)
+            if (MiniAudioNative.ma_sound_init_from_file(pEngine, "some_sound.ogg", ma_sound_flags.stream, default, default, pSound) != ma_result.success)
             {
                 Console.WriteLine("Failed to initialize sound");
                 Dispose();
@@ -123,24 +125,24 @@ namespace MiniAudioExExamples
             MiniAudioNative.ma_sound_stop(pSound);
 
             Dispose();
-        }
+		}
 
-        private static void Dispose()
-        {
-            MiniAudioNative.ma_sound_uninit(pSound);
-            MiniAudioNative.ma_engine_uninit(pEngine);
-            MiniAudioNative.ma_device_uninit(pDevice);
-            MiniAudioNative.ma_context_uninit(pContext);
-            MiniAudioNative.ma_resource_manager_uninit(pResourceManager);
+        private void Dispose()
+		{
+			MiniAudioNative.ma_sound_uninit(pSound);
+			MiniAudioNative.ma_engine_uninit(pEngine);
+			MiniAudioNative.ma_device_uninit(pDevice);
+			MiniAudioNative.ma_context_uninit(pContext);
+			MiniAudioNative.ma_resource_manager_uninit(pResourceManager);
 
-            pEngine.Free();
-            pContext.Free();
-            pDevice.Free();
-            pResourceManager.Free();
-            pSound.Free();
-        }
+			pEngine.Free();
+			pContext.Free();
+			pDevice.Free();
+			pResourceManager.Free();
+			pSound.Free();
+		}
 
-        private static unsafe void OnDeviceData(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
+        private unsafe void OnDeviceData(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
         {
             ma_device* device = pDevice.Get();
 

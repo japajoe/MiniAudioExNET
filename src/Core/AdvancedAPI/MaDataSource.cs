@@ -53,21 +53,21 @@ namespace MiniAudioEx.Core.AdvancedAPI
 {
 	public abstract class MaDataSource
 	{
-		protected ma_data_source_ptr handle;
+		protected ma_data_source_ptr dataSourceHandle;
 		protected ma_data_source_vtable_ptr vtable;
 		protected ma_data_source_vtable_read_proc onRead;
 		protected ma_data_source_vtable_seek_proc onSeek;
 		protected ma_data_source_vtable_get_data_format_proc onGetDataFormat;
 		protected ma_data_source_vtable_get_cursor_proc onGetCursor;
 
-		public ma_data_source_ptr Handle
+		public ma_data_source_ptr DataSourceHandle
 		{
-			get => handle;
+			get => dataSourceHandle;
 		}
 
 		public MaDataSource()
 		{
-			handle = new ma_data_source_ptr(IntPtr.Zero);
+			dataSourceHandle = new ma_data_source_ptr(IntPtr.Zero);
 			vtable = new ma_data_source_vtable_ptr(IntPtr.Zero);
 			onRead = null;
 			onSeek = null;

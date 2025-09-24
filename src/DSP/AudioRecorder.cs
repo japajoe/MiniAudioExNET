@@ -90,11 +90,11 @@ namespace MiniAudioEx.DSP
             CloseFile();
         }
 
-        public void OnProcess(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels)
-        {
+		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
+		{
             WriteHeader();
-            WriteData(framesOut, frameCount, channels);
-        }
+            WriteData(framesOut, frameCountIn);
+		}
 
         public void OnDestroy()
         {
@@ -174,7 +174,7 @@ namespace MiniAudioEx.DSP
             SetState(State.WriteData);
         }
 
-        private void WriteData(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels)
+        private void WriteData(NativeArray<float> framesOut, UInt32 frameCount)
         {
             if(GetState() != State.WriteData)
                 return;
@@ -268,5 +268,5 @@ namespace MiniAudioEx.DSP
                 Buffer.MemoryCopy(src, dst, sizeof(float), sizeof(float));
             }
         }
-    }
+	}
 }

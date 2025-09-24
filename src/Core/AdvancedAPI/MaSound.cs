@@ -130,7 +130,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			return result;
 		}
 
-		public ma_result InitializeFromCallback(MaEngine engine, UInt32 channels, UInt32 sampleRate, ma_procedural_sound_proc callback, IntPtr userData, MaSoundGroup group = null)
+		public ma_result InitializeFromCallback(MaEngine engine, UInt32 channels, UInt32 sampleRate, ma_procedural_data_source_proc callback, IntPtr userData, MaSoundGroup group = null)
 		{
 			ma_result result = IsInitialized(engine);
 
@@ -143,7 +143,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 			ma_sound_group_ptr pGroup = group == null ? default : group.Handle;
 
-			ma_procedural_sound_config config = MiniAudioNative.ma_procedural_sound_config_init(ma_format.f32, channels, sampleRate, callback, userData);
+			ma_procedural_data_source_config config = MiniAudioNative.ma_procedural_data_source_config_init(ma_format.f32, channels, sampleRate, callback, userData);
 
 			result = MiniAudioNative.ma_sound_init_from_callback(engine.Handle, ref config, flags, pGroup, default, handle);
 
@@ -160,10 +160,10 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			if (dataSource == null)
 				return ma_result.invalid_args;
 
-			if (dataSource.Handle.pointer == IntPtr.Zero)
+			if (dataSource.DataSourceHandle.pointer == IntPtr.Zero)
 				return ma_result.invalid_args;
 
-			return InitializeFromDataSource(engine, dataSource.Handle, flags, group);
+			return InitializeFromDataSource(engine, dataSource.DataSourceHandle, flags, group);
 		}
 
 		public ma_result InitializeFromDataSource(MaEngine engine, ma_data_source_ptr pDataSource, ma_sound_flags flags, MaSoundGroup group = null)

@@ -1,30 +1,35 @@
 //An example of how to procedurally generate sound with the 'Read' callback.
-
 using System;
 using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
 namespace MiniAudioExExamples
 {
-    class Example2
+    public class ProceduralSoundExample
     {
-        static AudioSource source;
-        static long timeCounter = 0;
+		private AudioApp application;
+        private AudioSource source;
+        private long timeCounter = 0;
 
-        static void Main(string[] args)
+		public ProceduralSoundExample()
         {
-            AudioApp application = new AudioApp(44100, 2);
+            application = new AudioApp(44100, 2);
             application.Loaded += OnLoaded;
-            application.Run();
         }
 
-        static void OnLoaded()
-        {
-            source = new AudioSource();
-            source.Read += OnAudioRead;
-            source.Play();
-        }
+		public void Run()
+		{
+            application.Run();			
+		}
 
-        static void OnAudioRead(AudioBuffer<float> framesOut, ulong frameCount, int channels)
+        private void OnLoaded()
+		{
+			source = new AudioSource();
+			source.Read += OnAudioRead;
+			source.Play();
+		}
+
+        private void OnAudioRead(NativeArray<float> framesOut, ulong frameCount, int channels)
         {
             float sample = 0.0f;
             float frequency = 440.0f;

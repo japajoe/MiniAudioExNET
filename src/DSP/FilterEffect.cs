@@ -46,6 +46,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
 using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
@@ -104,11 +105,11 @@ namespace MiniAudioEx.DSP
             filter = new Filter(type, frequency, q, gainDB, AudioContext.SampleRate);
         }
 
-        public void OnProcess(NativeArray<float> framesOut, ulong frameCount, int channels)
+        public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
         {
-            filter.Process(framesOut, frameCount, channels);
-        }
+            filter.Process(framesIn, framesOut, frameCountIn, (int)channels);
+		}
 
-        public void OnDestroy() {}
-    }
+        public void OnDestroy() { }
+	}
 }

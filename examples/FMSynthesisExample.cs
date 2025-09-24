@@ -1,38 +1,42 @@
 //An example of FM synthesis.
-
 using System;
 using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.DSP;
 
 namespace MiniAudioExExamples
 {
-    class Example6
+    public class FMSynthesisExample
     {
-        static AudioSource source;
-        static FMGenerator fmGenerator;
+		private AudioApp application;
+        private AudioSource source;
+        private FMGenerator fmGenerator;
 
-        static void Main(string[] args)
+        public FMSynthesisExample()
         {
-            AudioApp application = new AudioApp(44100, 2);
+            application = new AudioApp(44100, 2);
             application.Loaded += OnLoaded;
             application.Update += OnUpdate;
+        }
+
+		public void Run()
+		{
             application.Run();
-        }
+		}
 
-        static void OnLoaded()
-        {
-            source = new AudioSource();
-            
-            fmGenerator = new FMGenerator(WaveType.Sine, 110.0f, 1.0f);
-            fmGenerator.AddOperator(WaveType.Sine, 55, 1.0f);
-            fmGenerator.AddOperator(WaveType.Sine, 22, 0.5f);
-            
-            source.AddGenerator(fmGenerator);
+        private void OnLoaded()
+		{
+			source = new AudioSource();
 
-            source.Play();
-        }
+			fmGenerator = new FMGenerator(WaveType.Sine, 110.0f, 1.0f);
+			fmGenerator.AddOperator(WaveType.Sine, 55, 1.0f);
+			fmGenerator.AddOperator(WaveType.Sine, 22, 0.5f);
 
-        static void OnUpdate(float deltaTime)
+			source.AddGenerator(fmGenerator);
+
+			source.Play();
+		}
+
+        private void OnUpdate(float deltaTime)
         {
             if (Console.KeyAvailable)
             {

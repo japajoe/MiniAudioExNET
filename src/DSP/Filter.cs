@@ -159,16 +159,16 @@ namespace MiniAudioEx.DSP
             return output;
         }
 
-        public void Process(NativeArray<float> framesOut, ulong frameCount, int channels)
+        public void Process(NativeArray<float> framesOut, NativeArray<float> framesIn, ulong frameCount, int channels)
         {
             float output = 0.0f;
             float currentSample = 0.0f;
             
-            for(int i = 0; i < framesOut.Length; i+=channels)
+            for(int i = 0; i < framesIn.Length; i+=channels)
             {
                 for(int j = 0; j < channels; j++)
                 {
-                    currentSample = framesOut[i+j]; 
+                    currentSample = framesIn[i+j]; 
                     output = currentSample * a0 + z1;
                     z1 = currentSample * a1 + z2 - b1 * output;
                     z2 = currentSample * a2 - b2 * output;

@@ -47,49 +47,72 @@
 // SOFTWARE.
 
 using System;
-using System.Threading;
+using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
-namespace MiniAudioEx.Core.StandardAPI
+namespace MiniAudioEx.DSP
 {
-    public sealed class AudioApp
+    public sealed class ReverbEffect: IAudioEffect
     {
-        public delegate void UpdateEvent(float deltaTime);
-        public delegate void CloseEvent();
-        public delegate void LoadEvent();
+        private Reverb reverb;
+		
+		public float RoomSize
+		{
+			get => reverb.RoomSize;
+			set => reverb.RoomSize = value;
+		}
 
-        public event LoadEvent Loaded;
-        public event UpdateEvent Update;
-        public event CloseEvent Closing;
+		public float Damping
+		{
+			get => reverb.Damping;
+			set => reverb.Damping = value;
+		}
 
-        private UInt32 sampleRate;
-        private UInt32 channels;
+		public float Wet
+		{
+			get => reverb.Wet;
+			set => reverb.Wet = value;
+		}
 
-        public AudioApp(UInt32 sampleRate, UInt32 channels)
-        {
-            this.sampleRate = sampleRate;
-            this.channels = channels;
-        }
+		public float Dry
+		{
+			get => reverb.Dry;
+			set => reverb.Dry = value;
+		}
 
-        public void Run()
-        {
-            Console.CancelKeyPress += OnExit;
+		public float Width
+		{
+			get => reverb.Width;
+			set => reverb.Width = value;
+		}
 
-            AudioContext.Initialize(sampleRate, channels, 2048);
+		public float InputWidth
+		{
+			get => reverb.InputWidth;
+			set => reverb.InputWidth = value;
+		}
 
-            Loaded?.Invoke();
+		public float Mode
+		{
+			get => reverb.Mode;
+			set => reverb.Mode = value;
+		}
 
-            while(true)
-            {
-                AudioContext.Update();
-                Update?.Invoke(AudioContext.DeltaTime);
-                Thread.Sleep(10);
-            }
-        }
+		public UInt64 DecayTimeInFrames
+		{
+			get => reverb.DecayTimeInFrames;
+		}
 
-        private void OnExit(object sender, ConsoleCancelEventArgs e)
-        {
-            Closing?.Invoke();
-            AudioContext.Deinitialize();
-        }
-    }
+        public ReverbEffect(UInt32 sampleRate, UInt32 channels)
+		{
+			reverb = new Reverb(sampleRate, channels);
+		}
+		
+		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
+		{
+			reverb.Process(framesIn, framesOut, frameCountIn);
+		}
+
+        public void OnDestroy() { }
+	}
 }

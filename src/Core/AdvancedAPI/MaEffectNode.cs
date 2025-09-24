@@ -51,100 +51,73 @@ using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.AdvancedAPI
 {
-	public delegate void MaEffectNodeProcessEventHandler(MaEffectNode sender, NativeArray<float> pFramesIn, UInt32 pFrameCountIn, NativeArray<float> pFramesOut, ref UInt32 pFrameCountOut, UInt32 channels);
+	public delegate void MaEffectNodeProcessEvent(MaEffectNode sender, NativeArray<float> pFramesIn, UInt32 pFrameCountIn, NativeArray<float> pFramesOut, ref UInt32 pFrameCountOut, UInt32 channels);
 
 	public sealed class MaEffectNode : MaNode, IDisposable
 	{
-		public event MaEffectNodeProcessEventHandler Process;
+		public event MaEffectNodeProcessEvent Process;
 
-		private ma_node_base_ptr handle;
-		private ma_node_vtable_ptr vtable;
-		private ma_uint32_ptr pChannels;
-		private ma_node_vtable_process_proc onProcess;
-		private UInt32 channels;
+		private ma_effect_node_ptr handle;
+		private ma_effect_node_process_proc onProcess;
 
 		public ma_node_base_ptr Handle
 		{
-			get => handle;
+			get => new ma_node_base_ptr(handle.pointer);
 		}
 
 		public MaEffectNode() : base()
 		{
-			handle = new ma_node_base_ptr(true);
+			handle = new ma_effect_node_ptr(true);
 
 			if (handle.pointer == IntPtr.Zero)
 				throw new OutOfMemoryException();
 
-			vtable = new ma_node_vtable_ptr(true);
-
-			if (vtable.pointer == IntPtr.Zero)
-			{
-				handle.Free();
-				throw new OutOfMemoryException();
-			}
-
-			pChannels = new ma_uint32_ptr(true);
-
-			if (pChannels.pointer == IntPtr.Zero)
-			{
-				handle.Free();
-				vtable.Free();
-				throw new OutOfMemoryException();
-			}
-
 			nodeHandle = new ma_node_ptr(handle.pointer);
-			onProcess = OnProcess;
 		}
 
 		public void Dispose()
 		{
 			if (handle.pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_node_uninit(nodeHandle);
+				MiniAudioNative.ma_effect_node_uninit(handle);
 				handle.Free();
-				vtable.Free();
-				pChannels.Free();
 			}
 			nodeHandle.pointer = IntPtr.Zero;
 		}
 
-		public ma_result Initialize(MaEngine engine, UInt32 channels)
+		public ma_result Initialize(MaEngine engine, UInt32 sampleRate, UInt32 channels)
 		{
 			if (engine == null)
 				return ma_result.invalid_args;
 
-			if (engine.Handle.pointer == IntPtr.Zero)
-				return ma_result.invalid_args;
+			return Initialize(engine.Handle, sampleRate, channels);
+		}
 
-			if (handle.pointer == IntPtr.Zero || engine.Handle.pointer == IntPtr.Zero)
+		public ma_result Initialize(ma_engine_ptr pEngine, UInt32 sampleRate, UInt32 channels)
+		{
+			if (handle.pointer == IntPtr.Zero)
 				return ma_result.error;
 
-			if (channels > engine.GetChannels())
-				channels = engine.GetChannels();
+			if (pEngine.pointer == IntPtr.Zero)
+				return ma_result.invalid_args;
 
-			this.channels = channels;
+			if (channels > MiniAudioNative.ma_engine_get_channels(pEngine))
+				channels = MiniAudioNative.ma_engine_get_channels(pEngine);
 
-			unsafe
-			{
-				ma_node_vtable* pVtable = vtable.Get();
-				pVtable->inputBusCount = 1;
-				pVtable->outputBusCount = 1;
-				pVtable->flags = ma_node_flags.continuous_processing | ma_node_flags.allow_null_input;
-				pVtable->SetOnProcess(onProcess);
+			onProcess = OnProcess;
 
-				*pChannels.Get() = this.channels;
-
-				ma_node_config nodeConfig = MiniAudioNative.ma_node_config_init();
-				nodeConfig.pInputChannels = pChannels.pointer;
-				nodeConfig.pOutputChannels = pChannels.pointer;
-				nodeConfig.vtable = vtable;
-
-				return MiniAudioNative.ma_node_init(engine.GetNodeGraph(), ref nodeConfig, nodeHandle);
-			}
+			ma_effect_node_config nodeConfig = MiniAudioNative.ma_effect_node_config_init(channels, sampleRate, onProcess);
+			ma_node_graph_ptr pNodeGraph = MiniAudioNative.ma_engine_get_node_graph(pEngine);
+			return MiniAudioNative.ma_effect_node_init(pNodeGraph, ref nodeConfig, handle);
 		}
 
 		private unsafe void OnProcess(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
 		{
+            if (pNode.pointer == IntPtr.Zero)
+                return;
+
+            ma_effect_node* pEffectNode = (ma_effect_node*)pNode.pointer;
+			UInt32 channels = pEffectNode->config.channels;
 			UInt32 frameCountIn = *(UInt32*)pFrameCountIn;
 			UInt32 frameCountOut = *(UInt32*)pFrameCountOut;
 
@@ -152,8 +125,8 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			float** framesOut = (float**)ppFramesOut;
 
 			// There could be more input/output streams but we only deal with 1
-			NativeArray<float> bufferIn = new NativeArray<float>(new IntPtr(framesIn[0]), (int)(frameCountIn * channels));
-			NativeArray<float> bufferOut = new NativeArray<float>( new IntPtr(framesOut[0]), (int)(frameCountOut * channels));
+			NativeArray<float> bufferIn = new NativeArray<float>(framesIn[0], (int)(frameCountIn * channels));
+			NativeArray<float> bufferOut = new NativeArray<float>(framesOut[0], (int)(frameCountOut * channels));
 
 			Process?.Invoke(this, bufferIn, frameCountIn, bufferOut, ref frameCountOut, channels);
 			*(UInt32*)pFrameCountOut = frameCountOut;

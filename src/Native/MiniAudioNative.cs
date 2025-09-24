@@ -77,7 +77,7 @@ namespace MiniAudioEx.Native
     public delegate void ma_sound_process_proc(IntPtr pUserData, ma_sound_ptr pSound, IntPtr pFramesOut, ma_uint64 frameCount, ma_uint32 channels);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ma_procedural_sound_proc(IntPtr pUserData, IntPtr pFramesOut, ma_uint64 frameCount, ma_uint32 channels);
+    public delegate void ma_procedural_data_source_proc(IntPtr pUserData, IntPtr pFramesOut, ma_uint64 frameCount, ma_uint32 channels);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_device_data_proc(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, ma_uint32 frameCount);
@@ -180,6 +180,9 @@ namespace MiniAudioEx.Native
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate ma_result ma_data_source_vtable_set_looping_proc(ma_data_source_ptr pDataSource, ma_bool32 isLooping);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ma_effect_node_process_proc(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut);
 
     // ma_enums
     public enum ma_result
@@ -483,6 +486,7 @@ namespace MiniAudioEx.Native
         device_notification,
         device_descriptor,
         device_info,
+        effect_node,
         engine,
         fader,
         fence,
@@ -497,6 +501,7 @@ namespace MiniAudioEx.Native
         node_output_bus,
         node_vtable,
         panner,
+        procedural_data_source,
         resampling_backend_vtable,
         resource_manager,
         resource_manager_data_source,
@@ -1114,6 +1119,40 @@ namespace MiniAudioEx.Native
 	}
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_effect_node_ptr
+    {
+        public IntPtr pointer;
+        public ma_effect_node_ptr() { }
+        public ma_effect_node_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_effect_node_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.effect_node);
+            return pointer != IntPtr.Zero;
+        }
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_effect_node* Get()
+        {
+            return (ma_effect_node*)pointer;
+        }
+	}
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_engine_ptr
     {
         public IntPtr pointer;
@@ -1576,6 +1615,40 @@ namespace MiniAudioEx.Native
         public ma_panner* Get()
 		{
 			return (ma_panner*)pointer;
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public unsafe struct ma_procedural_data_source_ptr
+	{
+		public IntPtr pointer;
+		public ma_procedural_data_source_ptr() { }
+		public ma_procedural_data_source_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_procedural_data_source_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.procedural_data_source);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_procedural_data_source* Get()
+		{
+			return (ma_procedural_data_source*)pointer;
 		}
 	}
 
@@ -2322,7 +2395,7 @@ namespace MiniAudioEx.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_procedural_sound_config
+    public unsafe struct ma_procedural_data_source_config
     {
         public ma_format format;
         public ma_uint32 channels;
@@ -2330,10 +2403,17 @@ namespace MiniAudioEx.Native
         public IntPtr callback;
         public IntPtr pUserData;
 
-        public void SetCallback(ma_procedural_sound_proc callback)
+        public void SetCallback(ma_procedural_data_source_proc callback)
         {
             this.callback = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_procedural_data_source
+    {
+        public ma_data_source_base ds;
+        public ma_procedural_data_source_config config;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -3664,6 +3744,26 @@ namespace MiniAudioEx.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_effect_node_config
+    {
+        public ma_uint32 sampleRate;
+        public ma_uint32 channels;
+        public IntPtr onProcess;
+
+        public void SetOnProcess(ma_effect_node_process_proc callback)
+        {
+            onProcess = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ma_effect_node
+    {
+        public ma_node_base baseNode;
+        public ma_effect_node_config config;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_gainer_config
     {
         public ma_uint32 channels;
@@ -4072,7 +4172,7 @@ namespace MiniAudioEx.Native
         public static extern ma_result ma_sound_init_from_memory(ma_engine_ptr pEngine, IntPtr pData, ma_uint64 dataSize, ma_sound_flags flags, ma_sound_group_ptr pGroup, ma_fence_ptr pDoneFence, ma_sound_ptr pSound);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_sound_init_from_callback(ma_engine_ptr pEngine, ref ma_procedural_sound_config pConfig, ma_sound_flags flags, ma_sound_group_ptr pGroup, ma_fence_ptr pDoneFence, ma_sound_ptr pSound);
+        public static extern ma_result ma_sound_init_from_callback(ma_engine_ptr pEngine, ref ma_procedural_data_source_config pConfig, ma_sound_flags flags, ma_sound_group_ptr pGroup, ma_fence_ptr pDoneFence, ma_sound_ptr pSound);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_sound_init_copy(ma_engine_ptr pEngine, ma_sound_ptr pExistingSound, ma_sound_flags flags, ma_sound_group_ptr pGroup, ma_sound_ptr pSound);
@@ -4492,14 +4592,20 @@ namespace MiniAudioEx.Native
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_uint64 ma_sound_group_get_time_in_pcm_frames(ma_sound_group_ptr pGroup);
 
-        // ma_procedural_sound
+        // ma_procedural_data_source
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern ma_procedural_sound_config ma_procedural_sound_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, IntPtr pProceduralSoundProc, IntPtr pUserData);
+        private static extern ma_procedural_data_source_config ma_procedural_data_source_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, IntPtr pProceduralSoundProc, IntPtr pUserData);
 
-        public static ma_procedural_sound_config ma_procedural_sound_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, ma_procedural_sound_proc pProceduralSoundProc, IntPtr pUserData)
+        public static ma_procedural_data_source_config ma_procedural_data_source_config_init(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, ma_procedural_data_source_proc pProceduralSoundProc, IntPtr pUserData)
         {
-            return ma_procedural_sound_config_init(format, channels, sampleRate, MarshalHelper.GetFunctionPointerForDelegate(pProceduralSoundProc), pUserData);
+            return ma_procedural_data_source_config_init(format, channels, sampleRate, MarshalHelper.GetFunctionPointerForDelegate(pProceduralSoundProc), pUserData);
         }
+        
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_procedural_data_source_init(ref ma_procedural_data_source_config pConfig, ma_procedural_data_source_ptr pProceduralSound);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_procedural_data_source_uninit(ma_procedural_data_source_ptr pProceduralSound);
 
         // ma_spatializer_listener
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
@@ -5034,6 +5140,37 @@ namespace MiniAudioEx.Native
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_node_set_time(ma_node_ptr pNode, ma_uint64 localTime);
+
+        // ma_effect_node
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_effect_node_config ma_effect_node_config_init(ma_uint32 channels, ma_uint32 sampleRate, IntPtr onProcess);
+
+        public static ma_effect_node_config ma_effect_node_config_init(ma_uint32 channels, ma_uint32 sampleRate, ma_effect_node_process_proc onProcess)
+        {
+            return ma_effect_node_config_init(channels, sampleRate, MarshalHelper.GetFunctionPointerForDelegate(onProcess));
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern unsafe ma_result ma_effect_node_init(ma_node_graph_ptr pNodeGraph, ref ma_effect_node_config pConfig, ma_allocation_callbacks* pAllocationCallbacks, ma_effect_node_ptr pEffectNode);
+
+        public static ma_result ma_effect_node_init(ma_node_graph_ptr pNodeGraph, ref ma_effect_node_config pConfig, ma_effect_node_ptr pEffectNode)
+        {
+            unsafe
+            {
+                return ma_effect_node_init(pNodeGraph, ref pConfig, null, pEffectNode);
+            }
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern unsafe void ma_effect_node_uninit(ma_effect_node_ptr pEffectNode, ma_allocation_callbacks* pAllocationCallbacks);
+
+        public static void ma_effect_node_uninit(ma_effect_node_ptr pEffectNode)
+        {
+            unsafe
+            {
+                ma_effect_node_uninit(pEffectNode, null);
+            }
+        }
 
         // ma_data_source
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]

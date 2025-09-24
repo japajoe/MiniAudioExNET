@@ -25,8 +25,20 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.5.1
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.0
 ```
+
+# Changes in 2.6.0
+- Fixed serious bug that prevented to play new sounds with an `AudioSource`.
+- Added `MaDataSource`.
+- Added `MaProceduralDataSource`.
+- Added `MaEffectNode`.
+- Added `Reverb` and `ReverbEffect`.
+- Renamed `MaSound.Play` to `MaSound.Start`.
+- Renamed `AudioBuffer` to `NativeArray`.
+- Changed signature of `AudioProcessEvent`.
+- Changed signature of the `Process` method in `IAudioEffect`.
+- Examples updated.
 
 # Changes in 2.5.1
 - Made AdvancedAPI types more reflective of their native counterparts.
@@ -267,8 +279,7 @@ namespace MiniAudioExExample
 
 			device.Start();
 
-            // Starts the sound. This method will be renamed to 'Start' in an upcoming version.
-			sound.Play();
+			sound.Start();
 
 			Console.WriteLine("Press enter to exit");
 			Console.ReadLine();
@@ -307,16 +318,16 @@ namespace MiniAudioExExample
 
 See links below for more examples. Most of these use the `AudioApp` class which is suitable for simple console based applications.
 
-[Playing audio from a file on disk](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example1.cs)
+[Playing audio from a file on disk](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/PlayingFromFileExample.cs)
 
-[Using the 'Read' callback to generate sound](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example2.cs)
+[Using the 'Read' callback to generate sound](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/ProceduralSoundExample.cs)
 
-[Basic spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example3.cs)
+[Basic spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/SpatialAudioExample.cs)
 
-[Playing audio from a playlist](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example4.cs)
+[Playing audio from a playlist](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/PlayListExample.cs)
 
-[Generating sound, applying effects and spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example5.cs)
+[Generating sound, applying effects and spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/AdvancedProceduralSoundExample.cs)
 
-[FM synthesis](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example6.cs)
+[FM synthesis](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/FMSynthesisExample.cs)
 
-[Using the native miniaudio API.](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/Example7.cs)
+[Using the native miniaudio API.](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/NativeAPIExample.cs)

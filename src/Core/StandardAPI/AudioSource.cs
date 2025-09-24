@@ -49,12 +49,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using MiniAudioEx.Core.AdvancedAPI;
 using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.StandardAPI
 {
     public delegate void AudioEndEvent();
-    public delegate void AudioProcessEvent(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
+    public delegate void AudioProcessEvent(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels);
     public delegate void AudioReadEvent(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
 
     /// <summary>
@@ -77,10 +78,11 @@ namespace MiniAudioEx.Core.StandardAPI
 
         private List<IntPtr> sources;
         private ma_sound_group_ptr soundGroup;
+        private ma_effect_node_ptr effectNode;
         private Vector3f previousPosition;
-        private ma_sound_process_proc processCallback;
         private ma_sound_end_proc endCallback;
-        private ma_procedural_sound_proc proceduralProcessCallback;
+        private ma_effect_node_process_proc onEffectNodeProcess;
+        private ma_procedural_data_source_proc proceduralProcessCallback;
         private ConcurrentQueue<IntPtr> endEventQueue;
         private ConcurrentList<IAudioEffect> effects;
         private ConcurrentList<IAudioGenerator> generators;
@@ -328,7 +330,6 @@ namespace MiniAudioEx.Core.StandardAPI
             generators = new ConcurrentList<IAudioGenerator>();
             currentIndex = 0;
 
-            processCallback = OnProcess;
             endCallback = OnEnd;
             proceduralProcessCallback = OnProceduralProcess;
 
@@ -337,12 +338,6 @@ namespace MiniAudioEx.Core.StandardAPI
             if (soundGroup.pointer != IntPtr.Zero)
             {
                 AudioContext.Add(this);
-
-                ma_sound_ptr s = new ma_sound_ptr();
-                s.pointer = soundGroup.pointer;
-
-                MiniAudioNative.ma_sound_set_notifications_userdata(s, IntPtr.Zero);
-                MiniAudioNative.ma_sound_set_process_notification_callback(s, processCallback);
 
                 for (int i = 0; i < MAX_SOURCES; i++)
                 {
@@ -357,6 +352,20 @@ namespace MiniAudioEx.Core.StandardAPI
 
                     MiniAudioExNative.ma_ex_audio_source_set_callbacks(source, callbacks);
                     MiniAudioExNative.ma_ex_audio_source_set_group(source, soundGroup.pointer);
+                }
+
+                effectNode = new ma_effect_node_ptr(true);
+
+                onEffectNodeProcess = OnEffectProcess;
+
+                ma_effect_node_config effectNodeConfig = MiniAudioNative.ma_effect_node_config_init(2, 44100, onEffectNodeProcess);
+
+                ma_engine_ptr pEngine = new ma_engine_ptr(MiniAudioExNative.ma_ex_context_get_engine(AudioContext.NativeContext));
+
+                if (MiniAudioNative.ma_effect_node_init(MiniAudioNative.ma_engine_get_node_graph(pEngine), ref effectNodeConfig, effectNode) == ma_result.success)
+                {
+                    MiniAudioNative.ma_node_attach_output_bus(new ma_node_ptr(effectNode.pointer), 0, MiniAudioNative.ma_engine_get_endpoint(pEngine), 0);
+                    MiniAudioNative.ma_node_attach_output_bus(new ma_node_ptr(soundGroup.pointer), 0, new ma_node_ptr(effectNode.pointer), 0);
                 }
             }
         }
@@ -389,6 +398,9 @@ namespace MiniAudioEx.Core.StandardAPI
 
             effects.Clear();
             generators.Clear();
+
+            MiniAudioNative.ma_effect_node_uninit(effectNode);
+            effectNode.Free();
         }
 
         public void Dispose()
@@ -586,26 +598,44 @@ namespace MiniAudioEx.Core.StandardAPI
             endEventQueue.Enqueue(pUserData);
         }
 
-        /// <summary>
-        /// Called whenever the audio buffer of this source is filled with data.
-        /// </summary>
-        /// <param name="pUserData"></param>
-        /// <param name="pSound"></param>
-        /// <param name="pFramesOut"></param>
-        /// <param name="frameCount"></param>
-        /// <param name="channels"></param>
-        private void OnProcess(IntPtr pUserData, ma_sound_ptr pSound, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
+        private unsafe void OnEffectProcess(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
         {
-            int length = (int)(frameCount * channels);
+            if (pNode.pointer == IntPtr.Zero)
+                return;
 
-            NativeArray<float> framesOut = new NativeArray<float>(pFramesOut, length);
+            ma_effect_node* pEffectNode = (ma_effect_node*)pNode.pointer;
+
+            UInt32* frameCountIn = (UInt32*)pFrameCountIn;
+            UInt32* frameCountOut = (UInt32*)pFrameCountOut;
+            UInt32 channels = pEffectNode->config.channels;
+
+            float** framesIn = (float**)ppFramesIn;
+            float** framesOut = (float**)ppFramesOut;
+
+            NativeArray<float> bufferIn = new NativeArray<float>(framesIn[0], (int)(*frameCountIn * channels));
+            NativeArray<float> bufferOut = new NativeArray<float>(framesOut[0], (int)(*frameCountOut * channels));
+            
+            // Just in case we end up with no sound at all because no effects were active (prevents silence)
+            bufferIn.CopyTo(bufferOut);
+
+            // An effect can modify the number of frames it processes
+            // so we need to keep track of this
+            UInt32 countIn = *frameCountIn;
+            UInt32 countOut = *frameCountOut;
 
             for (int i = 0; i < effects.Count; i++)
             {
-                effects[i].OnProcess(framesOut, frameCount, (int)channels);
+                effects[i].OnProcess(bufferIn, countIn, bufferOut, ref countOut, channels);
+
+                //Since effects processing is like a stack, the output needs to be copied to the input for the next effect
+                bufferOut.CopyTo(bufferIn);
+
+                countIn = countOut;
             }
 
-            Process?.Invoke(framesOut, frameCount, (int)channels);
+            Process?.Invoke(bufferIn, countIn, bufferOut, ref countOut, pEffectNode->config.channels);
+
+            *frameCountOut = countOut;
         }
 
         /// <summary>
@@ -635,7 +665,7 @@ namespace MiniAudioEx.Core.StandardAPI
     /// </summary>
     public interface IAudioEffect
     {
-        void OnProcess(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
+        void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels);
         void OnDestroy();
     }
 
