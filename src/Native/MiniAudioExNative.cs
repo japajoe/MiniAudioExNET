@@ -80,24 +80,6 @@ namespace MiniAudioEx.Native
         public ma_device_data_proc deviceDataProc;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ma_ex_audio_source_callbacks_
-    {
-        public IntPtr pUserData;
-        public IntPtr endCallback;
-        public IntPtr loadCallback;
-        public IntPtr processCallback;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ma_ex_audio_source_callbacks
-    {
-        public IntPtr pUserData;
-        public ma_sound_end_proc endCallback;
-        public ma_sound_load_proc loadCallback;
-        public ma_sound_process_proc processCallback;
-    }
-
     public static class MiniAudioExNative
     {
         private const string LIB_MINIAUDIO_EX = "miniaudioex";
@@ -137,19 +119,6 @@ namespace MiniAudioEx.Native
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern void ma_ex_audio_source_uninit(IntPtr source);
-
-        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void ma_ex_audio_source_set_callbacks(IntPtr source, ma_ex_audio_source_callbacks_ callbacks);
-
-        public static void ma_ex_audio_source_set_callbacks(IntPtr source, ma_ex_audio_source_callbacks callbacks)
-        {
-            ma_ex_audio_source_callbacks_ c = new ma_ex_audio_source_callbacks_();
-            c.pUserData = callbacks.pUserData;
-            c.endCallback = MarshalHelper.GetFunctionPointerForDelegate(callbacks.endCallback);
-            c.loadCallback = MarshalHelper.GetFunctionPointerForDelegate(callbacks.loadCallback);
-            c.processCallback = MarshalHelper.GetFunctionPointerForDelegate(callbacks.processCallback);
-            ma_ex_audio_source_set_callbacks(source, c);
-        }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         private static extern ma_result ma_ex_audio_source_play_from_callback(IntPtr source, IntPtr callback);
@@ -248,6 +217,9 @@ namespace MiniAudioEx.Native
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern UInt32 ma_ex_audio_source_get_is_playing(IntPtr source);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UInt32 ma_ex_audio_source_get_is_at_end(IntPtr source);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_ex_audio_source_set_group(IntPtr source, IntPtr soundGroup);

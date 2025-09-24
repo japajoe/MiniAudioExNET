@@ -215,28 +215,9 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			MiniAudioNative.ma_sound_group_set_attenuation_model(handle, attenuationModel);
 		}
 
-		public ma_result SetNotificationsUserData(IntPtr userData)
+		public ma_result SetEndCallback(ma_sound_end_proc callback, IntPtr pUserData)
 		{
-			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			return MiniAudioNative.ma_sound_set_notifications_userdata(s, userData);
-		}
-
-		public ma_result SetLoadNotificationCallback(ma_sound_load_proc callback)
-		{
-			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			return MiniAudioNative.ma_sound_set_load_notification_callback(s, callback);
-		}
-
-		public ma_result SetEndNotificationCallback(ma_sound_end_proc callback)
-		{
-			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			return MiniAudioNative.ma_sound_set_end_notification_callback(s, callback);
-		}
-
-		public ma_result SetProcessNotificationCallback(ma_sound_process_proc callback)
-		{
-			ma_sound_ptr s = new ma_sound_ptr(handle.pointer);
-			return MiniAudioNative.ma_sound_set_process_notification_callback(s, callback);
+			return MiniAudioNative.ma_sound_set_end_callback(new ma_sound_ptr(handle.pointer), callback, pUserData);
 		}
 	}
 }

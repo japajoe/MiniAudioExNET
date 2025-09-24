@@ -25,8 +25,11 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.1
 ```
+
+# Changes in 2.6.1
+- Manual polling to see if playback of an `AudioSource` ended.
 
 # Changes in 2.6.0
 - Fixed serious bug that prevented to play new sounds with an `AudioSource`.

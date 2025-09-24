@@ -47,9 +47,7 @@
 // SOFTWARE.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using MiniAudioEx.Core.AdvancedAPI;
 using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.StandardAPI
@@ -76,14 +74,18 @@ namespace MiniAudioEx.Core.StandardAPI
         /// </summary>
         public event AudioReadEvent Read;
 
-        private List<IntPtr> sources;
+        private class SourceInfo
+        {
+            public IntPtr handle;
+            public bool atEnd;
+        }
+
+        private List<SourceInfo> sources;
         private ma_sound_group_ptr soundGroup;
         private ma_effect_node_ptr effectNode;
         private Vector3f previousPosition;
-        private ma_sound_end_proc endCallback;
         private ma_effect_node_process_proc onEffectNodeProcess;
         private ma_procedural_data_source_proc proceduralProcessCallback;
-        private ConcurrentQueue<IntPtr> endEventQueue;
         private ConcurrentList<IAudioEffect> effects;
         private ConcurrentList<IAudioGenerator> generators;
         private int currentIndex;
@@ -97,11 +99,11 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             get
             {
-                return MiniAudioExNative.ma_ex_audio_source_get_pcm_position(sources[0]);
+                return MiniAudioExNative.ma_ex_audio_source_get_pcm_position(sources[0].handle);
             }
             set
             {
-                MiniAudioExNative.ma_ex_audio_source_set_pcm_position(sources[0], value);
+                MiniAudioExNative.ma_ex_audio_source_set_pcm_position(sources[0].handle, value);
             }
         }
 
@@ -113,7 +115,7 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             get
             {
-                return MiniAudioExNative.ma_ex_audio_source_get_pcm_length(sources[0]);
+                return MiniAudioExNative.ma_ex_audio_source_get_pcm_length(sources[0].handle);
             }
         }
 
@@ -157,11 +159,11 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             get
             {
-                return MiniAudioExNative.ma_ex_audio_source_get_loop(sources[0]) > 0;
+                return MiniAudioExNative.ma_ex_audio_source_get_loop(sources[0].handle) > 0;
             }
             set
             {
-                MiniAudioExNative.ma_ex_audio_source_set_loop(sources[0], value ? (uint)1 : 0);
+                MiniAudioExNative.ma_ex_audio_source_set_loop(sources[0].handle, value ? (uint)1 : 0);
             }
         }
 
@@ -324,13 +326,11 @@ namespace MiniAudioEx.Core.StandardAPI
             MAX_SOURCES = maxSources;
 
             previousPosition = new Vector3f(0, 0, 0);
-            sources = new List<IntPtr>();
-            endEventQueue = new ConcurrentQueue<IntPtr>();
+            sources = new List<SourceInfo>();
             effects = new ConcurrentList<IAudioEffect>();
             generators = new ConcurrentList<IAudioGenerator>();
             currentIndex = 0;
 
-            endCallback = OnEnd;
             proceduralProcessCallback = OnProceduralProcess;
 
             soundGroup.pointer = MiniAudioExNative.ma_ex_sound_group_init(AudioContext.NativeContext);
@@ -341,24 +341,18 @@ namespace MiniAudioEx.Core.StandardAPI
 
                 for (int i = 0; i < MAX_SOURCES; i++)
                 {
-                    IntPtr source = MiniAudioExNative.ma_ex_audio_source_init(AudioContext.NativeContext);
+                    SourceInfo source = new SourceInfo();
+                    source.handle = MiniAudioExNative.ma_ex_audio_source_init(AudioContext.NativeContext);
+                    source.atEnd = false;
+                    MiniAudioExNative.ma_ex_audio_source_set_group(source.handle, soundGroup.pointer);
                     sources.Add(source);
-
-                    ma_ex_audio_source_callbacks callbacks = new ma_ex_audio_source_callbacks();
-                    callbacks.pUserData = source;
-                    callbacks.endCallback = endCallback;
-                    callbacks.loadCallback = null;
-                    callbacks.processCallback = null;
-
-                    MiniAudioExNative.ma_ex_audio_source_set_callbacks(source, callbacks);
-                    MiniAudioExNative.ma_ex_audio_source_set_group(source, soundGroup.pointer);
                 }
 
                 effectNode = new ma_effect_node_ptr(true);
 
                 onEffectNodeProcess = OnEffectProcess;
 
-                ma_effect_node_config effectNodeConfig = MiniAudioNative.ma_effect_node_config_init(2, 44100, onEffectNodeProcess);
+                ma_effect_node_config effectNodeConfig = MiniAudioNative.ma_effect_node_config_init((UInt32)AudioContext.Channels, (UInt32)AudioContext.SampleRate, onEffectNodeProcess);
 
                 ma_engine_ptr pEngine = new ma_engine_ptr(MiniAudioExNative.ma_ex_context_get_engine(AudioContext.NativeContext));
 
@@ -377,18 +371,14 @@ namespace MiniAudioEx.Core.StandardAPI
 
             for (int i = 0; i < sources.Count; i++)
             {
-                MiniAudioExNative.ma_ex_audio_source_stop(sources[i]);
-                MiniAudioExNative.ma_ex_audio_source_uninit(sources[i]);
+                MiniAudioExNative.ma_ex_audio_source_stop(sources[i].handle);
+                MiniAudioExNative.ma_ex_audio_source_uninit(sources[i].handle);
             }
 
             sources.Clear();
 
             MiniAudioExNative.ma_ex_sound_group_uninit(soundGroup.pointer);
             soundGroup.pointer = IntPtr.Zero;
-
-            //Clear the queues (netstandard2.0 does not have a Clear method for ConcurrentQueue)
-            while (endEventQueue.Count > 0)
-                endEventQueue.TryDequeue(out _);
 
             for (int i = 0; i < effects.Count; i++)
                 effects[i].OnDestroy();
@@ -415,7 +405,8 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             if (soundGroup.pointer == IntPtr.Zero)
                 return;
-            MiniAudioExNative.ma_ex_audio_source_play_from_callback(sources[0], proceduralProcessCallback);
+            SetAtEnd(0, false);
+            MiniAudioExNative.ma_ex_audio_source_play_from_callback(sources[0].handle, proceduralProcessCallback);
         }
 
         /// <summary>
@@ -427,10 +418,12 @@ namespace MiniAudioEx.Core.StandardAPI
             if (soundGroup.pointer == IntPtr.Zero)
                 return;
 
+            SetAtEnd(0, false);
+
             if (clip.Handle != IntPtr.Zero)
-                MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[0], clip.Handle, clip.DataSize);
+                MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[0].handle, clip.Handle, clip.DataSize);
             else
-                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[0], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[0].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
         }
 
         /// <summary>
@@ -442,16 +435,18 @@ namespace MiniAudioEx.Core.StandardAPI
             if (soundGroup.pointer == IntPtr.Zero)
                 return;
 
-            if (MiniAudioExNative.ma_ex_audio_source_get_is_playing(sources[currentIndex]) > 0)
+            SetAtEnd(currentIndex, false);
+
+            if (MiniAudioExNative.ma_ex_audio_source_get_is_playing(sources[currentIndex].handle) > 0)
             {
-                MiniAudioExNative.ma_ex_audio_source_stop(sources[currentIndex]);
-                MiniAudioExNative.ma_ex_audio_source_set_pcm_position(sources[currentIndex], 0);
+                MiniAudioExNative.ma_ex_audio_source_stop(sources[currentIndex].handle);
+                MiniAudioExNative.ma_ex_audio_source_set_pcm_position(sources[currentIndex].handle, 0);
             }
 
             if (clip.Handle != IntPtr.Zero)
-                MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[currentIndex], clip.Handle, clip.DataSize);
+                MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[currentIndex].handle, clip.Handle, clip.DataSize);
             else
-                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[currentIndex], clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[currentIndex].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
 
             if (++currentIndex >= sources.Count - 1)
             {
@@ -465,15 +460,24 @@ namespace MiniAudioEx.Core.StandardAPI
         public void Stop()
         {
             MiniAudioNative.ma_sound_group_stop(soundGroup);
+
+            for (int i = 0; i < sources.Count; i++)
+            {
+                SetAtEnd(i, false);
+            }
         }
 
         internal void Update()
         {
-            if (endEventQueue.Count > 0)
+            for (int i = 0; i < sources.Count; i++)
             {
-                while (endEventQueue.TryDequeue(out _))
+                if (MiniAudioExNative.ma_ex_audio_source_get_is_at_end(sources[i].handle) > 0)
                 {
-                    End?.Invoke();
+                    if (!sources[i].atEnd)
+                    {
+                        SetAtEnd(i, true);
+                        End?.Invoke();
+                    }
                 }
             }
         }
@@ -586,16 +590,9 @@ namespace MiniAudioEx.Core.StandardAPI
             return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
         }
 
-        /// <summary>
-        /// Called whenever audio has finished playing. This does not trigger when 'Loop' is true.
-        /// </summary>
-        /// <param name="pUserData"></param>
-        /// <param name="pSound"></param>
-        private void OnEnd(IntPtr pUserData, ma_sound_ptr pSound)
+        private void SetAtEnd(int sourceIndex, bool atEnd)
         {
-            //This callback is called from another thread so we move the message to a queue that the main thread can safely access
-            //If the audio is set to looping, this event is never triggered
-            endEventQueue.Enqueue(pUserData);
+            sources[sourceIndex].atEnd = atEnd;
         }
 
         private unsafe void OnEffectProcess(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
@@ -614,7 +611,7 @@ namespace MiniAudioEx.Core.StandardAPI
 
             NativeArray<float> bufferIn = new NativeArray<float>(framesIn[0], (int)(*frameCountIn * channels));
             NativeArray<float> bufferOut = new NativeArray<float>(framesOut[0], (int)(*frameCountOut * channels));
-            
+
             // Just in case we end up with no sound at all because no effects were active (prevents silence)
             bufferIn.CopyTo(bufferOut);
 

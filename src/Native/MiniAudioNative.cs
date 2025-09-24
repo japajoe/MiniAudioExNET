@@ -68,13 +68,7 @@ namespace MiniAudioEx.Native
 
     // ma_callbacks
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ma_sound_load_proc(IntPtr pUserData, ma_sound_ptr pSound);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_sound_end_proc(IntPtr pUserData, ma_sound_ptr pSound);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ma_sound_process_proc(IntPtr pUserData, ma_sound_ptr pSound, IntPtr pFramesOut, ma_uint64 frameCount, ma_uint32 channels);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_procedural_data_source_proc(IntPtr pUserData, IntPtr pFramesOut, ma_uint64 frameCount, ma_uint32 channels);
@@ -2645,10 +2639,16 @@ namespace MiniAudioEx.Native
         public ma_uint64 rangeEndInPCMFrames;
         public ma_uint64 loopPointBegInPCMFrames;
         public ma_uint64 loopPointEndInPCMFrames;
-        public ma_sound_notifications notifications;
+        public IntPtr endCallback;
+        public IntPtr pEndCallbackUserData;
         public ma_resource_manager_pipeline_notifications initNotifications;
         public ma_fence_ptr pDoneFence;                       /* Deprecated. Use initNotifications instead. Released when the resource manager has finished decoding the entire sound. Not used with streams. */
         public ma_bool32 isLooping;                        /* Deprecated. Use the MA_SOUND_FLAG_LOOPING flag in `flags` instead. */
+
+        public void SetEndCallback(ma_sound_end_proc callback)
+        {
+            endCallback = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2658,7 +2658,8 @@ namespace MiniAudioEx.Native
         public ma_data_source_ptr pDataSource;
         public ma_uint64 seekTarget; /* The PCM frame index to seek to in the mixing thread. Set to (~(ma_uint64)0) to not perform any seeking. */
         public ma_bool32 atEnd;
-        public ma_sound_notifications notifications;
+        public IntPtr endCallback;
+        public IntPtr pEndCallbackUserData;
         public ma_bool8 ownsDataSource;
 
         /*
@@ -2666,6 +2667,11 @@ namespace MiniAudioEx.Native
         sound via the resource manager, which I *think* will be the most common scenario.
         */
         public ma_resource_manager_data_source_ptr* pResourceManagerDataSource;
+
+        public void SetEndCallback(ma_sound_end_proc callback)
+        {
+            endCallback = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2694,34 +2700,16 @@ namespace MiniAudioEx.Native
         public ma_uint64 rangeEndInPCMFrames;
         public ma_uint64 loopPointBegInPCMFrames;
         public ma_uint64 loopPointEndInPCMFrames;
-        public ma_sound_notifications notifications;
+        public IntPtr endCallback;
+        public IntPtr pEndCallbackUserData;
         public ma_resource_manager_pipeline_notifications initNotifications;
         public ma_fence_ptr pDoneFence;                       /* Deprecated. Use initNotifications instead. Released when the resource manager has finished decoding the entire sound. Not used with streams. */
         public ma_bool32 isLooping;                        /* Deprecated. Use the MA_SOUND_FLAG_LOOPING flag in `flags` instead. */
-    }
 
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_sound_notifications
-    {
-        public IntPtr onLoaded;  /* Fired by the resource manager when the sound has finished loading. */
-        public IntPtr onAtEnd;  /* Fired when the sound reaches the end of the data source. */
-        public IntPtr onProcess;
-        public IntPtr pUserData;
-        public void SetLoadProc(ma_sound_load_proc callback)
+        public void SetEndCallback(ma_sound_end_proc callback)
         {
-            onLoaded = MarshalHelper.GetFunctionPointerForDelegate(callback);
+            endCallback = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
-
-        public void SetEndProc(ma_sound_end_proc callback)
-        {
-            onAtEnd = MarshalHelper.GetFunctionPointerForDelegate(callback);
-        }
-
-        public void SetProcessProc(ma_sound_process_proc callback)
-        {
-            onProcess = MarshalHelper.GetFunctionPointerForDelegate(callback);
-        }
-
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -4397,33 +4385,11 @@ namespace MiniAudioEx.Native
         public static extern ma_result ma_sound_get_length_in_seconds(ma_sound_ptr pSound, out float pLength);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_sound_notifications ma_sound_notifications_init();
+        public static extern ma_result ma_sound_set_end_callback(ma_sound_ptr pSound, IntPtr callback, IntPtr pUserData);
 
-        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ma_result ma_sound_set_notifications_userdata(ma_sound_ptr pSound, IntPtr pUserData);
-
-        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern ma_result ma_sound_set_end_notification_callback(ma_sound_ptr pSound, IntPtr callback);
-
-        public static ma_result ma_sound_set_end_notification_callback(ma_sound_ptr pSound, ma_sound_end_proc callback)
+        public static ma_result ma_sound_set_end_callback(ma_sound_ptr pSound, ma_sound_end_proc callback, IntPtr pUserData)
         {
-            return ma_sound_set_end_notification_callback(pSound, MarshalHelper.GetFunctionPointerForDelegate(callback));
-        }
-
-        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern ma_result ma_sound_set_load_notification_callback(ma_sound_ptr pSound, IntPtr callback);
-
-        public static ma_result ma_sound_set_load_notification_callback(ma_sound_ptr pSound, ma_sound_load_proc callback)
-        {
-            return ma_sound_set_load_notification_callback(pSound, MarshalHelper.GetFunctionPointerForDelegate(callback));
-        }
-
-        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern ma_result ma_sound_set_process_notification_callback(ma_sound_ptr pSound, IntPtr callback);
-
-        public static ma_result ma_sound_set_process_notification_callback(ma_sound_ptr pSound, ma_sound_process_proc callback)
-        {
-            return ma_sound_set_process_notification_callback(pSound, MarshalHelper.GetFunctionPointerForDelegate(callback));
+            return ma_sound_set_end_callback(pSound, MarshalHelper.GetFunctionPointerForDelegate(callback), pUserData);
         }
 
         // ma_sound_group
