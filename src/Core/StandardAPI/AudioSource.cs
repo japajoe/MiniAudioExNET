@@ -310,7 +310,12 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             get
             {
-                return MiniAudioNative.ma_sound_group_is_playing(soundGroup) > 0;
+                for (int i = 0; i < sources.Count; i++)
+                {
+                    if (MiniAudioExNative.ma_ex_audio_source_get_is_playing(sources[i].handle) > 0)
+                        return true;
+                }
+                return false;
             }
         }
 
@@ -459,10 +464,9 @@ namespace MiniAudioEx.Core.StandardAPI
         /// </summary>
         public void Stop()
         {
-            MiniAudioNative.ma_sound_group_stop(soundGroup);
-
             for (int i = 0; i < sources.Count; i++)
             {
+                MiniAudioExNative.ma_ex_audio_source_stop(sources[i].handle);
                 SetAtEnd(i, false);
             }
         }
