@@ -48,8 +48,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using MiniAudioEx.Native;
+using MiniAudioEx.DSP.Effects;
+using MiniAudioEx.DSP.Generators;
 
 namespace MiniAudioEx.Core.StandardAPI
 {
@@ -670,24 +671,6 @@ namespace MiniAudioEx.Core.StandardAPI
 
             Read?.Invoke(framesOut, frameCount, (int)channels);
         }
-    }
-
-    /// <summary>
-    /// An interface for implementing audio effects. These effects can be added to an AudioSource by using the AddEffect method.
-    /// </summary>
-    public interface IAudioEffect
-    {
-        void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels);
-        void OnDestroy();
-    }
-
-    /// <summary>
-    /// An interface for implementing audio generators. These generators can be added to an AudioSource by using the AddGenerator method.
-    /// </summary>
-    public interface IAudioGenerator
-    {
-        void OnGenerate(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
-        void OnDestroy();
     }
 
     public sealed class ThreadSafeBuffer
