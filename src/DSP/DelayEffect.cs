@@ -47,6 +47,7 @@
 // SOFTWARE.
 
 using System;
+using System.Runtime.CompilerServices;
 using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
@@ -102,7 +103,7 @@ namespace MiniAudioEx.DSP
 						bufferSizeInFrames = 1;
 					}
 
-					actualBufferSize = bufferSizeInFrames * channels;
+					actualBufferSize = (Int32)GetNextPowerOfTwo((UInt32)(bufferSizeInFrames * channels));
 
 					if (actualBufferSize > buffer.Length)
 					{
@@ -128,7 +129,7 @@ namespace MiniAudioEx.DSP
 						bufferSizeInFrames = 1;
 					}
 
-					actualBufferSize = bufferSizeInFrames * channels;
+					actualBufferSize = (Int32)GetNextPowerOfTwo((UInt32)(bufferSizeInFrames * channels));
 
 					if (actualBufferSize > buffer.Length)
 					{
@@ -149,7 +150,7 @@ namespace MiniAudioEx.DSP
 			dry = 1.0f;
 			this.decay = decay;
 			bufferSizeInFrames = (Int32)delayInFrames;
-			actualBufferSize = (Int32)(bufferSizeInFrames * channels);
+			actualBufferSize = (Int32)GetNextPowerOfTwo((UInt32)(bufferSizeInFrames * channels));
 			buffer = new float[actualBufferSize];
 		}
 
@@ -162,7 +163,7 @@ namespace MiniAudioEx.DSP
 			dry = 1.0f;
 			this.decay = decay;
 			bufferSizeInFrames = (Int32)Math.Ceiling(delayInSeconds * sampleRate);
-			actualBufferSize = (Int32)(bufferSizeInFrames * channels);
+			actualBufferSize = (Int32)GetNextPowerOfTwo((UInt32)(bufferSizeInFrames * channels));
 			buffer = new float[actualBufferSize];
 		}
 
@@ -208,7 +209,20 @@ namespace MiniAudioEx.DSP
 				pFramesInF32 += this.channels;
 			}
 		}
+
+		public void OnDestroy() { }
 		
-		public void OnDestroy() {}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private UInt32 GetNextPowerOfTwo(UInt32 value)
+		{
+			value--;
+			value |= value >> 1;
+			value |= value >> 2;
+			value |= value >> 4;
+			value |= value >> 8;
+			value |= value >> 16;
+			value++;
+			return value;
+		}
 	}
 }
