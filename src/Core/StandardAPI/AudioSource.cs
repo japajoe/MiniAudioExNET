@@ -600,7 +600,7 @@ namespace MiniAudioEx.Core.StandardAPI
             sources[sourceIndex].atEnd = atEnd;
         }
 
-        private AudioRingBuffer outputBuffer = new AudioRingBuffer(8192);
+        private ThreadSafeBuffer outputBuffer = new ThreadSafeBuffer(8192);
 
         private unsafe void OnEffectProcess(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
         {
@@ -644,9 +644,9 @@ namespace MiniAudioEx.Core.StandardAPI
             outputBuffer.Write(new NativeArray<float>(framesOut[0], (int)(*frameCountOut * channels)));
         }
 
-        public bool GetOutputBuffer(float[] buffer, out int length)
+        public bool GetOutputBuffer(ref float[] buffer, out int length)
         {
-            length = outputBuffer.Read(buffer);
+            length = outputBuffer.Read(ref buffer);
             return length > 0;
         }
 
@@ -690,13 +690,13 @@ namespace MiniAudioEx.Core.StandardAPI
         void OnDestroy();
     }
 
-    public sealed class AudioRingBuffer
+    public sealed class ThreadSafeBuffer
     {
         private readonly float[] buffer;
         private readonly object sync = new();
         private int currentLength = 0;
 
-        public AudioRingBuffer(int capacityPowerOfTwo)
+        public ThreadSafeBuffer(int capacityPowerOfTwo)
         {
             if (capacityPowerOfTwo <= 0 || (capacityPowerOfTwo & (capacityPowerOfTwo - 1)) != 0)
                 throw new ArgumentException("capacityPowerOfTwo must be power of two");
@@ -722,13 +722,13 @@ namespace MiniAudioEx.Core.StandardAPI
             }
         }
 
-        public int Read(float[] output)
+        public int Read(ref float[] output)
         {
             lock (sync)
             {
                 unsafe
                 {
-                    if (output.Length < buffer.Length)
+                    if (output?.Length < buffer.Length)
                         output = new float[buffer.Length];
 
                     fixed (float* pSrc = &buffer[0], pDst = &output[0])
