@@ -48,6 +48,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.StandardAPI
@@ -357,7 +358,7 @@ namespace MiniAudioEx.Core.StandardAPI
 
                 onEffectNodeProcess = OnEffectProcess;
 
-                ma_effect_node_config effectNodeConfig = MiniAudioNative.ma_effect_node_config_init((UInt32)AudioContext.Channels, (UInt32)AudioContext.SampleRate, onEffectNodeProcess);
+                ma_effect_node_config effectNodeConfig = MiniAudioNative.ma_effect_node_config_init((UInt32)AudioContext.Channels, (UInt32)AudioContext.SampleRate, onEffectNodeProcess, IntPtr.Zero);
 
                 ma_engine_ptr pEngine = new ma_engine_ptr(MiniAudioExNative.ma_ex_context_get_engine(AudioContext.NativeContext));
 
@@ -411,7 +412,7 @@ namespace MiniAudioEx.Core.StandardAPI
             if (soundGroup.pointer == IntPtr.Zero)
                 return;
             SetAtEnd(0, false);
-            MiniAudioExNative.ma_ex_audio_source_play_from_callback(sources[0].handle, proceduralProcessCallback);
+            MiniAudioExNative.ma_ex_audio_source_play_from_callback(sources[0].handle, proceduralProcessCallback, IntPtr.Zero);
         }
 
         /// <summary>
@@ -599,6 +600,8 @@ namespace MiniAudioEx.Core.StandardAPI
             sources[sourceIndex].atEnd = atEnd;
         }
 
+        private AudioRingBuffer outputBuffer = new AudioRingBuffer(8192);
+
         private unsafe void OnEffectProcess(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
         {
             if (pNode.pointer == IntPtr.Zero)
@@ -637,6 +640,14 @@ namespace MiniAudioEx.Core.StandardAPI
             Process?.Invoke(bufferIn, countIn, bufferOut, ref countOut, pEffectNode->config.channels);
 
             *frameCountOut = countOut;
+
+            outputBuffer.Write(new NativeArray<float>(framesOut[0], (int)(*frameCountOut * channels)));
+        }
+
+        public bool GetOutputBuffer(float[] buffer, out int length)
+        {
+            length = outputBuffer.Read(buffer);
+            return length > 0;
         }
 
         /// <summary>
@@ -677,5 +688,58 @@ namespace MiniAudioEx.Core.StandardAPI
     {
         void OnGenerate(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
         void OnDestroy();
+    }
+
+    public sealed class AudioRingBuffer
+    {
+        private readonly float[] buffer;
+        private readonly object sync = new();
+        private int currentLength = 0;
+
+        public AudioRingBuffer(int capacityPowerOfTwo)
+        {
+            if (capacityPowerOfTwo <= 0 || (capacityPowerOfTwo & (capacityPowerOfTwo - 1)) != 0)
+                throw new ArgumentException("capacityPowerOfTwo must be power of two");
+            int capacity = capacityPowerOfTwo;
+            buffer = new float[capacity];
+        }
+
+        public int Write(NativeArray<float> src)
+        {
+            lock (sync)
+            {
+                unsafe
+                {
+                    fixed (float* pBuffer = &buffer[0])
+                    {
+                        NativeArray<float> b = new NativeArray<float>(pBuffer, src.Length);
+                        src.CopyTo(b);
+                        currentLength = src.Length;
+                    }
+
+                }
+                return src.Length;
+            }
+        }
+
+        public int Read(float[] output)
+        {
+            lock (sync)
+            {
+                unsafe
+                {
+                    if (output.Length < buffer.Length)
+                        output = new float[buffer.Length];
+
+                    fixed (float* pSrc = &buffer[0], pDst = &output[0])
+                    {
+                        NativeArray<float> src = new NativeArray<float>(pSrc, buffer.Length);
+                        NativeArray<float> dst = new NativeArray<float>(pDst, buffer.Length);
+                        src.CopyTo(dst);
+                        return currentLength;
+                    }
+                }
+            }
+        }
     }
 }

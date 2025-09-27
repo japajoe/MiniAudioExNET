@@ -121,11 +121,11 @@ namespace MiniAudioEx.Native
         public static extern void ma_ex_audio_source_uninit(IntPtr source);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern ma_result ma_ex_audio_source_play_from_callback(IntPtr source, IntPtr callback);
+        private static extern ma_result ma_ex_audio_source_play_from_callback(IntPtr source, IntPtr callback, IntPtr pUserData);
 
-        public static ma_result ma_ex_audio_source_play_from_callback(IntPtr source, ma_procedural_data_source_proc callback)
+        public static ma_result ma_ex_audio_source_play_from_callback(IntPtr source, ma_procedural_data_source_proc callback, IntPtr pUserData)
         {
-            return ma_ex_audio_source_play_from_callback(source, MarshalHelper.GetFunctionPointerForDelegate(callback));
+            return ma_ex_audio_source_play_from_callback(source, MarshalHelper.GetFunctionPointerForDelegate(callback), pUserData);
         }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]

@@ -8,7 +8,7 @@
     <PackageId>JAJ.Packages.MiniAudioEx</PackageId>
     <Version>2.6.2</Version>
     <Authors>W.M.R Jap-A-Joe</Authors>
-    <PackageTags>MiniAudio Audio DSP WAV MP3 FLAC OGG</PackageTags>
+    <PackageTags>MiniAudio miniaudio Audio Sound DSP WAV MP3 FLAC OGG</PackageTags>
     <Description>
       A wrapper for a modified version of miniaudio.
     </Description>

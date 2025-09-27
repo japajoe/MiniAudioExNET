@@ -106,7 +106,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 			onProcess = OnProcess;
 
-			ma_effect_node_config nodeConfig = MiniAudioNative.ma_effect_node_config_init(channels, sampleRate, onProcess);
+			ma_effect_node_config nodeConfig = MiniAudioNative.ma_effect_node_config_init(channels, sampleRate, onProcess, IntPtr.Zero);
 			ma_node_graph_ptr pNodeGraph = MiniAudioNative.ma_engine_get_node_graph(pEngine);
 			return MiniAudioNative.ma_effect_node_init(pNodeGraph, ref nodeConfig, handle);
 		}
