@@ -47,94 +47,70 @@
 // SOFTWARE.
 
 using System;
+using System.Runtime.CompilerServices;
+using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Effects
 {
-    public enum NoiseType
-    {
-        Brown,
-        Pink,
-        White
-    }
+	public sealed class DistortionEffect : IAudioEffect
+	{
+        private float drive;
+        private float range;
+        private float blend;
+        private float volume;
 
-    public sealed class NoiseCalculator : IWaveCalculator
-    {
-        private delegate float NoiseFunc();
-        private NoiseType type;
-        private NoiseFunc noiseFunc;
-        private float previousValue;
-        private static Random random;
+		public float Drive
+		{
+			get => drive;
+			set => drive = value;
+		}
 
-        public NoiseType Type
-        {
-            get
-            {
-                return type;
-            }
-            set
-            {
-                type = value;
-                previousValue = 0.0f;
-                SetNoiseFunc();
-            }
-        }
+		public float Range
+		{
+			get => range;
+			set => range = value;
+		}
 
-        public NoiseCalculator(NoiseType type)
-        {
-            if(random == null)
-                random = new Random();
-            this.type = type;
-            previousValue = 0.0f;
-            SetNoiseFunc();
-        }
+		public float Blend
+		{
+			get => blend;
+			set => blend = value;
+		}
 
-        public float GetValue()
-        {
-            return noiseFunc();
-        }
+		public float Volume
+		{
+			get => volume;
+			set => volume = value;
+		}
 
-        public float GetValue(float phase)
-        {
-            return noiseFunc();
-        }
+		public DistortionEffect()
+		{
+			drive = 1.0f;
+			range = 1.0f;
+			blend = 1.0f;
+			volume = 1.0f;
+		}
 
-        private void SetNoiseFunc()
-        {
-            switch(type)
-            {
-                case NoiseType.Brown:
-                    noiseFunc = GetBrownNoise;
-                    break;
-                case NoiseType.Pink:
-                    noiseFunc = GetPinkNoise;
-                    break;
-                case NoiseType.White:
-                    noiseFunc = GetWhiteNoise;
-                    break;
-            }
-        }
+		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
+		{
+			int count = (int)(frameCountIn * channels);
 
-        private float GetBrownNoise()
-        {
-            float newValue = (float)random.NextDouble() * 2 - 1;
-            float output = (previousValue + newValue) / 2.0f;
-            previousValue = newValue;
-            return output;
-        }
+			for (int i = 0; i < count; i++)
+			{
+				framesOut[i] = Distort(framesIn[i], drive, range, blend, volume);
+			}
+		}
 
-        private float GetPinkNoise()
-        {
-            float value1 = (float)random.NextDouble() * 2 - 1;
-            float value2 = (float)random.NextDouble() * 2 - 1;
-            float output = (value1 + value2) / 2.0f;
-            return output;
-        }
-
-
-        private float GetWhiteNoise()
-        {
-            float output = (float)random.NextDouble() * 2 - 1;
-            return output;
-        }
-    }
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private float Distort(float x, float drive, float range, float blend, float volume)
+		{
+			float xClean = x;
+			x *= drive * range;
+			double result = (((((2.0f / Math.PI) * Math.Atan(x)) * blend) + (xClean * (1.0f - blend))) / 2.0f) * volume;
+			return (float)result;
+		}
+		
+		public void OnDestroy() { }
+	}
 }

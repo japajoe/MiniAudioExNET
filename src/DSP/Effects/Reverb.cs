@@ -58,7 +58,7 @@ using System;
 using System.Runtime.CompilerServices;
 using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Effects
 {
 	public class Reverb
 	{

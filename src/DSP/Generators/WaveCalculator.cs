@@ -46,105 +46,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using MiniAudioEx.Core.StandardAPI;
-using MiniAudioEx.Native;
-
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Generators
 {
-    public sealed class FMGenerator : IAudioGenerator
+    public sealed class WaveCalculator : IWaveCalculator
     {
-        private Oscillator carrier;
-        private ConcurrentList<Oscillator> operators;
+        private delegate float WaveFunc(float phase);
+        private WaveType type;
+        private WaveFunc waveFunction;
 
-        public Oscillator Carrier
+        public WaveType Type
         {
             get
             {
-                return carrier;
+                return type;
             }
-        }
-
-        /// <summary>
-        /// Gets the number of operators.
-        /// </summary>
-        /// <value></value>
-        public int Count
-        {
-            get
+            set
             {
-                return operators.Count;
+                type = value;
+                SetWaveFunc();
             }
         }
 
-        public Oscillator this[int index]
+        public WaveCalculator(WaveType type)
         {
-            get
+            this.type = type;
+            SetWaveFunc();
+        }
+
+        public float GetValue(float phase)
+        {
+            return waveFunction(phase);
+        }
+
+        private void SetWaveFunc()
+        {
+            switch(type)
             {
-                if ((uint)index >= (uint)operators.Count)
-                    new System.IndexOutOfRangeException();
-                return operators[index];
+                case WaveType.Saw:
+                    waveFunction = Oscillator.GetSawSample;
+                    break;
+                case WaveType.Sine:
+                    waveFunction = Oscillator.GetSineSample;
+                    break;
+                case WaveType.Square:
+                    waveFunction = Oscillator.GetSquareSample;
+                    break;
+                case WaveType.Triangle:
+                    waveFunction = Oscillator.GetTriangleSample;
+                    break;
             }
-        }
-
-        public FMGenerator(WaveType type, float frequency, float amplitude)
-        {
-            carrier = new Oscillator(type, frequency, amplitude);
-            operators = new ConcurrentList<Oscillator>();
-        }
-        
-        /// <summary>
-        /// /// Resets the phase.
-        /// </summary>
-        public void Reset()
-        {
-            carrier.Reset();
-            for(int i = 0; i < operators.Count; i++)
-            {
-                operators[i].Reset();
-            }
-        }
-
-        public void AddOperator(WaveType type, float frequency, float depth)
-        {
-            operators.Add(new Oscillator(type, frequency, depth));
-        }
-
-        public void RemoveOperator(int index)
-        {
-            if(index >= 0 && index < operators.Count)
-            {
-                var target = operators[index];
-                operators.Remove(target);
-            }
-        }
-
-        public void OnGenerate(NativeArray<float> framesOut, ulong frameCount, int channels)
-        {
-            float sample = 0;
-
-            for(int i = 0; i < framesOut.Length; i+=channels)
-            {
-                sample = GetModulatedSample();
-
-                for(int j = 0; j < channels; j++)
-                {
-                    framesOut[i+j] = sample;
-                }
-            }
-        }
-
-        public void OnDestroy() {}
-
-        private float GetModulatedSample()
-        {
-            float modulationSum = 0.0f;
-
-            for (int i = 0; i < operators.Count; i++)
-            {
-                modulationSum += operators[i].GetValue();
-            }
-
-            return carrier.GetModulatedValue(modulationSum);
         }
     }
 }

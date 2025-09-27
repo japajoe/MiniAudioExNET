@@ -3,7 +3,7 @@
 
 using System;
 using MiniAudioEx.Core.StandardAPI;
-using MiniAudioEx.DSP;
+using MiniAudioEx.DSP.Generators;
 using MiniAudioEx.Native;
 
 namespace MiniAudioExExamples

@@ -53,7 +53,7 @@
 using System;
 using MiniAudioEx.Core.StandardAPI;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Effects
 {
     public class ADSR
     {

@@ -50,7 +50,7 @@ using System;
 using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Effects
 {
     public enum FilterType
     {

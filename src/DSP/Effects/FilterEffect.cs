@@ -46,55 +46,70 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-namespace MiniAudioEx.DSP
-{
-    public sealed class WaveCalculator : IWaveCalculator
-    {
-        private delegate float WaveFunc(float phase);
-        private WaveType type;
-        private WaveFunc waveFunction;
+using System;
+using MiniAudioEx.Core.StandardAPI;
+using MiniAudioEx.Native;
 
-        public WaveType Type
+namespace MiniAudioEx.DSP.Effects
+{
+    public sealed class FilterEffect: IAudioEffect
+    {
+        private Filter filter;
+
+        public FilterType Type
         {
             get
             {
-                return type;
+                return filter.Type;
+            }
+        }
+        
+        public float Frequency
+        {
+            get
+            {
+                return filter.Frequency;
             }
             set
             {
-                type = value;
-                SetWaveFunc();
+                filter.Frequency = value;
             }
         }
 
-        public WaveCalculator(WaveType type)
+        public float Q
         {
-            this.type = type;
-            SetWaveFunc();
-        }
-
-        public float GetValue(float phase)
-        {
-            return waveFunction(phase);
-        }
-
-        private void SetWaveFunc()
-        {
-            switch(type)
+            get
             {
-                case WaveType.Saw:
-                    waveFunction = Oscillator.GetSawSample;
-                    break;
-                case WaveType.Sine:
-                    waveFunction = Oscillator.GetSineSample;
-                    break;
-                case WaveType.Square:
-                    waveFunction = Oscillator.GetSquareSample;
-                    break;
-                case WaveType.Triangle:
-                    waveFunction = Oscillator.GetTriangleSample;
-                    break;
+                return filter.Q;
+            }
+            set
+            {
+                filter.Q = value;
             }
         }
-    }
+
+        public float GainDB
+        {
+            get
+            {
+                return filter.GainDB;
+            }
+            set
+            {
+                filter.GainDB = value;
+            }
+        }
+
+        public FilterEffect(FilterType type, float frequency, float q, float gainDB)
+        {
+            filter = new Filter(type, frequency, q, gainDB, AudioContext.SampleRate);
+        }
+
+        public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
+        {
+            filter.Process(framesIn, framesOut, frameCountIn, (int)channels);
+		}
+
+        public void OnDestroy() { }
+	}
 }

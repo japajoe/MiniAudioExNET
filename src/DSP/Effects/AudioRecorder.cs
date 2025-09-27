@@ -51,7 +51,7 @@ using System.IO;
 using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Effects
 {
     public sealed class AudioRecorder : IAudioEffect
     {
@@ -93,7 +93,7 @@ namespace MiniAudioEx.DSP
 		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
 		{
             WriteHeader();
-            WriteData(framesOut, frameCountIn);
+            WriteData(framesIn, frameCountIn);
 		}
 
         public void OnDestroy()
@@ -174,7 +174,7 @@ namespace MiniAudioEx.DSP
             SetState(State.WriteData);
         }
 
-        private void WriteData(NativeArray<float> framesOut, UInt32 frameCount)
+        private void WriteData(NativeArray<float> framesIn, UInt32 frameCount)
         {
             if(GetState() != State.WriteData)
                 return;
@@ -182,7 +182,7 @@ namespace MiniAudioEx.DSP
             if(stream == null)
                 return;
 
-            UInt32 byteSize = (UInt32)(framesOut.Length * sizeof(short));
+            UInt32 byteSize = (UInt32)(framesIn.Length * sizeof(short));
 
             if(byteSize == 0)
                 return;
@@ -197,9 +197,9 @@ namespace MiniAudioEx.DSP
                 fixed(byte *pOutputBuffer = &outputBuffer[0])
                 {
                     Int16 *pBuffer = (Int16*)pOutputBuffer;
-                    for(Int32 i = 0; i < framesOut.Length; i++)
+                    for(Int32 i = 0; i < framesIn.Length; i++)
                     {
-                        pBuffer[index] = (short)(framesOut[i] * short.MaxValue);
+                        pBuffer[index] = (short)(framesIn[i] * short.MaxValue);
                         index++;
                     }
                 }

@@ -51,7 +51,7 @@ using System.Runtime.CompilerServices;
 using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Effects
 {
 	public sealed class DelayEffect : IAudioEffect
 	{

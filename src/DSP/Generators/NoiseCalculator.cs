@@ -47,72 +47,94 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioEx.Core.StandardAPI;
-using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Generators
 {
-    public sealed class ReverbEffect: IAudioEffect
+    public enum NoiseType
     {
-        private Reverb reverb;
-		
-		public float RoomSize
-		{
-			get => reverb.RoomSize;
-			set => reverb.RoomSize = value;
-		}
+        Brown,
+        Pink,
+        White
+    }
 
-		public float Damping
-		{
-			get => reverb.Damping;
-			set => reverb.Damping = value;
-		}
+    public sealed class NoiseCalculator : IWaveCalculator
+    {
+        private delegate float NoiseFunc();
+        private NoiseType type;
+        private NoiseFunc noiseFunc;
+        private float previousValue;
+        private static Random random;
 
-		public float Wet
-		{
-			get => reverb.Wet;
-			set => reverb.Wet = value;
-		}
+        public NoiseType Type
+        {
+            get
+            {
+                return type;
+            }
+            set
+            {
+                type = value;
+                previousValue = 0.0f;
+                SetNoiseFunc();
+            }
+        }
 
-		public float Dry
-		{
-			get => reverb.Dry;
-			set => reverb.Dry = value;
-		}
+        public NoiseCalculator(NoiseType type)
+        {
+            if(random == null)
+                random = new Random();
+            this.type = type;
+            previousValue = 0.0f;
+            SetNoiseFunc();
+        }
 
-		public float Width
-		{
-			get => reverb.Width;
-			set => reverb.Width = value;
-		}
+        public float GetValue()
+        {
+            return noiseFunc();
+        }
 
-		public float InputWidth
-		{
-			get => reverb.InputWidth;
-			set => reverb.InputWidth = value;
-		}
+        public float GetValue(float phase)
+        {
+            return noiseFunc();
+        }
 
-		public float Mode
-		{
-			get => reverb.Mode;
-			set => reverb.Mode = value;
-		}
+        private void SetNoiseFunc()
+        {
+            switch(type)
+            {
+                case NoiseType.Brown:
+                    noiseFunc = GetBrownNoise;
+                    break;
+                case NoiseType.Pink:
+                    noiseFunc = GetPinkNoise;
+                    break;
+                case NoiseType.White:
+                    noiseFunc = GetWhiteNoise;
+                    break;
+            }
+        }
 
-		public UInt64 DecayTimeInFrames
-		{
-			get => reverb.DecayTimeInFrames;
-		}
+        private float GetBrownNoise()
+        {
+            float newValue = (float)random.NextDouble() * 2 - 1;
+            float output = (previousValue + newValue) / 2.0f;
+            previousValue = newValue;
+            return output;
+        }
 
-        public ReverbEffect(UInt32 sampleRate, UInt32 channels)
-		{
-			reverb = new Reverb(sampleRate, channels);
-		}
-		
-		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
-		{
-			reverb.Process(framesIn, framesOut, frameCountIn);
-		}
+        private float GetPinkNoise()
+        {
+            float value1 = (float)random.NextDouble() * 2 - 1;
+            float value2 = (float)random.NextDouble() * 2 - 1;
+            float output = (value1 + value2) / 2.0f;
+            return output;
+        }
 
-        public void OnDestroy() { }
-	}
+
+        private float GetWhiteNoise()
+        {
+            float output = (float)random.NextDouble() * 2 - 1;
+            return output;
+        }
+    }
 }

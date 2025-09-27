@@ -46,71 +46,105 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-using System.Runtime.CompilerServices;
 using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Generators
 {
-	public sealed class DistortionEffect : IAudioEffect
-	{
-        private float drive;
-        private float range;
-        private float blend;
-        private float volume;
+    public sealed class FMGenerator : IAudioGenerator
+    {
+        private Oscillator carrier;
+        private ConcurrentList<Oscillator> operators;
 
-		public float Drive
-		{
-			get => drive;
-			set => drive = value;
-		}
+        public Oscillator Carrier
+        {
+            get
+            {
+                return carrier;
+            }
+        }
 
-		public float Range
-		{
-			get => range;
-			set => range = value;
-		}
+        /// <summary>
+        /// Gets the number of operators.
+        /// </summary>
+        /// <value></value>
+        public int Count
+        {
+            get
+            {
+                return operators.Count;
+            }
+        }
 
-		public float Blend
-		{
-			get => blend;
-			set => blend = value;
-		}
+        public Oscillator this[int index]
+        {
+            get
+            {
+                if ((uint)index >= (uint)operators.Count)
+                    new System.IndexOutOfRangeException();
+                return operators[index];
+            }
+        }
 
-		public float Volume
-		{
-			get => volume;
-			set => volume = value;
-		}
+        public FMGenerator(WaveType type, float frequency, float amplitude)
+        {
+            carrier = new Oscillator(type, frequency, amplitude);
+            operators = new ConcurrentList<Oscillator>();
+        }
+        
+        /// <summary>
+        /// /// Resets the phase.
+        /// </summary>
+        public void Reset()
+        {
+            carrier.Reset();
+            for(int i = 0; i < operators.Count; i++)
+            {
+                operators[i].Reset();
+            }
+        }
 
-		public DistortionEffect()
-		{
-			drive = 1.0f;
-			range = 1.0f;
-			blend = 1.0f;
-			volume = 1.0f;
-		}
+        public void AddOperator(WaveType type, float frequency, float depth)
+        {
+            operators.Add(new Oscillator(type, frequency, depth));
+        }
 
-		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
-		{
-			int count = (int)(frameCountIn * channels);
+        public void RemoveOperator(int index)
+        {
+            if(index >= 0 && index < operators.Count)
+            {
+                var target = operators[index];
+                operators.Remove(target);
+            }
+        }
 
-			for (int i = 0; i < count; i++)
-			{
-				framesOut[i] = Distort(framesIn[i], drive, range, blend, volume);
-			}
-		}
+        public void OnGenerate(NativeArray<float> framesOut, ulong frameCount, int channels)
+        {
+            float sample = 0;
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private float Distort(float x, float drive, float range, float blend, float volume)
-		{
-			float xClean = x;
-			x *= drive * range;
-			double result = (((((2.0f / Math.PI) * Math.Atan(x)) * blend) + (xClean * (1.0f - blend))) / 2.0f) * volume;
-			return (float)result;
-		}
-		
-		public void OnDestroy() { }
-	}
+            for(int i = 0; i < framesOut.Length; i+=channels)
+            {
+                sample = GetModulatedSample();
+
+                for(int j = 0; j < channels; j++)
+                {
+                    framesOut[i+j] = sample;
+                }
+            }
+        }
+
+        public void OnDestroy() {}
+
+        private float GetModulatedSample()
+        {
+            float modulationSum = 0.0f;
+
+            for (int i = 0; i < operators.Count; i++)
+            {
+                modulationSum += operators[i].GetValue();
+            }
+
+            return carrier.GetModulatedValue(modulationSum);
+        }
+    }
 }

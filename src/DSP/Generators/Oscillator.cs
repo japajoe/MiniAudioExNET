@@ -49,7 +49,7 @@
 using System;
 using MiniAudioEx.Core.StandardAPI;
 
-namespace MiniAudioEx.DSP
+namespace MiniAudioEx.DSP.Generators
 {
     public enum WaveType
     {
