@@ -56,14 +56,15 @@ namespace MiniAudioEx.DSP
 	{
 		private Int32 channels;
 		private Int32 sampleRate;
-		private Int32 delayInFrames;
 		private bool delayStart;       /* Set to true to delay the start of the output; false otherwise. */
 		private float wet;                  /* 0..1. Default = 1. */
 		private float dry;                  /* 0..1. Default = 1. */
 		private float decay;                /* 0..1. Default = 0 (no feedback). Feedback decay. Use this for echo. */
 		private Int32 cursor;               /* Feedback is written to this cursor. Always equal or in front of the read cursor. */
 		private Int32 bufferSizeInFrames;
+		private Int32 actualBufferSize;
 		private float[] buffer;
+		private readonly object lockObject = new object();
 
 		public float Wet
 		{
@@ -87,30 +88,82 @@ namespace MiniAudioEx.DSP
 			}
 		}
 
-		public DelayEffect(UInt32 channels, UInt32 sampleRate, UInt32 delayInFrames, float decay)
+		public UInt32 DelayInFrames
 		{
-			this.channels = (Int32)channels;
+			get => (UInt32)bufferSizeInFrames;
+			set
+			{
+				lock (lockObject)
+				{
+					bufferSizeInFrames = (Int32)value;
+
+					if (bufferSizeInFrames < 1)
+					{
+						bufferSizeInFrames = 1;
+					}
+
+					actualBufferSize = bufferSizeInFrames * channels;
+
+					if (actualBufferSize > buffer.Length)
+					{
+						buffer = new float[actualBufferSize];
+					}
+
+					cursor = cursor % bufferSizeInFrames;
+				}
+			}
+		}
+
+		public float DelayInSeconds
+		{
+			get => (float)bufferSizeInFrames / sampleRate;
+			set
+			{
+				lock (lockObject)
+				{
+					bufferSizeInFrames = (Int32)Math.Ceiling(value * sampleRate);
+
+					if (bufferSizeInFrames < 1)
+					{
+						bufferSizeInFrames = 1;
+					}
+
+					actualBufferSize = bufferSizeInFrames * channels;
+
+					if (actualBufferSize > buffer.Length)
+					{
+						buffer = new float[actualBufferSize];
+					}
+
+					cursor = cursor % bufferSizeInFrames;
+				}
+			}
+		}
+
+		public DelayEffect(UInt32 sampleRate, UInt32 channels, UInt32 delayInFrames, float decay)
+		{
 			this.sampleRate = (Int32)sampleRate;
-			this.delayInFrames = (Int32)delayInFrames;
+			this.channels = (Int32)channels;
 			delayStart = (decay == 0) ? true : false;   /* Delay the start if it looks like we're not configuring an echo. */
 			wet = 1.0f;
 			dry = 1.0f;
 			this.decay = decay;
 			bufferSizeInFrames = (Int32)delayInFrames;
-			buffer = new float[bufferSizeInFrames * channels];
+			actualBufferSize = (Int32)(bufferSizeInFrames * channels);
+			buffer = new float[actualBufferSize];
 		}
 
-		public DelayEffect(UInt32 channels, UInt32 sampleRate, float delayInSeconds, float decay)
+		public DelayEffect(UInt32 sampleRate, UInt32 channels, float delayInSeconds, float decay)
 		{
-			this.channels = (Int32)channels;
 			this.sampleRate = (Int32)sampleRate;
-			delayInFrames = (Int32)Math.Ceiling(delayInSeconds * sampleRate);
+			this.channels = (Int32)channels;
 			delayStart = (decay == 0) ? true : false;   /* Delay the start if it looks like we're not configuring an echo. */
 			wet = 1.0f;
 			dry = 1.0f;
 			this.decay = decay;
-			bufferSizeInFrames = delayInFrames;
-			buffer = new float[bufferSizeInFrames * channels];
+			bufferSizeInFrames = (Int32)Math.Ceiling(delayInSeconds * sampleRate);
+			actualBufferSize = (Int32)(bufferSizeInFrames * channels);
+			buffer = new float[actualBufferSize];
 		}
 
 		public unsafe void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
