@@ -25,12 +25,18 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.2
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.3
 ```
+
+# Changes in 2.6.3
+- Added `DelayEffect`.
+- Added `PhaserEffect`.
+- Added `AudioSource.GetOutputBuffer` and `AudioContext.GetOutputBuffer` methods.
+- Moved generators and effects into separate namespaces.
 
 # Changes in 2.6.2
 - Fixed bug with stopping/continuing an audio source.
-- Added DistortionEffect
+- Added `DistortionEffect`
 
 # Changes in 2.6.1
 - Manual polling to see if playback of an `AudioSource` ended.

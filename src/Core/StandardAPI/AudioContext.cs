@@ -65,6 +65,7 @@ namespace MiniAudioEx.Core.StandardAPI
         private static List<AudioSource> audioSources = new List<AudioSource>();
         private static List<AudioListener> audioListeners = new List<AudioListener>();
         private static Dictionary<UInt64, IntPtr> audioClipHandles = new Dictionary<UInt64, IntPtr>();
+        private static ThreadSafeBuffer outputBuffer = new ThreadSafeBuffer(8192);
 
         private static UInt32 sampleRate = 44100;
         private static UInt32 channels = 2;
@@ -98,7 +99,7 @@ namespace MiniAudioEx.Core.StandardAPI
             get
             {
                 return (int)channels;
-            }            
+            }
         }
 
         /// <summary>
@@ -138,7 +139,7 @@ namespace MiniAudioEx.Core.StandardAPI
         /// <param name="deviceInfo">If left null, a default device is used.</param>
         public static void Initialize(UInt32 sampleRate, UInt32 channels, UInt32 periodSizeInFrames = 2048, DeviceInfo deviceInfo = null)
         {
-            if(audioContext != IntPtr.Zero)
+            if (audioContext != IntPtr.Zero)
                 return;
 
             ma_ex_device_info pDeviceInfo = new ma_ex_device_info();
@@ -151,13 +152,13 @@ namespace MiniAudioEx.Core.StandardAPI
             AudioContext.channels = channels;
 
             ma_ex_context_config contextConfig = MiniAudioExNative.ma_ex_context_config_init(sampleRate, (byte)channels, periodSizeInFrames, ref pDeviceInfo);
-            
+
             deviceDataProc = OnDeviceDataProc;
             contextConfig.deviceDataProc = deviceDataProc;
 
             audioContext = MiniAudioExNative.ma_ex_context_init(ref contextConfig);
 
-            if(audioContext == IntPtr.Zero)
+            if (audioContext == IntPtr.Zero)
             {
                 Console.WriteLine("Failed to initialize MiniAudioEx");
             }
@@ -170,12 +171,12 @@ namespace MiniAudioEx.Core.StandardAPI
         /// </summary>
         public static void Deinitialize()
         {
-            if(audioContext == IntPtr.Zero)
+            if (audioContext == IntPtr.Zero)
                 return;
 
-            for(int i = 0; i < audioSources.Count; i++)
+            for (int i = 0; i < audioSources.Count; i++)
                 audioSources[i].Destroy();
-            
+
             audioSources.Clear();
 
             foreach (var audioClipHandle in audioClipHandles.Values)
@@ -186,7 +187,7 @@ namespace MiniAudioEx.Core.StandardAPI
 
             audioClipHandles.Clear();
 
-            for(int i = 0; i < audioListeners.Count; i++)
+            for (int i = 0; i < audioListeners.Count; i++)
                 audioListeners[i].Destroy();
 
             audioListeners.Clear();
@@ -200,7 +201,7 @@ namespace MiniAudioEx.Core.StandardAPI
         /// </summary>
         public static void Update()
         {
-            if(audioContext == IntPtr.Zero)
+            if (audioContext == IntPtr.Zero)
                 return;
 
             DateTime currentTime = DateTime.Now;
@@ -223,15 +224,15 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             IntPtr pDevices = MiniAudioExNative.ma_ex_playback_devices_get(out UInt32 count);
 
-            if(pDevices == IntPtr.Zero)
+            if (pDevices == IntPtr.Zero)
                 return null;
 
-            if(count == 0)
+            if (count == 0)
             {
                 MiniAudioExNative.ma_ex_playback_devices_free(pDevices, count);
                 return null;
             }
-            
+
             DeviceInfo[] devices = new DeviceInfo[count];
 
             for (UInt32 i = 0; i < count; i++)
@@ -242,7 +243,7 @@ namespace MiniAudioEx.Core.StandardAPI
             }
 
             MiniAudioExNative.ma_ex_playback_devices_free(pDevices, count);
-            
+
             return devices;
         }
 
@@ -250,9 +251,9 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             int hashcode = source.GetHashCode();
 
-            for(int i = 0; i < audioSources.Count; i++)
+            for (int i = 0; i < audioSources.Count; i++)
             {
-                if(audioSources[i].GetHashCode() == hashcode)
+                if (audioSources[i].GetHashCode() == hashcode)
                     return;
             }
 
@@ -277,14 +278,14 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             int hashcode = audioListeners.GetHashCode();
 
-            for(int i = 0; i < audioListeners.Count; i++)
+            for (int i = 0; i < audioListeners.Count; i++)
             {
-                if(audioListeners[i].GetHashCode() == hashcode)
+                if (audioListeners[i].GetHashCode() == hashcode)
                     return;
             }
 
             audioListeners.Add(listener);
-        }        
+        }
 
         internal static void Remove(AudioSource source)
         {
@@ -292,9 +293,9 @@ namespace MiniAudioEx.Core.StandardAPI
             bool found = false;
             int index = 0;
 
-            for(int i = 0; i < audioSources.Count; i++)
+            for (int i = 0; i < audioSources.Count; i++)
             {
-                if(audioSources[i].GetHashCode() == hashcode)
+                if (audioSources[i].GetHashCode() == hashcode)
                 {
                     index = i;
                     found = true;
@@ -302,7 +303,7 @@ namespace MiniAudioEx.Core.StandardAPI
                 }
             }
 
-            if(found)
+            if (found)
             {
                 audioSources[index].Destroy();
                 audioSources.RemoveAt(index);
@@ -334,13 +335,13 @@ namespace MiniAudioEx.Core.StandardAPI
 
         internal static void Remove(AudioClip clip)
         {
-            if(clip.Hash == 0)
+            if (clip.Hash == 0)
                 return;
-            
-            if(audioClipHandles.ContainsKey(clip.Hash))
+
+            if (audioClipHandles.ContainsKey(clip.Hash))
             {
                 IntPtr handle = audioClipHandles[clip.Hash];
-                if(handle != IntPtr.Zero)
+                if (handle != IntPtr.Zero)
                     Marshal.FreeHGlobal(handle);
                 audioClipHandles.Remove(clip.Hash);
             }
@@ -350,7 +351,7 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             handle = IntPtr.Zero;
 
-            if(audioClipHandles.ContainsKey(hashcode))
+            if (audioClipHandles.ContainsKey(hashcode))
             {
                 handle = audioClipHandles[hashcode];
                 return true;
@@ -364,11 +365,20 @@ namespace MiniAudioEx.Core.StandardAPI
             IntPtr pEngine = MiniAudioExNative.ma_ex_device_get_user_data(pDevice.pointer);
             MiniAudioExNative.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount, out _);
 
-            if(DataProcess != null)
+            NativeArray<float> buffer = new NativeArray<float>(pOutput, (Int32)(frameCount * channels));
+
+            if (DataProcess != null)
             {
-                NativeArray<float> buffer = new NativeArray<float>(pOutput, (Int32)(frameCount * channels));
                 DataProcess.Invoke(buffer, frameCount);
             }
+
+            outputBuffer.Write(buffer);
+        }
+
+        public static bool GetOutputBuffer(ref float[] buffer, out int length)
+        {
+            length = outputBuffer.Read(ref buffer);
+            return length > 0;
         }
     }
 
@@ -486,7 +496,7 @@ namespace MiniAudioEx.Core.StandardAPI
             v.y = v.y *= scale;
             v.z = v.z *= scale;
             return v;
-        }        
+        }
 
         /// <summary>
         /// Calculates the distance between two vectors.
@@ -760,7 +770,7 @@ namespace MiniAudioEx.Core.StandardAPI
         {
             lock (syncRoot)
             {
-                for(int i = 0; i < items.Count; i++)
+                for (int i = 0; i < items.Count; i++)
                 {
                     this.items.Remove(items[i]);
                 }
@@ -772,6 +782,59 @@ namespace MiniAudioEx.Core.StandardAPI
             lock (syncRoot)
             {
                 items.RemoveAt(index);
+            }
+        }
+    }
+
+    public sealed class ThreadSafeBuffer
+    {
+        private readonly float[] buffer;
+        private readonly object sync = new();
+        private int currentLength = 0;
+
+        public ThreadSafeBuffer(int capacityPowerOfTwo)
+        {
+            if (capacityPowerOfTwo <= 0 || (capacityPowerOfTwo & (capacityPowerOfTwo - 1)) != 0)
+                throw new ArgumentException("capacityPowerOfTwo must be power of two");
+            int capacity = capacityPowerOfTwo;
+            buffer = new float[capacity];
+        }
+
+        public int Write(NativeArray<float> src)
+        {
+            lock (sync)
+            {
+                unsafe
+                {
+                    fixed (float* pBuffer = &buffer[0])
+                    {
+                        NativeArray<float> b = new NativeArray<float>(pBuffer, src.Length);
+                        src.CopyTo(b);
+                        currentLength = src.Length;
+                    }
+
+                }
+                return src.Length;
+            }
+        }
+
+        public int Read(ref float[] output)
+        {
+            lock (sync)
+            {
+                unsafe
+                {
+                    if (output?.Length < buffer.Length)
+                        output = new float[buffer.Length];
+
+                    fixed (float* pSrc = &buffer[0], pDst = &output[0])
+                    {
+                        NativeArray<float> src = new NativeArray<float>(pSrc, buffer.Length);
+                        NativeArray<float> dst = new NativeArray<float>(pDst, buffer.Length);
+                        src.CopyTo(dst);
+                        return currentLength;
+                    }
+                }
             }
         }
     }
