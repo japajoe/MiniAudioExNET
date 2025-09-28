@@ -9,7 +9,6 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 # Features
 - Playback and decoding of various audio formats such as WAV/MP3/FLAC/OGG.
 - Stream audio from disk or from memory.
-- Callbacks for effects processing and generating audio.
 - Spatial properties like doppler effect, pitching, distance attenuation and panning.
 - Utilities for audio generation.
 - Effects processing, including reverb/delay/phaser/filters etc.
