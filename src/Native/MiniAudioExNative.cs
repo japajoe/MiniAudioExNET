@@ -153,6 +153,18 @@ namespace MiniAudioEx.Native
         public static extern float ma_ex_audio_source_get_pitch(IntPtr source);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_ex_audio_source_set_pan(IntPtr source, float value);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float ma_ex_audio_source_get_pan(IntPtr source);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_ex_audio_source_set_pan_mode(IntPtr source, ma_pan_mode mode);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_pan_mode ma_ex_audio_source_get_pan_mode(IntPtr source);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern void ma_ex_audio_source_set_pcm_position(IntPtr source, UInt64 position);
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]

@@ -154,6 +154,38 @@ namespace MiniAudioEx.Core.StandardAPI
         }
 
         /// <summary>
+        /// Gets or sets the pan of the sound.
+        /// </summary>
+        /// <value></value>
+        public float Pan
+        {
+            get
+            {
+                return MiniAudioNative.ma_sound_group_get_pan(soundGroup);
+            }
+            set
+            {
+                MiniAudioNative.ma_sound_group_set_pan(soundGroup, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the pan of the sound.
+        /// </summary>
+        /// <value></value>
+        public PanMode PanMode
+        {
+            get
+            {
+                return (PanMode)MiniAudioNative.ma_sound_group_get_pan_mode(soundGroup);
+            }
+            set
+            {
+                MiniAudioNative.ma_sound_group_set_pan_mode(soundGroup, (ma_pan_mode)value);
+            }
+        }
+
+        /// <summary>
         /// Gets or sets whether the audio should loop. If true, then the 'End' event will not be called. If the Play() overload is used, this property has no effect because the audio will loop regardless. Take note that this setting only applies to the first source, so it may cause undesirable results when using the PlayOneShot method.
         /// </summary>
         /// <value></value>

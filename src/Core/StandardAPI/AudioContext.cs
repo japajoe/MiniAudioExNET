@@ -640,6 +640,12 @@ namespace MiniAudioEx.Core.StandardAPI
         Exponential
     }
 
+    public enum PanMode
+    {
+        Balance,
+        Pan
+    }
+
     public struct DeviceDataFormat
     {
         public ma_format format;       /* Sample format. If set to ma_format_unknown, all sample formats are supported. */
