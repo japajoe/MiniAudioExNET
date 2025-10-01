@@ -48,7 +48,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
 namespace MiniAudioEx.DSP.Effects

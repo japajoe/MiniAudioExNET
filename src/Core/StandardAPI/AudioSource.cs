@@ -409,15 +409,16 @@ namespace MiniAudioEx.Core.StandardAPI
                 return;
 
             for (int i = 0; i < sources.Count; i++)
-            {
                 MiniAudioExNative.ma_ex_audio_source_stop(sources[i].handle);
-                MiniAudioExNative.ma_ex_audio_source_uninit(sources[i].handle);
-            }
 
-            sources.Clear();
+            MiniAudioNative.ma_effect_node_uninit(effectNode);
+            effectNode.Free();
 
             MiniAudioExNative.ma_ex_sound_group_uninit(soundGroup.pointer);
             soundGroup.pointer = IntPtr.Zero;
+
+            for (int i = 0; i < sources.Count; i++)
+                MiniAudioExNative.ma_ex_audio_source_uninit(sources[i].handle);
 
             for (int i = 0; i < effects.Count; i++)
                 effects[i].OnDestroy();
@@ -425,11 +426,9 @@ namespace MiniAudioEx.Core.StandardAPI
             for (int i = 0; i < generators.Count; i++)
                 generators[i].OnDestroy();
 
+            sources.Clear();
             effects.Clear();
             generators.Clear();
-
-            MiniAudioNative.ma_effect_node_uninit(effectNode);
-            effectNode.Free();
         }
 
         public void Dispose()
