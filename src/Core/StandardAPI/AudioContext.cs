@@ -65,7 +65,7 @@ namespace MiniAudioEx.Core.StandardAPI
         private static List<AudioSource> audioSources = new List<AudioSource>();
         private static List<AudioListener> audioListeners = new List<AudioListener>();
         private static Dictionary<UInt64, IntPtr> audioClipHandles = new Dictionary<UInt64, IntPtr>();
-        private static ThreadSafeBuffer outputBuffer = new ThreadSafeBuffer(8192);
+        private static AudioBuffer outputBuffer = new AudioBuffer(8192);
 
         private static UInt32 sampleRate = 44100;
         private static UInt32 channels = 2;
@@ -792,13 +792,16 @@ namespace MiniAudioEx.Core.StandardAPI
         }
     }
 
-    public sealed class ThreadSafeBuffer
+    /// <summary>
+    /// A thread safe class storing audio data.
+    /// </summary>
+    public sealed class AudioBuffer
     {
         private readonly float[] buffer;
         private readonly object sync = new();
         private int currentLength = 0;
 
-        public ThreadSafeBuffer(int capacityPowerOfTwo)
+        public AudioBuffer(int capacityPowerOfTwo)
         {
             if (capacityPowerOfTwo <= 0 || (capacityPowerOfTwo & (capacityPowerOfTwo - 1)) != 0)
                 throw new ArgumentException("capacityPowerOfTwo must be power of two");

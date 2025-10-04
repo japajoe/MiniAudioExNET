@@ -25,8 +25,12 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.3
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.4
 ```
+
+# Changes in 2.6.4
+- Added `ChorusEffect`.
+- Fixed bug in uninitialization of `AudioSource` causing unmanaged exception.
 
 # Changes in 2.6.3
 - Added `DelayEffect`.

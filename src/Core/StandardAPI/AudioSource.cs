@@ -90,6 +90,7 @@ namespace MiniAudioEx.Core.StandardAPI
         private ma_procedural_data_source_proc proceduralProcessCallback;
         private ConcurrentList<IAudioEffect> effects;
         private ConcurrentList<IAudioGenerator> generators;
+        private AudioBuffer outputBuffer;
         private int currentIndex;
         private readonly int MAX_SOURCES;
 
@@ -368,6 +369,7 @@ namespace MiniAudioEx.Core.StandardAPI
             sources = new List<SourceInfo>();
             effects = new ConcurrentList<IAudioEffect>();
             generators = new ConcurrentList<IAudioGenerator>();
+            outputBuffer = new AudioBuffer(8192);
             currentIndex = 0;
 
             proceduralProcessCallback = OnProceduralProcess;
@@ -627,13 +629,31 @@ namespace MiniAudioEx.Core.StandardAPI
             return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
         }
 
+        /// <summary>
+        /// Used to get the audio data right after the effect processing stage. This can be used for FFT analysis etc.
+        /// </summary>
+        /// <param name="buffer">The buffer to copy the data to.</param>
+        /// <param name="length">The number of samples that have been copied to the buffer.</param>
+        /// <returns></returns>
+        public bool GetOutputBuffer(ref float[] buffer, out int length)
+        {
+            length = outputBuffer.Read(ref buffer);
+            return length > 0;
+        }
+
         private void SetAtEnd(int sourceIndex, bool atEnd)
         {
             sources[sourceIndex].atEnd = atEnd;
-        }
+        }        
 
-        private ThreadSafeBuffer outputBuffer = new ThreadSafeBuffer(8192);
-
+        /// <summary>
+        /// Called whenever the source wants to apply effects.
+        /// </summary>
+        /// <param name="pNode"></param>
+        /// <param name="ppFramesIn"></param>
+        /// <param name="pFrameCountIn"></param>
+        /// <param name="ppFramesOut"></param>
+        /// <param name="pFrameCountOut"></param>
         private unsafe void OnEffectProcess(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
         {
             if (pNode.pointer == IntPtr.Zero)
@@ -654,8 +674,7 @@ namespace MiniAudioEx.Core.StandardAPI
             // Just in case we end up with no sound at all because no effects were active (prevents silence)
             bufferIn.CopyTo(bufferOut);
 
-            // An effect can modify the number of frames it processes
-            // so we need to keep track of this
+            // An effect can modify the number of frames it processes so we need to keep track of this
             UInt32 countIn = *frameCountIn;
             UInt32 countOut = *frameCountOut;
 
@@ -674,12 +693,6 @@ namespace MiniAudioEx.Core.StandardAPI
             *frameCountOut = countOut;
 
             outputBuffer.Write(new NativeArray<float>(framesOut[0], (int)(*frameCountOut * channels)));
-        }
-
-        public bool GetOutputBuffer(ref float[] buffer, out int length)
-        {
-            length = outputBuffer.Read(ref buffer);
-            return length > 0;
         }
 
         /// <summary>

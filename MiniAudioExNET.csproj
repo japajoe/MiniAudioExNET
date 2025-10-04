@@ -6,9 +6,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>0618</NoWarn>
     <PackageId>JAJ.Packages.MiniAudioEx</PackageId>
-    <Version>2.6.3</Version>
+    <Version>2.6.4</Version>
     <Authors>W.M.R Jap-A-Joe</Authors>
-    <PackageTags>MiniAudio miniaudio Audio Sound DSP WAV MP3 FLAC OGG</PackageTags>
+    <PackageTags>miniaudio miniaudioex audio sound playback spatial dsp effects wav mp3 flac ogg</PackageTags>
     <Description>
       A wrapper for a modified version of miniaudio.
     </Description>
