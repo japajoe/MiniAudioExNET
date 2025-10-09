@@ -22,11 +22,16 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Linux ARM32
 - OSX x86_64
 - OSX ARM64
+- Android ARM64
+- Android ARM32
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.4
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.5
 ```
+
+# Changes in 2.6.5
+- Added native libraries for Android ARM and ARM64.
 
 # Changes in 2.6.4
 - Added `ChorusEffect`.
