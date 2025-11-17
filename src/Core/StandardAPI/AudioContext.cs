@@ -135,12 +135,12 @@ namespace MiniAudioEx.Core.StandardAPI
         /// </summary>
         /// <param name="sampleRate">The sample rate to use. Typical sampling rates are 44100 and 48000.</param>
         /// <param name="channels">The number of channels to use. For most purposes 2 is the best choice (stereo audio).</param>
-        /// <param name="periodSizeInFrames">Buffer size for audio processing. This value is a 'hint' so in practice it may be different than what you passed.</param>
+        /// <param name="periodSizeInFrames">Buffer size for audio processing. This value is a 'hint' so in practice it may be different than what you passed. Passing 0 means the period size is automatically set.</param>
         /// <param name="deviceInfo">If left null, a default device is used.</param>
-        public static void Initialize(UInt32 sampleRate, UInt32 channels, UInt32 periodSizeInFrames = 2048, DeviceInfo deviceInfo = null)
+        public static void Initialize(UInt32 sampleRate, UInt32 channels, UInt32 periodSizeInFrames = 0, DeviceInfo deviceInfo = null)
         {
             if (audioContext != IntPtr.Zero)
-                return;
+                throw new Exception("MiniAudioEx is already initialized");
 
             ma_ex_device_info pDeviceInfo = new ma_ex_device_info();
             pDeviceInfo.index = deviceInfo == null ? -1 : deviceInfo.Index;
@@ -160,7 +160,7 @@ namespace MiniAudioEx.Core.StandardAPI
 
             if (audioContext == IntPtr.Zero)
             {
-                Console.WriteLine("Failed to initialize MiniAudioEx");
+                throw new Exception("Failed to initialize MiniAudioEx");
             }
 
             lastUpdateTime = DateTime.Now;
@@ -363,6 +363,10 @@ namespace MiniAudioEx.Core.StandardAPI
         private static void OnDeviceDataProc(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
         {
             IntPtr pEngine = MiniAudioExNative.ma_ex_device_get_user_data(pDevice.pointer);
+
+            if (pEngine == IntPtr.Zero)
+                return;
+
             MiniAudioExNative.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount, out _);
 
             NativeArray<float> buffer = new NativeArray<float>(pOutput, (Int32)(frameCount * channels));

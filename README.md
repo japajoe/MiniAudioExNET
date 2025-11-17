@@ -27,8 +27,11 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.5
+dotnet add package JAJ.Packages.MiniAudioEx --version 2.6.6
 ```
+
+# Changes in 2.6.6
+- Throw exception if AudioContext fails to initialize.
 
 # Changes in 2.6.5
 - Added native libraries for Android ARM and ARM64.

@@ -753,33 +753,39 @@ namespace MiniAudioEx.Native
 		}
 	}
 
-	[StructLayout(LayoutKind.Sequential)]
-	public unsafe struct ma_context_ptr
-	{
-		public IntPtr pointer;
-		public ma_context_ptr() { }
-		public ma_context_ptr(IntPtr handle)
-		{
-			pointer = handle;
-		}
-		public ma_context_ptr(bool allocate)
-		{
-			if (allocate)
-				Allocate();
-		}
-		public bool Allocate()
-		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.context);
-			return pointer != IntPtr.Zero;
-		}
-		public void Free()
-		{
-			if (pointer != IntPtr.Zero)
-			{
-				MiniAudioNative.ma_deallocate_type(pointer);
-				pointer = IntPtr.Zero;
-			}
-		}
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_context_ptr
+    {
+        public IntPtr pointer;
+        public ma_context_ptr() { }
+        public ma_context_ptr(IntPtr handle)
+        {
+            pointer = handle;
+        }
+        public ma_context_ptr(bool allocate)
+        {
+            if (allocate)
+                Allocate();
+        }
+        public bool Allocate()
+        {
+            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.context);
+            return pointer != IntPtr.Zero;
+        }
+
+        public void Free()
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                MiniAudioNative.ma_deallocate_type(pointer);
+                pointer = IntPtr.Zero;
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_context* Get()
+        {
+            return (ma_context*)pointer;
+        }
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -2525,6 +2531,20 @@ namespace MiniAudioEx.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_context
+    {
+        public ma_backend_callbacks callbacks;
+        public ma_backend backend;                 /* DirectSound, ALSA, etc. */
+        public ma_log_ptr pLog;
+        public ma_log log; /* Only used if the log is owned by the context. The pLog member will be set to &log in this case. */
+        public ma_thread_priority threadPriority;
+        public size_t threadStackSize;
+        public IntPtr pUserData;
+        public ma_allocation_callbacks allocationCallbacks;
+        //More (variable sized) fields here...
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_resource_manager_pipeline_stage_notification
     {
         public ma_async_notification_ptr pNotification;
@@ -3922,7 +3942,7 @@ namespace MiniAudioEx.Native
         public static extern ma_context_config ma_context_config_init();
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern unsafe ma_result ma_context_init(ma_backend* backends, ma_uint32 backendCount, ma_context_config* pConfig, ma_context_ptr pContext);
+        public static extern unsafe ma_result ma_context_init(ma_backend* backends, ma_uint32 backendCount, ma_context_config* pConfig, ma_context_ptr pContext);
 
         public static unsafe ma_result ma_context_init(ma_backend[] backends, ref ma_context_config config, ma_context_ptr pContext)
         {
@@ -3975,7 +3995,7 @@ namespace MiniAudioEx.Native
         }
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
-        private static extern unsafe ma_result ma_context_get_devices(ma_context_ptr pContext, ma_device_info** ppPlaybackDeviceInfos, ma_uint32* pPlaybackDeviceCount, ma_device_info** ppCaptureDeviceInfos, ma_uint32* pCaptureDeviceCount);
+        public static extern unsafe ma_result ma_context_get_devices(ma_context_ptr pContext, ma_device_info** ppPlaybackDeviceInfos, ma_uint32* pPlaybackDeviceCount, ma_device_info** ppCaptureDeviceInfos, ma_uint32* pCaptureDeviceCount);
 
         public static unsafe ma_result ma_context_get_devices(ma_context_ptr pContext, out ma_device_info_ex[] ppPlaybackDeviceInfos, out ma_device_info_ex[] ppCaptureDeviceInfos)
         {
