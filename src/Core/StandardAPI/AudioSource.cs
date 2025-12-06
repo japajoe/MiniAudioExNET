@@ -267,6 +267,54 @@ namespace MiniAudioEx.Core.StandardAPI
         }
 
         /// <summary>
+        /// Gets or sets the roll off value, which controls how quickly a sound rolls off as it moves away from the listener.
+        /// </summary>
+        /// <value></value>
+        public float RollOff
+        {
+            get
+            {
+                return MiniAudioNative.ma_sound_group_get_rolloff(soundGroup);
+            }
+            set
+            {
+                MiniAudioNative.ma_sound_group_set_rolloff(soundGroup, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the min gain which is applied to the spatialization.
+        /// </summary>
+        /// <value></value>
+        public float MinGain
+        {
+            get
+            {
+                return MiniAudioNative.ma_sound_group_get_min_gain(soundGroup);
+            }
+            set
+            {
+                MiniAudioNative.ma_sound_group_set_min_gain(soundGroup, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the min gain which is applied to the spatialization.
+        /// </summary>
+        /// <value></value>
+        public float MaxGain
+        {
+            get
+            {
+                return MiniAudioNative.ma_sound_group_get_max_gain(soundGroup);
+            }
+            set
+            {
+                MiniAudioNative.ma_sound_group_set_max_gain(soundGroup, value);
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the mathematical model used to simulate the attenuation of sound over distance.
         /// </summary>
         /// <value></value>
