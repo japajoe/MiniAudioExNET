@@ -2272,7 +2272,7 @@ namespace MiniAudioEx.Native
         public ma_uint32 volumeSmoothTimeInPCMFrames;
         public ma_mono_expansion_mode monoExpansionMode;
         public ma_fader fader;
-        public ma_linear_resampler resampler;                      /* For pitch shift. */
+        public ma_resampler resampler;                      /* For pitch shift. */
         public ma_spatializer spatializer;
         public ma_panner panner;
         public ma_gainer volumeGainer;                             /* This will only be used if volumeSmoothTimeInPCMFrames is > 0. */
@@ -2325,6 +2325,8 @@ namespace MiniAudioEx.Native
         public ma_vfs_ptr pResourceManagerVFS;                    /* A pointer to a pre-allocated VFS object to use with the resource manager. This is ignored if pResourceManager is not NULL. */
         public IntPtr onProcess;               /* Fired at the end of each call to ma_engine_read_pcm_frames(). For engine's that manage their own internal device (the default configuration), this will be fired from the audio thread, and you do not need to call ma_engine_read_pcm_frames() manually in order to trigger this. */
         public IntPtr pProcessUserData;                         /* User data that's passed into onProcess. */
+        public ma_resampler_config resourceManagerResampling;  /* The resampling config to use with the resource manager. */
+        public ma_resampler_config pitchResampling;            /* The resampling config for the pitch and Doppler effects. You will typically want this to be a fast resampler. For high quality stuff, it's recommended that you pre-resample. */
 
         public void SetDataProc(ma_device_data_proc callback)
         {
@@ -2363,6 +2365,7 @@ namespace MiniAudioEx.Native
         public ma_mono_expansion_mode monoExpansionMode;
         public IntPtr onProcess;
         public IntPtr pProcessUserData;
+        public ma_resampler_config pitchResamplingConfig;
 
         public void SetProcessProc(ma_engine_process_proc callback)
         {
@@ -2661,6 +2664,7 @@ namespace MiniAudioEx.Native
         public ma_uint64 loopPointEndInPCMFrames;
         public IntPtr endCallback;
         public IntPtr pEndCallbackUserData;
+        public ma_resampler_config pitchResampling;
         public ma_resource_manager_pipeline_notifications initNotifications;
         public ma_fence_ptr pDoneFence;                       /* Deprecated. Use initNotifications instead. Released when the resource manager has finished decoding the entire sound. Not used with streams. */
         public ma_bool32 isLooping;                        /* Deprecated. Use the MA_SOUND_FLAG_LOOPING flag in `flags` instead. */
@@ -2680,6 +2684,9 @@ namespace MiniAudioEx.Native
         public ma_bool32 atEnd;
         public IntPtr endCallback;
         public IntPtr pEndCallbackUserData;
+        public IntPtr pProcessingCache;            /* Will be null if pDataSource is null. */ 
+        public ma_uint32 processingCacheFramesRemaining;
+        public ma_uint32 processingCacheCap;
         public ma_bool8 ownsDataSource;
 
         /*
@@ -3492,6 +3499,7 @@ namespace MiniAudioEx.Native
         public IntPtr ppCustomDecodingBackendVTables;
         public ma_uint32 customDecodingBackendCount;
         public IntPtr pCustomDecodingBackendUserData;
+        public ma_resampler_config resampling;
 
         /// <summary>
         /// Sets the ppCustomDecodingBackendVTables and customDecodingBackendCount fields. The caller is responsible for cleaning up memory by calling FreeCustomDecodingBackendVTables().

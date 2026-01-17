@@ -6,7 +6,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>0618</NoWarn>
     <PackageId>JAJ.Packages.MiniAudioEx</PackageId>
-    <Version>2.6.7</Version>
+    <Version>3.0.0</Version>
     <Authors>W.M.R Jap-A-Joe</Authors>
     <PackageTags>miniaudio miniaudioex audio sound playback spatial dsp effects wav mp3 flac ogg</PackageTags>
     <Description>
