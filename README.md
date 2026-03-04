@@ -27,8 +27,11 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 3.0.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 3.1.0
 ```
+
+# Changes in 3.1.0
+- Updated miniaudio to 0.11.25.
 
 # Changes in 3.0.0
 - Updated miniaudio to 0.11.24.
