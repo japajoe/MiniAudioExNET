@@ -51,6 +51,7 @@ using System.Collections.Generic;
 using MiniAudioEx.Native;
 using MiniAudioEx.DSP.Effects;
 using MiniAudioEx.DSP.Generators;
+using System.Runtime.InteropServices;
 
 namespace MiniAudioEx.Core.StandardAPI
 {
@@ -511,7 +512,12 @@ namespace MiniAudioEx.Core.StandardAPI
             if (clip.Handle != IntPtr.Zero)
                 MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[0].handle, clip.Handle, clip.DataSize);
             else
-                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[0].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+            {
+                if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    MiniAudioExNative.ma_ex_audio_source_play_from_file_w(sources[0].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                else
+                    MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[0].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+            }
         }
 
         /// <summary>
@@ -534,7 +540,12 @@ namespace MiniAudioEx.Core.StandardAPI
             if (clip.Handle != IntPtr.Zero)
                 MiniAudioExNative.ma_ex_audio_source_play_from_memory(sources[currentIndex].handle, clip.Handle, clip.DataSize);
             else
-                MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[currentIndex].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    MiniAudioExNative.ma_ex_audio_source_play_from_file_w(sources[currentIndex].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+                else
+                    MiniAudioExNative.ma_ex_audio_source_play_from_file(sources[currentIndex].handle, clip.FilePath, clip.StreamFromDisk ? (uint)1 : 0);
+            }
 
             if (++currentIndex >= sources.Count - 1)
             {
