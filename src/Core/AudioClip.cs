@@ -48,7 +48,12 @@ namespace MiniAudioEx.Core
             sound = new ma_sound_ptr(true);
 
             ma_sound_flags flags = streamFromDisk ? ma_sound_flags.stream : ma_sound_flags.decode;
-            ma_result result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, default, default, sound);
+            ma_result result = ma_result.success;
+            
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                result = MiniAudio.ma_sound_init_from_file_w(context.Engine, filePath, flags, default, default, sound);
+            else
+                result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, default, default, sound);
 
             if (result != ma_result.success)
             {
@@ -136,18 +141,17 @@ namespace MiniAudioEx.Core
 
             if(flags == ma_sound_flags.stream)
             {
-                result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, soundGroup, default, other.sound);
+                if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    result = MiniAudio.ma_sound_init_from_file_w(context.Engine, filePath, flags, soundGroup, default, other.sound);
+                else
+                    result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, soundGroup, default, other.sound);
             }
             else
             {
                 if(dataHandle == IntPtr.Zero)
-                {
                     result = MiniAudio.ma_sound_init_copy(context.Engine, sound, flags, soundGroup, other.sound);
-                }
                 else
-                {
                     result = MiniAudio.ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, soundGroup, default, other.sound);
-                }
             }
             
             return result == ma_result.success;
