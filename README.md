@@ -14,6 +14,9 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Effects processing, including reverb/delay/phaser/filters etc.
 - Exposes many native miniaudio API calls.
 
+# Note
+If you find something is missing from the API, please open an issue. This library is made by hand and does not rely on automatically generated bindings. I might not have implemented something because I didn't think it was crucial, but I am happy to add it on request.
+
 # Platforms
 - Windows x86_64
 - Windows x86

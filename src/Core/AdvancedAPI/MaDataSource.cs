@@ -73,7 +73,6 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			onSeek = null;
 			onGetDataFormat = null;
 			onGetCursor = null;
-
 		}
 	}
 }

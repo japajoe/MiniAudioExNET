@@ -187,6 +187,25 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			return result;
 		}
 
+		public ma_result InitializeCopy(MaEngine engine, MaSound existingSound, ma_sound_flags flags, MaSoundGroup group = null)
+		{
+			ma_result result = IsInitialized(engine);
+
+			if (result != ma_result.success)
+				return result;
+
+			ma_sound_group_ptr pGroup = group == null ? default : group.Handle;
+
+			result = MiniAudioNative.ma_sound_init_copy(engine.Handle, existingSound.handle, flags, pGroup, handle);
+
+			if (result != ma_result.success)
+				return result;
+
+			isSoundLoaded = true;
+
+			return result;
+		}
+
 		public ma_result Start()
 		{
 			return MiniAudioNative.ma_sound_start(handle);
