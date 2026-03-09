@@ -101,7 +101,7 @@ namespace MiniAudioEx.DSP.Effects
 			}
 		}
 
-		public Chorus(float baseDelay = 6000)
+		public Chorus(float sampleRate, float baseDelay = 6000)
 		{
 			delayLines = new DelayLine[2];
 			mods = new Oscillator[2];
@@ -115,7 +115,7 @@ namespace MiniAudioEx.DSP.Effects
 
 			for (int i = 0; i < mods.Length; i++)
 			{
-				mods[i] = new Oscillator(WaveType.Sine, 0.2f, 1.0f);
+				mods[i] = new Oscillator(WaveType.Sine, 0.2f, 1.0f, sampleRate);
 			}
 
 			delayLines[0].MaximumDelay = (UInt32)(baseDelay * 1.414f) + 2;

@@ -47,8 +47,8 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
+using MiniAudioEx.Utilities;
 
 namespace MiniAudioEx.DSP.Effects
 {
@@ -100,9 +100,9 @@ namespace MiniAudioEx.DSP.Effects
             }
         }
 
-        public FilterEffect(FilterType type, float frequency, float q, float gainDB)
+        public FilterEffect(FilterType type, float frequency, float q, float gainDB, int sampleRate)
         {
-            filter = new Filter(type, frequency, q, gainDB, AudioContext.SampleRate);
+            filter = new Filter(type, frequency, q, gainDB, sampleRate);
         }
 
         public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)

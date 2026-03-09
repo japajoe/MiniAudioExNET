@@ -47,7 +47,7 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioEx.Native;
+using MiniAudioEx.Utilities;
 
 namespace MiniAudioEx.DSP.Generators
 {

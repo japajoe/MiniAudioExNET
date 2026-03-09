@@ -1,10 +1,4 @@
 /.vscode
 /bin
 /obj
-/test
-/src/AudioSourceX.cs.bak
-pack.sh
-run.sh
-MiniAudioExNETTesting.csproj
-MiniAudioEx.sln
-miniaudioexnet.sln
+MiniAudioEx-dev.sln

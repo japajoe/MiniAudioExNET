@@ -48,6 +48,7 @@
 
 using System;
 using MiniAudioEx.Native;
+using MiniAudioEx.Utilities;
 
 namespace MiniAudioEx.DSP.Effects
 {
@@ -73,9 +74,9 @@ namespace MiniAudioEx.DSP.Effects
 			set => chorus.ModFrequency = value;
 		}
 
-		public ChorusEffect(UInt32 baseDelay = 6000)
+		public ChorusEffect(float sampleRate, UInt32 baseDelay = 6000)
 		{
-			chorus = new Chorus(baseDelay);
+			chorus = new Chorus(sampleRate, baseDelay);
 		}
 
 		public void OnProcess(NativeArray<float> framesIn, uint frameCountIn, NativeArray<float> framesOut, ref uint frameCountOut, uint channels)

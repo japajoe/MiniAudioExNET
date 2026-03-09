@@ -47,8 +47,8 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
+using MiniAudioEx.Utilities;
 
 namespace MiniAudioEx.DSP.Effects
 {
@@ -134,7 +134,7 @@ namespace MiniAudioEx.DSP.Effects
         public Filter(FilterType type, float frequency, float q, float gainDB, int sampleRate = 0)
         {
             if(sampleRate <= 0)
-                this.sampleRate = AudioContext.SampleRate;
+                this.sampleRate = 44100;
             if(frequency <= 0.0f)
                 throw new ArgumentException("Frequency must be greater than 0");
             if(sampleRate <= (frequency * 2))
@@ -143,7 +143,7 @@ namespace MiniAudioEx.DSP.Effects
                 throw new ArgumentException("Q can not be zero");
 
             this.type = type;
-            this.sampleRate = sampleRate == 0 ? AudioContext.SampleRate : sampleRate;
+            this.sampleRate = sampleRate == 0 ? 44100 : sampleRate;
             this.frequency = frequency;
             this.q = q;
             this.gainDB = gainDB > 0.0f ? gainDB : 6.0f;

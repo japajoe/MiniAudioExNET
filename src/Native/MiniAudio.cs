@@ -642,14 +642,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate(Marshal.SizeOf<UInt32>());
+            pointer = MiniAudio.ma_allocate(Marshal.SizeOf<UInt32>());
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -677,14 +677,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.async_notification);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.async_notification);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -706,14 +706,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.biquad_coefficient);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.biquad_coefficient);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -740,14 +740,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.channel);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.channel);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -769,7 +769,7 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.context);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.context);
             return pointer != IntPtr.Zero;
         }
 
@@ -777,7 +777,7 @@ namespace MiniAudioEx.Native
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -804,14 +804,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.data_source);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.data_source);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -833,14 +833,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.data_source_node);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.data_source_node);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -867,14 +867,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.data_source_vtable);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.data_source_vtable);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -901,14 +901,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.decoder);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.decoder);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -935,14 +935,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.decoding_backend_vtable);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.decoding_backend_vtable);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -969,14 +969,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.device);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1003,14 +1003,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_id);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.device_id);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1037,14 +1037,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_notification);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.device_notification);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1066,14 +1066,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_descriptor);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.device_descriptor);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1100,14 +1100,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.device_info);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.device_info);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1134,14 +1134,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.effect_node);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.effect_node);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1168,14 +1168,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.engine);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.engine);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1202,14 +1202,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.fader);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.fader);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1236,14 +1236,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.fence);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.fence);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1265,14 +1265,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.gainer);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.gainer);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1299,14 +1299,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.log);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.log);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1333,14 +1333,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.lpf1);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.lpf1);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1367,14 +1367,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.lpf2);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.lpf2);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1401,14 +1401,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.node);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1430,14 +1430,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_base);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.node_base);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1464,14 +1464,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_graph);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.node_graph);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1498,14 +1498,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_input_bus);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.node_input_bus);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1532,14 +1532,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_output_bus);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.node_output_bus);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1566,14 +1566,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.node_vtable);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.node_vtable);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1600,14 +1600,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.panner);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.panner);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1634,14 +1634,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.procedural_data_source);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.procedural_data_source);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1668,14 +1668,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.resampling_backend_vtable);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.resampling_backend_vtable);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1697,14 +1697,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.resource_manager);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.resource_manager);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1726,14 +1726,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.resource_manager_data_source);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.resource_manager_data_source);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1756,14 +1756,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.sound);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.sound);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1790,14 +1790,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.sound_inlined);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.sound_inlined);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1825,14 +1825,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.sound_group);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.sound_group);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1859,14 +1859,14 @@ namespace MiniAudioEx.Native
         }
         public bool Allocate()
         {
-            pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.spatializer);
+            pointer = MiniAudio.ma_allocate_type(ma_allocation_type.spatializer);
             return pointer != IntPtr.Zero;
         }
         public void Free()
         {
             if (pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_deallocate_type(pointer);
+                MiniAudio.ma_deallocate_type(pointer);
                 pointer = IntPtr.Zero;
             }
         }
@@ -1893,14 +1893,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.spatializer_listener);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.spatializer_listener);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1927,14 +1927,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.stack);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.stack);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -1961,14 +1961,14 @@ namespace MiniAudioEx.Native
 		}
 		public bool Allocate()
 		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.vfs);
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.vfs);
 			return pointer != IntPtr.Zero;
 		}
 		public void Free()
 		{
 			if (pointer != IntPtr.Zero)
 			{
-				MiniAudioNative.ma_deallocate_type(pointer);
+				MiniAudio.ma_deallocate_type(pointer);
 				pointer = IntPtr.Zero;
 			}
 		}
@@ -2212,7 +2212,7 @@ namespace MiniAudioEx.Native
         public ma_format format;
         public ma_uint32 channels;
         public ma_uint32 sampleRate;
-        private fixed ma_channel channelMap[MiniAudioNative.MA_MAX_CHANNELS];
+        private fixed ma_channel channelMap[MiniAudio.MA_MAX_CHANNELS];
         public ma_uint32 periodSizeInFrames;
         public ma_uint32 periodSizeInMilliseconds;
         public ma_uint32 periodCount;
@@ -2384,7 +2384,7 @@ namespace MiniAudioEx.Native
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    if (index < 0 || index >= MiniAudioNative.MA_ENGINE_MAX_LISTENERS)
+                    if (index < 0 || index >= MiniAudio.MA_ENGINE_MAX_LISTENERS)
                     {
                         throw new IndexOutOfRangeException("Index must be between 0 and 3.");
                     }
@@ -2468,7 +2468,7 @@ namespace MiniAudioEx.Native
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    if (index < 0 || index >= MiniAudioNative.MA_MAX_LOG_CALLBACKS)
+                    if (index < 0 || index >= MiniAudio.MA_MAX_LOG_CALLBACKS)
                     {
                         throw new IndexOutOfRangeException("Index must be between 0 and 3.");
                     }
@@ -2753,7 +2753,7 @@ namespace MiniAudioEx.Native
     {
         /* Basic info. This is the only information guaranteed to be filled in during device enumeration. */
         public ma_device_id id;
-        public fixed byte name[MiniAudioNative.MA_MAX_DEVICE_NAME_LENGTH + 1];
+        public fixed byte name[MiniAudio.MA_MAX_DEVICE_NAME_LENGTH + 1];
         public ma_bool32 isDefault;
         public ma_uint32 nativeDataFormatCount;
         public ma_native_data_format_array nativeDataFormats;
@@ -2766,7 +2766,7 @@ namespace MiniAudioEx.Native
                 {
                     // Find length up to null terminator
                     int len = 0;
-                    while (len < MiniAudioNative.MA_MAX_DEVICE_NAME_LENGTH && pName[len] != 0) len++;
+                    while (len < MiniAudio.MA_MAX_DEVICE_NAME_LENGTH && pName[len] != 0) len++;
 
                     if (len == 0) return string.Empty;
 
@@ -3701,7 +3701,7 @@ namespace MiniAudioEx.Native
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    if (index < 0 || index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                    if (index < 0 || index >= MiniAudio.MA_MAX_NODE_LOCAL_BUS_COUNT)
                     {
                         throw new IndexOutOfRangeException("Index must be between 0 and 1.");
                     }
@@ -3723,7 +3723,7 @@ namespace MiniAudioEx.Native
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    if (index < 0 || index >= MiniAudioNative.MA_MAX_NODE_LOCAL_BUS_COUNT)
+                    if (index < 0 || index >= MiniAudio.MA_MAX_NODE_LOCAL_BUS_COUNT)
                     {
                         throw new IndexOutOfRangeException("Index must be between 0 and 1.");
                     }
@@ -3881,7 +3881,7 @@ namespace MiniAudioEx.Native
         public IntPtr _pHeap;
     }
 
-    public static class MiniAudioNative
+    public static class MiniAudio
     {
         public const int MA_MAX_CHANNELS = 254;
         public const int MA_MAX_DEVICE_NAME_LENGTH = 255;

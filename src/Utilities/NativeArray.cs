@@ -46,105 +46,77 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using MiniAudioEx.Core.StandardAPI;
-using MiniAudioEx.Native;
+using System;
 
-namespace MiniAudioEx.DSP.Generators
+namespace MiniAudioEx.Utilities
 {
-    public sealed class FMGenerator : IAudioGenerator
+    public unsafe ref struct NativeArray<T> where T : unmanaged
     {
-        private Oscillator carrier;
-        private ConcurrentList<Oscillator> operators;
+        internal void* _pointer;
+        /// <summary>The number of elements this NativeArray contains.</summary>
+        private readonly int _length;
 
-        public Oscillator Carrier
+        public int Length
         {
             get
             {
-                return carrier;
+                return _length;
             }
         }
 
-        /// <summary>
-        /// Gets the number of operators.
-        /// </summary>
-        /// <value></value>
-        public int Count
+        public bool IsEmpty
         {
             get
             {
-                return operators.Count;
+                return 0 >= (uint)_length;
             }
         }
 
-        public Oscillator this[int index]
+        public IntPtr Pointer
         {
             get
             {
-                if ((uint)index >= (uint)operators.Count)
+                return new IntPtr(_pointer);
+            }
+        }
+
+        public ref T this[int index]
+        {
+            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (index >= _length || index < 0)
                     new System.IndexOutOfRangeException();
-                return operators[index];
+                return ref ((T*)_pointer)[index];
             }
         }
 
-        public FMGenerator(WaveType type, float frequency, float amplitude)
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public NativeArray(void* pointer, int length)
         {
-            carrier = new Oscillator(type, frequency, amplitude);
-            operators = new ConcurrentList<Oscillator>();
+            _pointer = pointer;
+            _length = length;
         }
-        
-        /// <summary>
-        /// /// Resets the phase.
-        /// </summary>
-        public void Reset()
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public NativeArray(System.IntPtr pointer, int length)
         {
-            carrier.Reset();
-            for(int i = 0; i < operators.Count; i++)
+            _pointer = pointer.ToPointer();
+            _length = length;
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public void CopyTo(NativeArray<T> destination)
+        {
+            if ((uint)_length <= (uint)destination.Length)
             {
-                operators[i].Reset();
+                long byteCount = _length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+                Buffer.MemoryCopy(_pointer, (void*)destination.Pointer, byteCount, byteCount);
             }
-        }
-
-        public void AddOperator(WaveType type, float frequency, float depth)
-        {
-            operators.Add(new Oscillator(type, frequency, depth));
-        }
-
-        public void RemoveOperator(int index)
-        {
-            if(index >= 0 && index < operators.Count)
+            else
             {
-                var target = operators[index];
-                operators.Remove(target);
+                throw new ArgumentException("Destination is too short.", "destination");
             }
-        }
-
-        public void OnGenerate(NativeArray<float> framesOut, ulong frameCount, int channels)
-        {
-            float sample = 0;
-
-            for(int i = 0; i < framesOut.Length; i+=channels)
-            {
-                sample = GetModulatedSample();
-
-                for(int j = 0; j < channels; j++)
-                {
-                    framesOut[i+j] = sample;
-                }
-            }
-        }
-
-        public void OnDestroy() {}
-
-        private float GetModulatedSample()
-        {
-            float modulationSum = 0.0f;
-
-            for (int i = 0; i < operators.Count; i++)
-            {
-                modulationSum += operators[i].GetValue();
-            }
-
-            return carrier.GetModulatedValue(modulationSum);
         }
     }
 }
