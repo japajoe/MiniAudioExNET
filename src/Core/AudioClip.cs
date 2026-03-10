@@ -11,8 +11,15 @@ namespace MiniAudioEx.Core
         private IntPtr dataHandle;
         private UInt64 dataLength;
         private bool streamFromDisk;
+        private UInt64 pcmLength;
         private UInt64 hashCode;
         public ma_sound_ptr Sound => sound;
+
+        /// <summary>
+        /// Gets the length of the audio clip in PCM samples.
+        /// </summary>
+        /// <value></value>
+        public UInt64 LengthSamples => pcmLength;
         public UInt64 HashCode => hashCode;
 
         public AudioClip()
@@ -21,6 +28,7 @@ namespace MiniAudioEx.Core
             dataHandle = IntPtr.Zero;
             dataLength = 0;
             streamFromDisk = false;
+            pcmLength = 0;
             hashCode = 0;
         }
 
@@ -60,6 +68,8 @@ namespace MiniAudioEx.Core
                 Dispose();
                 throw new Exception("Failed to initialize AudioClip: " + result);
             }
+
+            MiniAudio.ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
 
             hashCode = (UInt64)filePath.GetHashCode();
         }
@@ -102,6 +112,8 @@ namespace MiniAudioEx.Core
                 throw new Exception("Failed to initialize AudioClip: " + result);
             }
 
+            MiniAudio.ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
+
             hashCode = GetHashCode(data, data.Length);
         }
 
@@ -133,6 +145,7 @@ namespace MiniAudioEx.Core
             other.streamFromDisk = streamFromDisk;
             other.dataLength = dataLength;
             other.filePath = filePath;
+            other.pcmLength = pcmLength;
             other.hashCode = hashCode;
 
             ma_sound_flags flags = streamFromDisk ? ma_sound_flags.stream : ma_sound_flags.decode;

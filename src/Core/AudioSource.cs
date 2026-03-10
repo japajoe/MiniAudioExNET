@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using MiniAudioEx.DSP.Effects;
-using MiniAudioEx.DSP.Generators;
 using MiniAudioEx.Native;
 using MiniAudioEx.Utilities;
+using MiniAudioEx.DSP.Effects;
+using MiniAudioEx.DSP.Generators;
 
 namespace MiniAudioEx.Core
 {
@@ -25,10 +25,24 @@ namespace MiniAudioEx.Core
         Pan
     }
 
+    /// <summary>
+    /// This class is used to play sounds.
+    /// </summary>
     public sealed class AudioSource : IDisposable
     {
+        /// <summary>
+        /// Callback handler for when the playback has finished. This does not trigger if the AudioSource is set to Loop.
+        /// </summary>
         public event AudioEndEvent End;
+
+        /// <summary>
+        /// Callback handler for generating procedural audio when using the 'Play()' method.
+        /// </summary>
         public event AudioReadEvent Read;
+
+        /// <summary>
+        /// Callback handler for implementing custom effects.
+        /// </summary>
         public event AudioProcessEvent Process;
 
         private class Sound
@@ -55,6 +69,10 @@ namespace MiniAudioEx.Core
         private int currentIndex;
         private bool loop;
 
+        /// <summary>
+        /// Indicates whether the source is playing audio or not.
+        /// </summary>
+        /// <value></value>
         public bool IsPlaying
         {
             get
@@ -64,94 +82,157 @@ namespace MiniAudioEx.Core
                     if (MiniAudio.ma_sound_is_playing(sounds[i].clip.Sound) > 0)
                         return true;
                 }
+                if (MiniAudio.ma_sound_is_playing(proceduralSound) > 0)
+                    return true;
                 return false;
             }
         }
 
+        /// <summary>
+        /// Gets or sets whether the audio should loop. If true, then the 'End' event will not be called. If the Play() overload is used, this property has no effect because the audio will loop regardless. Take note that this setting only applies to the first source, so it may cause undesirable results when using the PlayOneShot method.
+        /// </summary>
+        /// <value></value>
         public bool Loop
         {
             get => loop;
             set => loop = value;
         }
 
+        /// <summary>
+        /// Gets or sets the current position of the playback cursor in PCM samples.
+        /// </summary>
+        /// <value></value>
         public UInt64 Cursor
         {
             get => MiniAudio.ma_sound_get_time_in_pcm_frames(sounds[0].clip.Sound);
             set => MiniAudio.ma_sound_seek_to_pcm_frame(sounds[0].clip.Sound, value);
         }
 
+        /// <summary>
+        /// Gets or sets the pitch of the sound.
+        /// </summary>
+        /// <value></value>
         public float Pitch
         {
             get => MiniAudio.ma_sound_group_get_pitch(group);
             set => MiniAudio.ma_sound_group_set_pitch(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the volume of the sound.
+        /// </summary>
+        /// <value></value>
         public float Volume
         {
             get => MiniAudio.ma_sound_group_get_volume(group);
             set => MiniAudio.ma_sound_group_set_volume(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the pan of the sound.
+        /// </summary>
+        /// <value></value>
         public float Pan
         {
             get => MiniAudio.ma_sound_group_get_pan(group);
             set => MiniAudio.ma_sound_group_set_pan(group, value);
         }
 
+
+        /// <summary>
+        /// Gets or sets the mathematical model used to simulate the attenuation of sound over distance.
+        /// </summary>
+        /// <value></value>
         public AttenuationModel AttenuationModel
         {
             get => (AttenuationModel)MiniAudio.ma_sound_group_get_attenuation_model(group);
             set => MiniAudio.ma_sound_group_set_attenuation_model(group, (ma_attenuation_model)value);
         }
 
+        /// <summary>
+        /// Gets or sets the pan of the sound.
+        /// </summary>
+        /// <value></value>
         public PanMode PanMode
         {
             get => (PanMode)MiniAudio.ma_sound_group_get_pan_mode(group);
             set => MiniAudio.ma_sound_group_set_pan_mode(group, (ma_pan_mode)value);
         }
 
+        /// <summary>
+        /// Gets or sets whether this source has spatial audio enabled or not.
+        /// </summary>
+        /// <value></value>
         public bool Spatial
         {
             get => MiniAudio.ma_sound_group_is_spatialization_enabled(group) > 0;
             set => MiniAudio.ma_sound_group_set_spatialization_enabled(group, value ? (uint)1 : 0);
         }
 
+        /// <summary>
+        /// Gets or sets the intensity or strength of the simulated Doppler effect applied to the audio if Spatial is set to true.
+        /// </summary>
+        /// <value></value>
         public float DopplerFactor
         {
             get => MiniAudio.ma_sound_group_get_doppler_factor(group);
             set => MiniAudio.ma_sound_group_set_doppler_factor(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the distance from the audio source at which the volume of the audio starts to attenuate. Sounds closer to or within this minimum distance are heard at full volume without any attenuation applied.
+        /// </summary>
+        /// <value></value>
         public float MinDistance
         {
             get => MiniAudio.ma_sound_group_get_min_distance(group);
             set => MiniAudio.ma_sound_group_set_min_distance(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the distance from the audio source beyond which the audio is no longer audible or significantly attenuated. Sounds beyond this maximum distance are either inaudible or heard at greatly reduced volume.
+        /// </summary>
+        /// <value></value>
         public float MaxDistance
         {
             get => MiniAudio.ma_sound_group_get_max_distance(group);
             set => MiniAudio.ma_sound_group_set_max_distance(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the roll off value, which controls how quickly a sound rolls off as it moves away from the listener.
+        /// </summary>
+        /// <value></value>
         public float RollOff
         {
             get => MiniAudio.ma_sound_group_get_rolloff(group);
             set => MiniAudio.ma_sound_group_set_rolloff(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the min gain which is applied to the spatialization.
+        /// </summary>
+        /// <value></value>
         public float MinGain
         {
             get => MiniAudio.ma_sound_group_get_min_gain(group);
             set => MiniAudio.ma_sound_group_set_min_gain(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the min gain which is applied to the spatialization.
+        /// </summary>
+        /// <value></value>
         public float MaxGain
         {
             get => MiniAudio.ma_sound_group_get_max_gain(group);
             set => MiniAudio.ma_sound_group_set_max_gain(group, value);
         }
 
+        /// <summary>
+        /// Gets or sets the position of the source, used for calculating spatial sound.
+        /// </summary>
+        /// <value></value>
         public Vector3f Position
         {
             get
@@ -166,6 +247,10 @@ namespace MiniAudioEx.Core
             }
         }
 
+        /// <summary>
+        /// Gets or sets the direction of the source, used for calculation spatial sound.
+        /// </summary>
+        /// <value></value>
         public Vector3f Direction
         {
             get
@@ -176,6 +261,10 @@ namespace MiniAudioEx.Core
             set => MiniAudio.ma_sound_group_set_direction(group, value.x, value.y, value.z);
         }
 
+        /// <summary>
+        /// The velocity of the source, used for calculating spatial sound.
+        /// </summary>
+        /// <value></value>
         public Vector3f Velocity
         {
             get
@@ -186,6 +275,9 @@ namespace MiniAudioEx.Core
             set => MiniAudio.ma_sound_group_set_velocity(group, value.x, value.y, value.z);
         }
 
+        /// <summary>
+        /// Creates and AudioSourceGroup instance.
+        /// </summary>
         public AudioSource()
         {
             context = AudioContext.GetCurrent();
@@ -225,7 +317,7 @@ namespace MiniAudioEx.Core
 
             loop = false;
 
-            currentIndex = 0;
+            currentIndex = 1;
 
             context.Add(this);
         }
@@ -257,8 +349,20 @@ namespace MiniAudioEx.Core
                 MiniAudio.ma_sound_group_uninit(group);
                 group.Free();
             }
+
+            for (int i = 0; i < effects.Count; i++)
+                effects[i].OnDestroy();
+
+            for (int i = 0; i < generators.Count; i++)
+                generators[i].OnDestroy();
+            
+            effects.Clear();
+            generators.Clear();
         }
 
+        /// <summary>
+        /// Use this method if you registered a method to the Read callback to generate audio.
+        /// </summary>
         public void Play()
         {
             Stop();
@@ -267,6 +371,10 @@ namespace MiniAudioEx.Core
             MiniAudio.ma_sound_start(proceduralSound);
         }
 
+        /// <summary>
+        /// Plays an AudioClip.
+        /// </summary>
+        /// <param name="clip">The AudioClip to play.</param>
         public void Play(AudioClip clip)
         {
             Stop();
@@ -276,8 +384,22 @@ namespace MiniAudioEx.Core
             MiniAudio.ma_sound_start(sounds[0].clip.Sound);
         }
 
+        /// <summary>
+        /// Plays an AudioClip while allowing overlapping sounds.
+        /// </summary>
+        /// <param name="clip">The AudioClip to play.</param>
         public void PlayOneShot(AudioClip clip)
         {
+            // The first clip in the list is reserved for regular playback
+            // We don't play this at all when using PlayOneShot
+            if(MiniAudio.ma_sound_is_playing(sounds[0].clip.Sound) > 0)
+                MiniAudio.ma_sound_stop(sounds[0].clip.Sound);
+            
+            // The procedural sound is only used for audio generation
+            // We don't play this at all when using PlayOneShot
+            if(MiniAudio.ma_sound_is_playing(proceduralSound) > 0)
+                MiniAudio.ma_sound_stop(proceduralSound);
+
             SetAtEnd(currentIndex, false);
             Invalidate(clip);
 
@@ -292,9 +414,12 @@ namespace MiniAudioEx.Core
             MiniAudio.ma_sound_start(sounds[currentIndex].clip.Sound);
 
             if (++currentIndex >= sounds.Count - 1)
-                currentIndex = 0;
+                currentIndex = 1;
         }
 
+        /// <summary>
+        /// Stop the AudioSource playback, note that this method does not set the cursor back to 0 so it could be used as a pause method.
+        /// </summary>
         public void Stop()
         {
             MiniAudio.ma_sound_stop(proceduralSound);
@@ -321,16 +446,28 @@ namespace MiniAudioEx.Core
             }
         }
 
+        /// <summary>
+        /// A thread safe method to add an IAudioEffect.
+        /// </summary>
+        /// <param name="effect"></param>
         public void AddEffect(IAudioEffect effect)
         {
             effects.Add(effect);
         }
 
+        /// <summary>
+        /// A thread safe method to remove an IAudioEffect.
+        /// </summary>
+        /// <param name="effect"></param>
         public void RemoveEffect(IAudioEffect effect)
         {
             effects.Remove(effect);
         }
 
+        /// <summary>
+        /// A thread safe method to remove an IAudioEffect by its index.
+        /// </summary>
+        /// <param name="effect"></param>
         public void RemoveEffect(int index)
         {
             if (index >= 0 && index < effects.Count)
@@ -340,21 +477,36 @@ namespace MiniAudioEx.Core
             }
         }
 
+        /// <summary>
+        /// A thread safe method to remove all IAudioEffect instances.
+        /// </summary>
         public void RemoveEffects()
         {
             effects.Clear();
         }
 
+        /// <summary>
+        /// A thread safe method to add an IAudioGenerator.
+        /// </summary>
+        /// <param name="effect"></param>
         public void AddGenerator(IAudioGenerator generator)
         {
             generators.Add(generator);
         }
 
+        /// <summary>
+        /// A thread safe method to remove an IAudioGenerator.
+        /// </summary>
+        /// <param name="effect"></param>
         public void RemoveGenerator(IAudioGenerator generator)
         {
             generators.Remove(generator);
         }
 
+        /// <summary>
+        /// A thread safe method to remove an IAudioGenerator by its index.
+        /// </summary>
+        /// <param name="effect"></param>
         public void RemoveGenerator(int index)
         {
             if (index >= 0 && index < generators.Count)
@@ -364,6 +516,9 @@ namespace MiniAudioEx.Core
             }
         }
 
+        /// <summary>
+        /// A thread safe method to remove all IAudioGenerator instances.
+        /// </summary>
         public void RemoveGenerators()
         {
             generators.Clear();

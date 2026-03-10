@@ -3,6 +3,9 @@ using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core
 {
+    /// <summary>
+    /// This class represents a point in the 3D space where audio is perceived or heard.
+    /// </summary>
     public sealed class AudioListener
     {
         private AudioContext context;
@@ -20,12 +23,20 @@ namespace MiniAudioEx.Core
             Enabled = true;
         }
 
+        /// <summary>
+        /// If true, then spatialization is enabled for this listener.
+        /// </summary>
+        /// <value></value>
         public bool Enabled
         {
             get => MiniAudio.ma_engine_listener_is_enabled(context.Engine, 0) > 0;
             set => MiniAudio.ma_engine_listener_set_enabled(context.Engine, 0, value ? (UInt32)1 : 0);
         }
 
+        /// <summary>
+        /// Gets or sets the position of the listener.
+        /// </summary>
+        /// <value></value>
         public Vector3f Position
         {
             get
@@ -36,6 +47,11 @@ namespace MiniAudioEx.Core
             set => MiniAudio.ma_engine_listener_set_position(context.Engine, 0, value.x, value.y, value.z);
         }
 
+
+        /// <summary>
+        /// Gets or sets the direction that the listener is facing.
+        /// </summary>
+        /// <value></value>
         public Vector3f Direction
         {
             get
@@ -46,6 +62,11 @@ namespace MiniAudioEx.Core
             set => MiniAudio.ma_engine_listener_set_direction(context.Engine, 0, value.x, value.y, value.z);
         }
 
+
+        /// <summary>
+        /// Gets or sets the velocity of the listener.
+        /// </summary>
+        /// <value></value>
         public Vector3f Velocity
         {
             get
@@ -56,6 +77,10 @@ namespace MiniAudioEx.Core
             set => MiniAudio.ma_engine_listener_set_velocity(context.Engine, 0, value.x, value.y, value.z);
         }
 
+        /// <summary>
+        /// Gets or sets the up direction of the world. By default this is 0,1,0.
+        /// </summary>
+        /// <value></value>
         public Vector3f WorldUp
         {
             get

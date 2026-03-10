@@ -51,6 +51,76 @@ using MiniAudioEx.Utilities;
 
 namespace MiniAudioEx.DSP.Effects
 {
+    public struct ReverbPreset
+    {
+        public float roomSize;
+        public float damping;
+        public float wet;
+        public float dry;
+        public float width;
+        public float inputWidth;
+		
+		public static ReverbPreset SmallRoom()
+		{
+			ReverbPreset preset;
+			preset.roomSize = 0.2f;    // Small space
+			preset.damping = 0.5f;     // Significant high-frequency absorption
+			preset.wet = 0.3f;         // Subtle reverb level
+			preset.dry = 0.9f;         // Strong original signal
+			preset.width = 0.5f;       // Moderate stereo spread
+			preset.inputWidth = 0.2f;  // Keep input fairly centered
+			return preset;
+		}
+
+		public static ReverbPreset LargeHall()
+		{
+			ReverbPreset preset;
+			preset.roomSize = 0.85f;   // Large expansive space
+			preset.damping = 0.2f;     // Low damping for a bright tail
+			preset.wet = 0.4f;         // Noticeable reverb
+			preset.dry = 0.7f;         // Slightly reduced dry signal
+			preset.width = 1.0f;       // Full stereo width
+			preset.inputWidth = 0.8f;  // Wide input stage
+			return preset;
+		}
+
+		public static ReverbPreset Cathedral()
+		{
+			ReverbPreset preset;
+			preset.roomSize = 0.95f;   // Maximum decay time
+			preset.damping = 0.15f;    // Very little absorption
+			preset.wet = 0.5f;         // High wet mix
+			preset.dry = 0.5f;         // Balanced with dry signal
+			preset.width = 1.0f;       // Full stereo immersion
+			preset.inputWidth = 1.0f;  // Maximum input widening
+			return preset;
+		}
+
+		public static ReverbPreset Plate()
+		{
+			ReverbPreset preset;
+			preset.roomSize = 0.5f;    // Mid-size simulated plate
+			preset.damping = 0.1f;     // Very bright, metallic response
+			preset.wet = 0.4f;         // Distinct effect
+			preset.dry = 0.8f;         // High clarity for the source
+			preset.width = 0.7f;       // Slightly narrower than a hall
+			preset.inputWidth = 0.5f;  // Normal stereo input
+			return preset;
+		}
+
+		public static ReverbPreset Tunnel()
+		{
+			ReverbPreset preset;
+			preset.roomSize = 0.9f;    // Long narrow space
+			preset.damping = 0.8f;     // High damping for a dark, muddy sound
+			preset.wet = 0.6f;         // Heavy reverb presence
+			preset.dry = 0.4f;         // Reverb starts to overpower dry
+			preset.width = 0.3f;       // Narrow output for "tunnel" feel
+			preset.inputWidth = 0.1f;  // Very narrow input
+			return preset;
+		}
+    }
+
     public sealed class ReverbEffect: IAudioEffect
     {
         private Reverb reverb;
@@ -113,5 +183,15 @@ namespace MiniAudioEx.DSP.Effects
 		}
 
         public void OnDestroy() { }
+
+		public void SetPreset(ReverbPreset preset)
+		{
+			RoomSize = preset.roomSize;
+			Damping = preset.damping;
+			Wet = preset.wet;
+			Dry = preset.dry;
+			Width = preset.width;
+			InputWidth = preset.inputWidth;
+		}
 	}
 }
