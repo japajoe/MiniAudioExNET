@@ -404,7 +404,7 @@ namespace MiniAudioEx.Core.StandardAPI
         }
 
         /// <summary>
-        /// Creates and AudioSourceGroup instance.
+        /// Creates an AudioSource instance.
         /// </summary>
         /// <param name="maxSources">The maximum number of sounds that can be played simultaneuously.</param>
         public AudioSource(Int32 maxSources = 16)
