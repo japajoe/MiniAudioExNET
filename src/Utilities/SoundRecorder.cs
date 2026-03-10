@@ -47,8 +47,6 @@
 // SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using MiniAudioEx.Core.AdvancedAPI;
 using MiniAudioEx.DSP.Effects;
 using MiniAudioEx.Native;
@@ -127,23 +125,25 @@ namespace MiniAudioEx.Utilities
 
 			var device = GetAvailableDevice();
 
-			Console.WriteLine(device.GetName());
+			Console.WriteLine(device.Name);
 
 			var captureDeviceConfig = MiniAudioNative.ma_device_config_init(ma_device_type.capture);
-			captureDeviceConfig.capture.pDeviceID = device.pDeviceId;
+			captureDeviceConfig.capture.pDeviceID = new ma_device_id_ptr(true);
+			*captureDeviceConfig.capture.pDeviceID.Get() = device.deviceInfo.id;
 			captureDeviceConfig.capture.channels = 2;
 			captureDeviceConfig.capture.format = ma_format.f32;
 			captureDeviceConfig.sampleRate = 44100;
-			//captureDeviceConfig.pUserData = context.pointer;
 			captureDeviceConfig.pUserData = IntPtr.Zero;
 			captureDeviceConfig.SetDataCallback(callback);
 
 			if (MiniAudioNative.ma_device_init(context, ref captureDeviceConfig, captureDevice) != ma_result.success)
 			{
+				captureDeviceConfig.capture.pDeviceID.Free();
 				Console.WriteLine("Failed to initialize the audio capture device");
 				return false;
 			}
 
+			captureDeviceConfig.capture.pDeviceID.Free();
 
 			return false;
 		}
@@ -231,7 +231,6 @@ namespace MiniAudioEx.Utilities
 
 			const int channels = 2;
 			int length = (int)(frameCount * channels);
-			//NativeArray<short> buffer = new NativeArray<short>(pInput, length);
 			NativeArray<float> buffer = new NativeArray<float>(pInput, length);
 
 			uint frameCountOut = 0;

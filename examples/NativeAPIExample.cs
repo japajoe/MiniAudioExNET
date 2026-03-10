@@ -40,7 +40,7 @@ namespace MiniAudioExExamples
             deviceConfig.periodSizeInFrames = 2048;
             deviceConfig.SetDataCallback(deviceDataProc);
 
-            if (MiniAudioNative.ma_context_get_devices(pContext, out ma_device_info_ex[] ppPlaybackDeviceInfos, out ma_device_info_ex[] ppCaptureDeviceInfos) != ma_result.success)
+            if (MiniAudioNative.ma_context_get_devices(pContext, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos) != ma_result.success)
             {
                 Console.WriteLine("Failed to get devices");
                 Dispose();
@@ -51,10 +51,14 @@ namespace MiniAudioExExamples
             {
                 for (int i = 0; i < ppPlaybackDeviceInfos.Length; i++)
                 {
-                    if (ppPlaybackDeviceInfos[i].deviceInfo.isDefault > 0)
+                    if (ppPlaybackDeviceInfos[i].isDefault > 0)
                     {
-                        deviceConfig.playback.pDeviceID = ppPlaybackDeviceInfos[i].pDeviceId;
-                        Console.WriteLine("Selected default device: " + ppPlaybackDeviceInfos[i].deviceInfo.GetName());
+                        deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
+                        unsafe
+                        {
+                            *deviceConfig.playback.pDeviceID.Get() = ppPlaybackDeviceInfos[i].id;
+                        }
+                        Console.WriteLine("Selected default device: " + ppPlaybackDeviceInfos[i].GetName());
                         break;
                     }
                 }
@@ -62,10 +66,15 @@ namespace MiniAudioExExamples
 
             if (MiniAudioNative.ma_device_init(pContext, ref deviceConfig, pDevice) != ma_result.success)
             {
+                if(deviceConfig.playback.pDeviceID.pointer != IntPtr.Zero)
+                    deviceConfig.playback.pDeviceID.Free();
                 Console.WriteLine("Failed to initialize device");
                 Dispose();
                 return;
             }
+
+            if(deviceConfig.playback.pDeviceID.pointer != IntPtr.Zero)
+                deviceConfig.playback.pDeviceID.Free();
 
             ma_decoding_backend_vtable_ptr[] vtables = {
                 MiniAudioNative.ma_libvorbis_get_decoding_backend_ptr()

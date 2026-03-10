@@ -142,7 +142,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			playbackDevices = null;
 			captureDevices = null;
 
-			ma_result result = MiniAudioNative.ma_context_get_devices(handle, out ma_device_info_ex[] ppPlaybackDeviceInfos, out ma_device_info_ex[] ppCaptureDeviceInfos);
+			ma_result result = MiniAudioNative.ma_context_get_devices(handle, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos);
 
 			if (result != ma_result.success)
 				return false;
@@ -154,8 +154,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 				for (int i = 0; i < ppPlaybackDeviceInfos.Length; i++)
 				{
 					playbackDevices[i] = new MaDeviceInfo();
-					playbackDevices[i].deviceInfo = ppPlaybackDeviceInfos[i].deviceInfo;
-					playbackDevices[i].pDeviceId = ppPlaybackDeviceInfos[i].pDeviceId;
+					playbackDevices[i].deviceInfo = ppPlaybackDeviceInfos[i];
 				}
 			}
 
@@ -166,8 +165,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 				for (int i = 0; i < ppCaptureDeviceInfos.Length; i++)
 				{
 					captureDevices[i] = new MaDeviceInfo();
-					captureDevices[i].deviceInfo = ppCaptureDeviceInfos[i].deviceInfo;
-					captureDevices[i].pDeviceId = ppCaptureDeviceInfos[i].pDeviceId;
+					captureDevices[i].deviceInfo = ppCaptureDeviceInfos[i];
 				}
 			}
 

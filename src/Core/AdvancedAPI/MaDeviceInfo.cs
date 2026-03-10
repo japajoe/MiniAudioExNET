@@ -46,7 +46,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
 using MiniAudioEx.Native;
 
 namespace MiniAudioEx.Core.AdvancedAPI
@@ -54,14 +53,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 	public struct MaDeviceInfo
 	{
 		public ma_device_info deviceInfo;
-		public ma_device_id_ptr pDeviceId;
-
-		public string GetName()
-		{
-			if (pDeviceId.pointer == IntPtr.Zero)
-				return string.Empty;
-
-			return deviceInfo.GetName();
-		}
+		public bool IsDefault => deviceInfo.isDefault > 0;
+		public string Name => deviceInfo.GetName();
 	}
 }
