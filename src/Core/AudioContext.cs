@@ -79,6 +79,7 @@ namespace MiniAudioEx.Core
             ma_device_config deviceConfig = MiniAudio.ma_device_config_init(ma_device_type.playback);
             deviceConfig.playback.format = ma_format.f32;
             deviceConfig.playback.channels = channels;
+            deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
             deviceConfig.sampleRate = sampleRate;
             deviceConfig.periodSizeInFrames = periodSizeInFrames;
             deviceConfig.SetDataCallback(deviceDataProc);
@@ -97,7 +98,6 @@ namespace MiniAudioEx.Core
                     {
                         if (ppPlaybackDeviceInfos[i].isDefault > 0)
                         {
-                            deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
                             unsafe
                             {
                                 *deviceConfig.playback.pDeviceID.Get() = ppPlaybackDeviceInfos[i].id;
@@ -111,7 +111,6 @@ namespace MiniAudioEx.Core
             {
                 unsafe
                 {
-                    deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
                     *deviceConfig.playback.pDeviceID.Get() = audioDevice.info.id;
                 }
             }
