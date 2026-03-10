@@ -5,7 +5,7 @@ namespace MiniAudioEx.Core
 {
     public sealed class AudioDevice
     {
-        public ma_device_info_ex info;
+        public ma_device_info info;
 
         public static AudioDevice[] GetDevices()
         {
@@ -17,7 +17,7 @@ namespace MiniAudioEx.Core
                 throw new Exception("Can not obtain devices, failed to create audio context");
             }
 
-            if (MiniAudio.ma_context_get_devices(context, out ma_device_info_ex[] ppPlaybackDeviceInfos, out ma_device_info_ex[] ppCaptureDeviceInfos) != ma_result.success)
+            if (MiniAudio.ma_context_get_devices(context, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos) != ma_result.success)
             {
                 context.Free();
                 throw new Exception("Failed to get devices");

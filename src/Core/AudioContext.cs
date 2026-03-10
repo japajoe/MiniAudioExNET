@@ -85,7 +85,7 @@ namespace MiniAudioEx.Core
 
             if(audioDevice == null)
             {
-                if (MiniAudio.ma_context_get_devices(context, out ma_device_info_ex[] ppPlaybackDeviceInfos, out ma_device_info_ex[] ppCaptureDeviceInfos) != ma_result.success)
+                if (MiniAudio.ma_context_get_devices(context, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos) != ma_result.success)
                 {
                     Dispose();
                     throw new Exception("Failed to get devices");
@@ -95,9 +95,13 @@ namespace MiniAudioEx.Core
                 {
                     for (int i = 0; i < ppPlaybackDeviceInfos.Length; i++)
                     {
-                        if (ppPlaybackDeviceInfos[i].deviceInfo.isDefault > 0)
+                        if (ppPlaybackDeviceInfos[i].isDefault > 0)
                         {
-                            deviceConfig.playback.pDeviceID = ppPlaybackDeviceInfos[i].pDeviceId;
+                            deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
+                            unsafe
+                            {
+                                *deviceConfig.playback.pDeviceID.Get() = ppPlaybackDeviceInfos[i].id;
+                            }
                             break;
                         }
                     }
@@ -105,14 +109,21 @@ namespace MiniAudioEx.Core
             }
             else
             {
-                deviceConfig.playback.pDeviceID = audioDevice.info.pDeviceId;
+                unsafe
+                {
+                    deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
+                    *deviceConfig.playback.pDeviceID.Get() = audioDevice.info.id;
+                }
             }
 
             if (MiniAudio.ma_device_init(context, ref deviceConfig, device) != ma_result.success)
             {
+                deviceConfig.playback.pDeviceID.Free();
                 Dispose();
                 throw new Exception("Failed to initialize device");
             }
+
+            deviceConfig.playback.pDeviceID.Free();
 
             ma_decoding_backend_vtable_ptr[] vtables = {
                 MiniAudio.ma_libvorbis_get_decoding_backend_ptr()
@@ -196,6 +207,9 @@ namespace MiniAudioEx.Core
             log.Free();
 
             sources.Clear();
+
+            if(current == this)
+                current = null;
         }
 
         public void Update()

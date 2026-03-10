@@ -2861,12 +2861,12 @@ namespace MiniAudioEx.Native
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_device_info_ex
-    {
-        public ma_device_info deviceInfo;
-        public ma_device_id_ptr pDeviceId;
-    }
+    // [StructLayout(LayoutKind.Sequential)]
+    // public unsafe struct ma_device_info_ex
+    // {
+    //     public ma_device_info deviceInfo;
+    //     public ma_device_id_ptr pDeviceId;
+    // }
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_resampler_config
@@ -4005,7 +4005,7 @@ namespace MiniAudioEx.Native
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern unsafe ma_result ma_context_get_devices(ma_context_ptr pContext, ma_device_info** ppPlaybackDeviceInfos, ma_uint32* pPlaybackDeviceCount, ma_device_info** ppCaptureDeviceInfos, ma_uint32* pCaptureDeviceCount);
 
-        public static unsafe ma_result ma_context_get_devices(ma_context_ptr pContext, out ma_device_info_ex[] ppPlaybackDeviceInfos, out ma_device_info_ex[] ppCaptureDeviceInfos)
+        public static unsafe ma_result ma_context_get_devices(ma_context_ptr pContext, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos)
         {
             ppPlaybackDeviceInfos = null;
             ppCaptureDeviceInfos = null;
@@ -4021,23 +4021,21 @@ namespace MiniAudioEx.Native
 
             if (pPlayback != null && playbackCount > 0)
             {
-                ppPlaybackDeviceInfos = new ma_device_info_ex[playbackCount];
+                ppPlaybackDeviceInfos = new ma_device_info[playbackCount];
 
                 for (int i = 0; i < playbackCount; i++)
                 {
-                    ppPlaybackDeviceInfos[i].deviceInfo = pPlayback[i];
-                    ppPlaybackDeviceInfos[i].pDeviceId = new ma_device_id_ptr(new IntPtr(&pPlayback[i]));
+                    ppPlaybackDeviceInfos[i] = pPlayback[i];
                 }
             }
 
             if (pCapture != null && captureCount > 0)
             {
-                ppCaptureDeviceInfos = new ma_device_info_ex[captureCount];
+                ppCaptureDeviceInfos = new ma_device_info[captureCount];
 
                 for (int i = 0; i < captureCount; i++)
                 {
-                    ppCaptureDeviceInfos[i].deviceInfo = pCapture[i];
-                    ppCaptureDeviceInfos[i].pDeviceId = new ma_device_id_ptr(new IntPtr(&pCapture[i]));
+                    ppCaptureDeviceInfos[i] = pCapture[i];
                 }
             }
 
