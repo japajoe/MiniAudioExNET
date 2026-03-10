@@ -8,6 +8,8 @@ namespace MiniAudioEx.Core
 
     public sealed class AudioContext : IDisposable
     {
+        public event LogEventHandler Log;
+        
 		private ma_log_ptr log;
         private ma_context_ptr context;
         private ma_resource_manager_ptr resourceManager;
@@ -22,7 +24,6 @@ namespace MiniAudioEx.Core
         private List<AudioSource> sources;
         private static AudioContext current;
 
-        public event LogEventHandler Log;
         public ma_context_ptr Context => context;
         public ma_engine_ptr Engine => engine;
         public UInt32 Channels => channels;

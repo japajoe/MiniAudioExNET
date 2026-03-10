@@ -105,7 +105,7 @@ namespace MiniAudioEx.Core
             hashCode = GetHashCode(data, data.Length);
         }
 
-        internal bool CopyTo(AudioClip other, AudioSource group = null)
+        internal bool CopyTo(AudioClip other, ma_sound_group_ptr group = default)
         {
             AudioContext context = AudioContext.GetCurrent();
 
@@ -136,22 +136,21 @@ namespace MiniAudioEx.Core
             other.hashCode = hashCode;
 
             ma_sound_flags flags = streamFromDisk ? ma_sound_flags.stream : ma_sound_flags.decode;
-            ma_sound_group_ptr soundGroup = group == null ? default : group.Group;
             ma_result result = ma_result.success;
 
             if(flags == ma_sound_flags.stream)
             {
                 if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    result = MiniAudio.ma_sound_init_from_file_w(context.Engine, filePath, flags, soundGroup, default, other.sound);
+                    result = MiniAudio.ma_sound_init_from_file_w(context.Engine, filePath, flags, group, default, other.sound);
                 else
-                    result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, soundGroup, default, other.sound);
+                    result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, group, default, other.sound);
             }
             else
             {
                 if(dataHandle == IntPtr.Zero)
-                    result = MiniAudio.ma_sound_init_copy(context.Engine, sound, flags, soundGroup, other.sound);
+                    result = MiniAudio.ma_sound_init_copy(context.Engine, sound, flags, group, other.sound);
                 else
-                    result = MiniAudio.ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, soundGroup, default, other.sound);
+                    result = MiniAudio.ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, group, default, other.sound);
             }
             
             return result == ma_result.success;

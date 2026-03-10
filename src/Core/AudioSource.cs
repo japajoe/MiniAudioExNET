@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
+using MiniAudioEx.DSP.Effects;
+using MiniAudioEx.DSP.Generators;
 using MiniAudioEx.Native;
 using MiniAudioEx.Utilities;
 
 namespace MiniAudioEx.Core
 {
     public delegate void AudioEndEvent();
+    public delegate void AudioProcessEvent(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels);
+    public delegate void AudioReadEvent(NativeArray<float> framesOut, UInt64 frameCount, Int32 channels);
 
     public enum AttenuationModel
     {
@@ -23,10 +27,9 @@ namespace MiniAudioEx.Core
 
     public sealed class AudioSource : IDisposable
     {
-        private struct Settings
-        {
-            public bool loop;
-        }
+        public event AudioEndEvent End;
+        public event AudioReadEvent Read;
+        public event AudioProcessEvent Process;
 
         private class Sound
         {
@@ -42,13 +45,15 @@ namespace MiniAudioEx.Core
 
         private AudioContext context;
         private List<Sound> sounds;
+        private ConcurrentList<IAudioEffect> effects;
+        private ConcurrentList<IAudioGenerator> generators;
         private ma_sound_group_ptr group;
         private ma_effect_node_ptr effectNode;
-        private ma_effect_node_process_proc onProcessEffect;
+        private ma_effect_node_process_proc onProcess;
+        private ma_sound_ptr proceduralSound;
+        private ma_procedural_data_source_proc onGenerate;
         private int currentIndex;
-        private Settings settings;
-        public event AudioEndEvent End;
-        public ma_sound_group_ptr Group => group;
+        private bool loop;
 
         public bool IsPlaying
         {
@@ -65,8 +70,8 @@ namespace MiniAudioEx.Core
 
         public bool Loop
         {
-            get => settings.loop;
-            set => settings.loop = value;
+            get => loop;
+            set => loop = value;
         }
 
         public UInt64 Cursor
@@ -198,11 +203,13 @@ namespace MiniAudioEx.Core
                 sounds.Add(new Sound());
             }
 
+            effects = new ConcurrentList<IAudioEffect>();
+            generators = new ConcurrentList<IAudioGenerator>();
+
             effectNode = new ma_effect_node_ptr(true);
+            onProcess = OnEffect;
 
-            onProcessEffect = OnEffectProcess;
-
-            ma_effect_node_config effectNodeConfig = MiniAudio.ma_effect_node_config_init(context.Channels, context.SampleRate, onProcessEffect, IntPtr.Zero);
+            ma_effect_node_config effectNodeConfig = MiniAudio.ma_effect_node_config_init(context.Channels, context.SampleRate, onProcess, IntPtr.Zero);
 
             if (MiniAudio.ma_effect_node_init(MiniAudio.ma_engine_get_node_graph(context.Engine), ref effectNodeConfig, effectNode) == ma_result.success)
             {
@@ -210,25 +217,39 @@ namespace MiniAudioEx.Core
                 MiniAudio.ma_node_attach_output_bus(new ma_node_ptr(group.pointer), 0, new ma_node_ptr(effectNode.pointer), 0);
             }
 
-            settings = new Settings();
-            settings.loop = false;
+            proceduralSound = new ma_sound_ptr(true);
+            onGenerate = OnGenerate;
+            ma_procedural_data_source_config config = MiniAudio.ma_procedural_data_source_config_init(ma_format.f32, context.Channels, context.SampleRate, onGenerate, IntPtr.Zero);
+            
+            MiniAudio.ma_sound_init_from_callback(context.Engine, ref config, (ma_sound_flags)0, group, default, proceduralSound);
+
+            loop = false;
 
             currentIndex = 0;
+
+            context.Add(this);
         }
 
         public void Dispose()
         {
+            if(context != null)
+                context.Remove(this);
+
             Stop();
 
             for(int i = 0; i < sounds.Count; i++)
-            {
                 sounds[i].clip?.Dispose();
-            }
 
             if(effectNode.pointer != IntPtr.Zero)
             {
                 MiniAudio.ma_effect_node_uninit(effectNode);
                 effectNode.Free();
+            }
+
+            if(proceduralSound.pointer != IntPtr.Zero)
+            {
+                MiniAudio.ma_sound_uninit(proceduralSound);
+                proceduralSound.Free();
             }
 
             if(group.pointer != IntPtr.Zero)
@@ -238,8 +259,17 @@ namespace MiniAudioEx.Core
             }
         }
 
+        public void Play()
+        {
+            Stop();
+            SetAtEnd(0, false);
+            ApplySettings();
+            MiniAudio.ma_sound_start(proceduralSound);
+        }
+
         public void Play(AudioClip clip)
         {
+            Stop();
             SetAtEnd(0, false);
             Invalidate(clip);
             ApplySettings();
@@ -267,7 +297,7 @@ namespace MiniAudioEx.Core
 
         public void Stop()
         {
-            MiniAudio.ma_sound_group_stop(group);
+            MiniAudio.ma_sound_stop(proceduralSound);
 
             for (int i = 0; i < sounds.Count; i++)
             {
@@ -291,28 +321,90 @@ namespace MiniAudioEx.Core
             }
         }
 
+        public void AddEffect(IAudioEffect effect)
+        {
+            effects.Add(effect);
+        }
+
+        public void RemoveEffect(IAudioEffect effect)
+        {
+            effects.Remove(effect);
+        }
+
+        public void RemoveEffect(int index)
+        {
+            if (index >= 0 && index < effects.Count)
+            {
+                var target = effects[index];
+                effects.Remove(target);
+            }
+        }
+
+        public void RemoveEffects()
+        {
+            effects.Clear();
+        }
+
+        public void AddGenerator(IAudioGenerator generator)
+        {
+            generators.Add(generator);
+        }
+
+        public void RemoveGenerator(IAudioGenerator generator)
+        {
+            generators.Remove(generator);
+        }
+
+        public void RemoveGenerator(int index)
+        {
+            if (index >= 0 && index < generators.Count)
+            {
+                var target = generators[index];
+                generators.Remove(target);
+            }
+        }
+
+        public void RemoveGenerators()
+        {
+            generators.Clear();
+        }
+
         private void Invalidate(AudioClip clip)
         {
             if(clip.HashCode != sounds[0].clip.HashCode)
             {
                 for(int i = 0; i < sounds.Count; i++)
                 {
-                    clip.CopyTo(sounds[i].clip, this);
+                    clip.CopyTo(sounds[i].clip, group);
                 }
             }
         }
 
         private void ApplySettings()
         {
-            MiniAudio.ma_sound_set_looping(sounds[0].clip.Sound, settings.loop ? (UInt32)1 : 0);
+            MiniAudio.ma_sound_set_looping(sounds[0].clip.Sound, loop ? (UInt32)1 : 0);
         }
 
         private void SetAtEnd(int sourceIndex, bool atEnd)
         {
             sounds[sourceIndex].atEnd = atEnd;
-        }  
+        }
 
-        private unsafe void OnEffectProcess(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
+        private void OnGenerate(IntPtr pUserData, IntPtr pFramesOut, UInt64 frameCount, UInt32 channels)
+        {
+            int length = (int)(frameCount * channels);
+
+            NativeArray<float> framesOut = new NativeArray<float>(pFramesOut, length);
+
+            for (int i = 0; i < generators.Count; i++)
+            {
+                generators[i].OnGenerate(framesOut, frameCount, (int)channels);
+            }
+
+            Read?.Invoke(framesOut, frameCount, (int)channels);
+        }
+
+        private unsafe void OnEffect(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut)
         {
             if (pNode.pointer == IntPtr.Zero)
                 return;
@@ -336,17 +428,17 @@ namespace MiniAudioEx.Core
             UInt32 countIn = *frameCountIn;
             UInt32 countOut = *frameCountOut;
 
-            // for (int i = 0; i < effects.Count; i++)
-            // {
-            //     effects[i].OnProcess(bufferIn, countIn, bufferOut, ref countOut, channels);
+            for (int i = 0; i < effects.Count; i++)
+            {
+                effects[i].OnProcess(bufferIn, countIn, bufferOut, ref countOut, channels);
 
-            //     //Since effects processing is like a stack, the output needs to be copied to the input for the next effect
-            //     bufferOut.CopyTo(bufferIn);
+                //Since effects processing is like a stack, the output needs to be copied to the input for the next effect
+                bufferOut.CopyTo(bufferIn);
 
-            //     countIn = countOut;
-            // }
+                countIn = countOut;
+            }
 
-            // Process?.Invoke(bufferIn, countIn, bufferOut, ref countOut, pEffectNode->config.channels);
+            Process?.Invoke(bufferIn, countIn, bufferOut, ref countOut, pEffectNode->config.channels);
 
             *frameCountOut = countOut;
         }
