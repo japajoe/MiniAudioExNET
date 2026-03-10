@@ -4026,7 +4026,7 @@ namespace MiniAudioEx.Native
                 for (int i = 0; i < playbackCount; i++)
                 {
                     ppPlaybackDeviceInfos[i].deviceInfo = pPlayback[i];
-                    ppPlaybackDeviceInfos[i].pDeviceId = new ma_device_id_ptr(new IntPtr(&pPlayback[i]));
+                    ppPlaybackDeviceInfos[i].pDeviceId = new ma_device_id_ptr(new IntPtr(&pPlayback[i].id));
                 }
             }
 
@@ -4037,7 +4037,7 @@ namespace MiniAudioEx.Native
                 for (int i = 0; i < captureCount; i++)
                 {
                     ppCaptureDeviceInfos[i].deviceInfo = pCapture[i];
-                    ppCaptureDeviceInfos[i].pDeviceId = new ma_device_id_ptr(new IntPtr(&pCapture[i]));
+                    ppCaptureDeviceInfos[i].pDeviceId = new ma_device_id_ptr(new IntPtr(&pCapture[i].id));
                 }
             }
 
