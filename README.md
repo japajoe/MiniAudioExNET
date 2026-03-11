@@ -12,6 +12,7 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Spatial properties like doppler effect, pitching, distance attenuation and panning.
 - Utilities for audio generation.
 - Effects processing, including reverb/delay/phaser/filters etc.
+- Capture audio from a microphone or a playback device.
 - Exposes many native miniaudio API calls.
 
 # Note
@@ -30,8 +31,14 @@ If you find something is missing from the API, please open an issue. This librar
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 3.1.1
+dotnet add package JAJ.Packages.MiniAudioEx --version 3.2.0
 ```
+
+# Changes in 3.2.0
+- Default to using wide strings when loading sounds on Windows.
+- Removed `SoundRecorder`, replaced with `AudioRecorder`.
+- Added `WaveFileStream`.
+- Added `ClipperEffect`.
 
 # Changes in 3.1.1
 - Fix for `ma_sound_init_from_file_w`: path marshal incorrectly

@@ -48,12 +48,14 @@
 
 using System;
 using System.IO;
-using MiniAudioEx.Core.StandardAPI;
 using MiniAudioEx.Native;
 
-namespace MiniAudioEx.DSP.Effects
+namespace MiniAudioEx.Utilities
 {
-    public sealed class AudioRecorder : IAudioEffect
+    /// <summary>
+    /// A class for writing audio data as a wave file to disk. Unlike the WaveFileWriter class, this can write arbitrary length files.
+    /// </summary>
+    public sealed class WaveFileStream : IDisposable
     {
         private enum State
         {
@@ -63,40 +65,66 @@ namespace MiniAudioEx.DSP.Effects
             CloseFile
         }
 
-        private string currentFileName;
+        private string outputFilePath;
         private byte[] outputBuffer;
         private UInt64 bytesWritten;
         private FileStream stream;
         private State state;
+        private Int32 sampleRate;
+        private Int16 channels;
         private readonly object stateLock = new object();
 
-        public AudioRecorder()
+        /// <summary>
+        /// Indicates whether the WaveFileWriter is currently writing to disk or not.
+        /// </summary>
+        public bool IsActive => GetState() != State.Idle;
+
+        public WaveFileStream(UInt32 sampleRate, UInt32 channels)
         {
+            this.sampleRate = (Int32)Math.Max(sampleRate, 1);
+            this.channels = (Int16)Math.Max(channels, 1);
             outputBuffer = new byte[4096];
             bytesWritten = 0;
             state = State.Idle;
         }
 
-        public void Start()
+        /// <summary>
+        /// Prepares the stream for writing. Call OnProcess for submitting data to be written. Call Stop to finish and close the file.
+        /// </summary>
+        /// <param name="outputFilePath">The file path of where to write the data</param>
+        public void Start(string outputFilePath)
         {
             if(GetState() != State.Idle) 
                 return;
+            
+            this.outputFilePath = outputFilePath;
 
             SetState(State.WriteHeader);
         }
 
+        /// <summary>
+        /// Stops writing and closes the file.
+        /// </summary>
         public void Stop()
         {
             CloseFile();
         }
 
-		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn, NativeArray<float> framesOut, ref UInt32 frameCountOut, UInt32 channels)
+        /// <summary>
+        /// Submits data to be written.
+        /// </summary>
+        /// <param name="framesIn"></param>
+        /// <param name="frameCountIn"></param>
+		public void OnProcess(NativeArray<float> framesIn, UInt32 frameCountIn)
 		{
             WriteHeader();
             WriteData(framesIn, frameCountIn);
 		}
 
-        public void OnDestroy()
+        /// <summary>
+        /// Stops writing and closes the file.
+        /// </summary>
+        public void Dispose()
         {
             CloseFile();
         }
@@ -128,12 +156,6 @@ namespace MiniAudioEx.DSP.Effects
             if(stream != null)
                 return;
 
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Recording");
-            Console.ForegroundColor = ConsoleColor.White;
-
-            currentFileName = "res/recordings/" + DateTime.Now.Ticks.ToString() + ".wav";
-
             byte[] header = new byte[44];
 
             const Int32 bitDepth = 16;
@@ -144,8 +166,7 @@ namespace MiniAudioEx.DSP.Effects
             Int32 subChunk1Id = 544501094;        //"fmt "
             Int32 subChunk1Size = 16;
             Int16 audioFormat = 1;
-            Int16 numChannels = (Int16)AudioContext.Channels;
-            Int32 sampleRate = AudioContext.SampleRate;
+            Int16 numChannels = channels;
             Int32 byteRate = sampleRate * numChannels * bitDepth / 8;
             Int16 blockAlign = (Int16)(numChannels * bitDepth / 8);
             Int16 bitsPerSample = bitDepth;
@@ -166,7 +187,7 @@ namespace MiniAudioEx.DSP.Effects
             WriteInt32(subChunk2Id, header, 36);
             WriteInt32(subChunk2Size, header, 40);
 
-            stream = new FileStream(currentFileName, FileMode.CreateNew);
+            stream = new FileStream(outputFilePath, FileMode.CreateNew);
             stream.Write(header, 0, header.Length);
 
             bytesWritten = 0;
@@ -199,7 +220,7 @@ namespace MiniAudioEx.DSP.Effects
                     Int16 *pBuffer = (Int16*)pOutputBuffer;
                     for(Int32 i = 0; i < framesIn.Length; i++)
                     {
-                        pBuffer[index] = (short)(framesIn[i] * short.MaxValue);
+                        pBuffer[index] = (Int16)(framesIn[i] * Int16.MaxValue);
                         index++;
                     }
                 }
@@ -229,10 +250,6 @@ namespace MiniAudioEx.DSP.Effects
                     stream.Write(outputBuffer, 0, sizeof(Int32));
 
                     bytesWritten = 0;
-
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Recording stopped");
-                    Console.ForegroundColor = ConsoleColor.White;
                 }
 
                 stream.Dispose();
@@ -257,15 +274,6 @@ namespace MiniAudioEx.DSP.Effects
             {
                 byte* src = (byte*)&value;
                 Buffer.MemoryCopy(src, dst, sizeof(Int32), sizeof(Int32));
-            }
-        }
-
-        private unsafe void WriteFloat(float value, byte[] buffer, Int32 offset)
-        {
-            fixed(byte *dst = &buffer[offset])
-            {
-                byte* src = (byte*)&value;
-                Buffer.MemoryCopy(src, dst, sizeof(float), sizeof(float));
             }
         }
 	}
