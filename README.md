@@ -369,16 +369,16 @@ namespace MiniAudioExExample
 
 See links below for more examples. Most of these use the `AudioApp` class which is suitable for simple console based applications.
 
-[Playing audio from a file on disk](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/PlayingFromFileExample.cs)
+[Playing audio from a file on disk](https://github.com/japajoe/MiniAudioExNET/blob/master/examples/PlayingFromFileExample.cs)
 
-[Using the 'Read' callback to generate sound](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/ProceduralSoundExample.cs)
+[Using the 'Read' callback to generate sound](https://github.com/japajoe/MiniAudioExNET/blob/master/examples/ProceduralSoundExample.cs)
 
-[Basic spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/SpatialAudioExample.cs)
+[Basic spatial audio](https://github.com/japajoe/MiniAudioExNET/blob/master/examples/SpatialAudioExample.cs)
 
-[Playing audio from a playlist](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/PlayListExample.cs)
+[Playing audio from a playlist](https://github.com/japajoe/MiniAudioExNET/blob/master/examples/PlayListExample.cs)
 
-[Generating sound, applying effects and spatial audio](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/AdvancedProceduralSoundExample.cs)
+[Generating sound, applying effects and spatial audio](https://github.com/japajoe/MiniAudioExNET/blob/master/examples/AdvancedProceduralSoundExample.cs)
 
-[FM synthesis](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/FMSynthesisExample.cs)
+[FM synthesis](https://github.com/japajoe/MiniAudioExNET/blob/master/examples/FMSynthesisExample.cs)
 
-[Using the native miniaudio API.](https://github.com/japajoe/MiniAudioExNET/tree/master/examples/NativeAPIExample.cs)
+[Using the native miniaudio API.](https://github.com/japajoe/MiniAudioExNET/blob/master/examples/NativeAPIExample.cs)
