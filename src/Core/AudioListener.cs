@@ -9,6 +9,7 @@ namespace MiniAudioEx.Core
     public sealed class AudioListener
     {
         private AudioContext context;
+        private UInt32 index;
         private Vector3f previousPosition;
 
         /// <summary>
@@ -17,8 +18,8 @@ namespace MiniAudioEx.Core
         /// <value></value>
         public bool Enabled
         {
-            get => MiniAudio.ma_engine_listener_is_enabled(context.Engine, 0) > 0;
-            set => MiniAudio.ma_engine_listener_set_enabled(context.Engine, 0, value ? (UInt32)1 : 0);
+            get => MiniAudio.ma_engine_listener_is_enabled(context.Engine, index) > 0;
+            set => MiniAudio.ma_engine_listener_set_enabled(context.Engine, index, value ? (UInt32)1 : 0);
         }
 
         /// <summary>
@@ -29,12 +30,12 @@ namespace MiniAudioEx.Core
         {
             get
             {
-                ma_vec3f position = MiniAudio.ma_engine_listener_get_position(context.Engine, 0);
+                ma_vec3f position = MiniAudio.ma_engine_listener_get_position(context.Engine, index);
                 return new Vector3f(position.x, position.y, position.z);
             }
             set
             {
-                var previous = MiniAudio.ma_engine_listener_get_position(context.Engine, 0);
+                var previous = MiniAudio.ma_engine_listener_get_position(context.Engine, index);
                 previousPosition.x = previous.x;
                 previousPosition.y = previous.y;
                 previousPosition.z = previous.z;
@@ -51,10 +52,10 @@ namespace MiniAudioEx.Core
         {
             get
             {
-                ma_vec3f direction = MiniAudio.ma_engine_listener_get_direction(context.Engine, 0);
+                ma_vec3f direction = MiniAudio.ma_engine_listener_get_direction(context.Engine, index);
                 return new Vector3f(direction.x, direction.y, direction.z);
             }
-            set => MiniAudio.ma_engine_listener_set_direction(context.Engine, 0, value.x, value.y, value.z);
+            set => MiniAudio.ma_engine_listener_set_direction(context.Engine, index, value.x, value.y, value.z);
         }
 
 
@@ -66,10 +67,10 @@ namespace MiniAudioEx.Core
         {
             get
             {
-                ma_vec3f velocity = MiniAudio.ma_engine_listener_get_velocity(context.Engine, 0);
+                ma_vec3f velocity = MiniAudio.ma_engine_listener_get_velocity(context.Engine, index);
                 return new Vector3f(velocity.x, velocity.y, velocity.z);
             }
-            set => MiniAudio.ma_engine_listener_set_velocity(context.Engine, 0, value.x, value.y, value.z);
+            set => MiniAudio.ma_engine_listener_set_velocity(context.Engine, index, value.x, value.y, value.z);
         }
 
         /// <summary>
@@ -99,24 +100,29 @@ namespace MiniAudioEx.Core
         {
             get
             {
-                ma_vec3f worldUp = MiniAudio.ma_engine_listener_get_world_up(context.Engine, 0);
+                ma_vec3f worldUp = MiniAudio.ma_engine_listener_get_world_up(context.Engine, index);
                 return new Vector3f(worldUp.x, worldUp.y, worldUp.z);
             }
-            set => MiniAudio.ma_engine_listener_set_world_up(context.Engine, 0, value.x, value.y, value.z);
+            set => MiniAudio.ma_engine_listener_set_world_up(context.Engine, index, value.x, value.y, value.z);
         }
 
-        public AudioListener()
+        public AudioListener(UInt32 index = 0)
         {
             context = AudioContext.GetCurrent();
 
             if(context == null)
                 throw new Exception("Failed to initialize AudioListener because there is no current AudioContext");
 
+            if(index >= MiniAudio.MA_ENGINE_MAX_LISTENERS)
+                throw new Exception("Listener index should be less than " + MiniAudio.MA_ENGINE_MAX_LISTENERS);
+
+            this.index = index;
+
             Position = new Vector3f(0, 0, 0);
             Direction = new Vector3f(0, 0, -1);
             WorldUp = new Vector3f(0, 1, 0);
-            previousPosition  = new Vector3f(0, 0, 0);
             Enabled = true;
+            previousPosition  = new Vector3f(0, 0, 0);
         }
     }
 }

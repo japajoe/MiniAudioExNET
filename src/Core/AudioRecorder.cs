@@ -53,6 +53,7 @@ namespace MiniAudioEx.Core
 
                 if(result != ma_result.success)
                 {
+                    MiniAudio.ma_context_uninit(context);
                     context.Free();
                     throw new Exception("Failed to get audio capture devices: " + result);
                 }
