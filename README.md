@@ -276,7 +276,8 @@ namespace MiniAudioExExample
 			deviceConfig.periodSizeInFrames = 2048;
 			deviceConfig.playback.format = ma_format.f32;
 			deviceConfig.playback.channels = 2;
-			deviceConfig.playback.pDeviceID = deviceInfo.pDeviceId;
+			deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
+            *deviceConfig.playback.pDeviceID.Get() = deviceInfo.deviceInfo.id;
 			deviceConfig.SetDataCallback(deviceDataCallback);
 
 			if (device.Initialize(deviceConfig) != ma_result.success)
@@ -297,6 +298,7 @@ namespace MiniAudioExExample
 			if (engine.Initialize(engineConfig) != ma_result.success)
 			{
 				Console.WriteLine("Failed to initialize engine");
+				deviceConfig.playback.pDeviceID.Free();
 				engine.Dispose();
 				device.Dispose();
 				resourceManager.Dispose();
@@ -304,6 +306,8 @@ namespace MiniAudioExExample
 				log.Dispose();
 				return;
 			}
+
+			deviceConfig.playback.pDeviceID.Free();
 
 			MaSound sound = new MaSound();
 
