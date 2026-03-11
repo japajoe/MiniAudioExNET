@@ -68,6 +68,7 @@ namespace MiniAudioEx.Core
         private ma_procedural_data_source_proc onGenerate;
         private int currentIndex;
         private bool loop;
+        private Vector3f previousPosition;
 
         /// <summary>
         /// Indicates whether the source is playing audio or not.
@@ -241,7 +242,10 @@ namespace MiniAudioEx.Core
             }
             set
             {
-                var p = MiniAudio.ma_sound_group_get_position(group);
+                var previous = MiniAudio.ma_sound_group_get_position(group);
+                previousPosition.x = previous.x;
+                previousPosition.y = previous.y;
+                previousPosition.z = previous.z;
                 MiniAudio.ma_sound_group_set_position(group, value.x, value.y, value.z);
             }
         }
@@ -272,6 +276,25 @@ namespace MiniAudioEx.Core
                 return new Vector3f(result.x, result.y, result.z);
             }
             set => MiniAudio.ma_sound_group_set_velocity(group, value.x, value.y, value.z);
+        }
+
+        /// <summary>
+        /// Gets the the velocity based on the current position and the previous position.
+        /// </summary>
+        /// <returns></returns>
+        public Vector3f CurrentVelocity
+        {
+            get
+            {
+                if(context == null)
+                    return new Vector3f(0, 0, 0);
+                float deltaTime = context.DeltaTime;
+                Vector3f currentPosition = Position;
+                float dx = currentPosition.x - previousPosition.x;
+                float dy = currentPosition.y - previousPosition.y;
+                float dz = currentPosition.z - previousPosition.z;
+                return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
+            }
         }
 
         /// <summary>
@@ -317,6 +340,8 @@ namespace MiniAudioEx.Core
             loop = false;
 
             currentIndex = 1;
+
+            previousPosition = new Vector3f(0, 0, 0);
 
             context.Add(this);
         }

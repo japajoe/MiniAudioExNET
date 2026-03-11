@@ -26,12 +26,15 @@ namespace MiniAudioEx.Core
         private UInt32 periodSizeInFrames;
         private AudioDevice audioDevice;
         private List<AudioSource> sources;
+        private float deltaTime;
+        private DateTime lastUpdateTime;
         private static AudioContext current;
 
         public ma_context_ptr Context => context;
         public ma_engine_ptr Engine => engine;
         public UInt32 Channels => channels;
         public UInt32 SampleRate => sampleRate;
+        public float DeltaTime => deltaTime;
 
         public AudioContext(UInt32 sampleRate = 44100, UInt32 channels = 2, UInt32 periodSizeInFrames = 2048, AudioDevice audioDevice = null)
         {
@@ -40,6 +43,8 @@ namespace MiniAudioEx.Core
             this.periodSizeInFrames = Math.Max(periodSizeInFrames, 1);
             this.audioDevice = audioDevice;
             sources = new List<AudioSource>();
+            deltaTime = 0.0f;
+            lastUpdateTime = DateTime.Now;
         }
 
         public void Create()
@@ -213,6 +218,11 @@ namespace MiniAudioEx.Core
 
         public void Update()
         {
+            DateTime currentTime = DateTime.Now;
+            TimeSpan dt = currentTime - lastUpdateTime;
+            deltaTime = (float)dt.TotalSeconds;
+            lastUpdateTime = currentTime;
+
             for(int i = 0; i < sources.Count; i++)
                 sources[i].Update();
         }
