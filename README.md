@@ -283,23 +283,7 @@ namespace MiniAudioExExample
 			if (device.Initialize(deviceConfig) != ma_result.success)
 			{
 				Console.WriteLine("Failed to initialize device");
-				device.Dispose();
-				resourceManager.Dispose();
-				context.Dispose();
-				log.Dispose();
-				return;
-			}
-
-			MaEngine engine = new MaEngine();
-			ma_engine_config engineConfig = engine.GetConfig();
-			engineConfig.pDevice = device.Handle;
-			engineConfig.pResourceManager = resourceManager.Handle;
-
-			if (engine.Initialize(engineConfig) != ma_result.success)
-			{
-				Console.WriteLine("Failed to initialize engine");
 				deviceConfig.playback.pDeviceID.Free();
-				engine.Dispose();
 				device.Dispose();
 				resourceManager.Dispose();
 				context.Dispose();
@@ -308,6 +292,22 @@ namespace MiniAudioExExample
 			}
 
 			deviceConfig.playback.pDeviceID.Free();
+
+			MaEngine engine = new MaEngine();
+			ma_engine_config engineConfig = engine.GetConfig();
+			engineConfig.pDevice = device.Handle;
+			engineConfig.pResourceManager = resourceManager.Handle;
+
+			if (engine.Initialize(engineConfig) != ma_result.success)
+			{
+				Console.WriteLine("Failed to initialize engine");				
+				engine.Dispose();
+				device.Dispose();
+				resourceManager.Dispose();
+				context.Dispose();
+				log.Dispose();
+				return;
+			}
 
 			MaSound sound = new MaSound();
 
