@@ -138,7 +138,6 @@ namespace MiniAudioEx.Core
             set => MiniAudio.ma_sound_group_set_pan(group, value);
         }
 
-
         /// <summary>
         /// Gets or sets the mathematical model used to simulate the attenuation of sound over distance.
         /// </summary>
@@ -379,29 +378,19 @@ namespace MiniAudioEx.Core
         {
             Stop();
             SetAtEnd(0, false);
-            Invalidate(clip);
+            Invalidate(clip, false);
             ApplySettings();
             MiniAudio.ma_sound_start(sounds[0].clip.Sound);
         }
 
         /// <summary>
-        /// Plays an AudioClip while allowing overlapping sounds.
+        /// Plays an AudioClip while allowing overlapping sounds. Does not cancel clips that are already being played by PlayOneShot and Play methods.
         /// </summary>
         /// <param name="clip">The AudioClip to play.</param>
         public void PlayOneShot(AudioClip clip)
         {
-            // The first clip in the list is reserved for regular playback
-            // We don't play this at all when using PlayOneShot
-            if(MiniAudio.ma_sound_is_playing(sounds[0].clip.Sound) > 0)
-                MiniAudio.ma_sound_stop(sounds[0].clip.Sound);
-            
-            // The procedural sound is only used for audio generation
-            // We don't play this at all when using PlayOneShot
-            if(MiniAudio.ma_sound_is_playing(proceduralSound) > 0)
-                MiniAudio.ma_sound_stop(proceduralSound);
-
             SetAtEnd(currentIndex, false);
-            Invalidate(clip);
+            Invalidate(clip, true);
 
             if (MiniAudio.ma_sound_is_playing(sounds[currentIndex].clip.Sound) > 0)
             {
@@ -524,13 +513,20 @@ namespace MiniAudioEx.Core
             generators.Clear();
         }
 
-        private void Invalidate(AudioClip clip)
+        private void Invalidate(AudioClip clip, bool all)
         {
             if(clip.HashCode != sounds[0].clip.HashCode)
             {
-                for(int i = 0; i < sounds.Count; i++)
+                if(all)
                 {
-                    clip.CopyTo(sounds[i].clip, group);
+                    for(int i = 0; i < sounds.Count; i++)
+                    {
+                        clip.CopyTo(sounds[i].clip, group);
+                    }
+                }
+                else
+                {
+                    clip.CopyTo(sounds[0].clip, group);
                 }
             }
         }

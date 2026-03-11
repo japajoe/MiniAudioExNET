@@ -13,6 +13,20 @@ namespace MiniAudioEx.Core
         protected readonly UInt32 sampleRate;
         protected readonly UInt32 channels;
 
+        /// <summary>
+        /// Indicates whether recording is currently active or not.
+        /// </summary>
+        public bool IsActive
+        {
+            get
+            {
+                if(device.pointer == IntPtr.Zero)
+                    return false;
+                
+                return MiniAudio.ma_device_is_started(device) > 0;
+            }
+        }
+
         public AudioRecorder(UInt32 sampleRate, UInt32 channels)
         {
             this.sampleRate = (UInt32)Math.Max(sampleRate, 1);
@@ -80,7 +94,7 @@ namespace MiniAudioEx.Core
             context.Free();
         }
 
-        public bool Initialize()
+        protected bool Initialize()
         {
             if(context.pointer == IntPtr.Zero)
             {
@@ -168,7 +182,7 @@ namespace MiniAudioEx.Core
 
         private void OnDeviceData(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
         {
-            int length = (int)(frameCount * channels);
+            Int32 length = (Int32)(frameCount * channels);
             NativeArray<float> data = new NativeArray<float>(pInput, length);
             OnProcess(data, frameCount);
         }
