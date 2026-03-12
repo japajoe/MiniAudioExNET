@@ -53,6 +53,9 @@ using System.Text;
 using System.Collections.Generic;
 using MiniAudioEx.Native;
 using MiniAudioEx.Utilities;
+using System.IO;
+using System.Net.Security;
+using System.Xml.Schema;
 
 namespace MiniAudioEx.Core
 {
@@ -67,34 +70,28 @@ namespace MiniAudioEx.Core
         private ma_decoder_seek_proc decoderSeekProc;
         private ma_device_data_proc deviceDataProc;
         private Socket socket;
+        private Stream networkStream;
         private Thread connectionThread;
         private AtomicBool isRunning;
         private RingBuffer audioBuffer;
         private AudioDevice playbackDevice;
         private bool audioInitialized;
+        private bool isBuffering;
         private float volume;
+        private const int bufferCapacity = 1024 * 128;
+        private const int bufferThreshold = 1024 * 64; 
 
         public float Volume
         {
-            get
-            {
-                return volume;
-            }
-            set
-            {
-                if (value < 0.0f)
-                {
-                    value = 0.0f;
-                }
-                volume = value;
-            }
+            get => volume;
+            set => volume = Math.Max(value, 0.0f);
         }
 
         public AudioStream(AudioDevice playbackDevice = null)
         {
             this.playbackDevice = playbackDevice;
             isRunning = new AtomicBool();
-            audioBuffer = new RingBuffer(1024 * 128);
+            audioBuffer = new RingBuffer(bufferCapacity);
             decoder = new ma_decoder_ptr(true);
             device = new ma_device_ptr(true);
             decoderReadProc = OnDecoderRead;
@@ -102,6 +99,7 @@ namespace MiniAudioEx.Core
             deviceDataProc = OnDeviceData;
             volume = 1.0f;
             audioInitialized = false;
+            isBuffering = true;
         }
 
         public void Play(string url)
@@ -113,6 +111,7 @@ namespace MiniAudioEx.Core
 
             audioBuffer.Reset();
             audioInitialized = false;
+            isBuffering = true;
             isRunning.Store(true);
 
             connectionThread = new Thread(() =>
@@ -158,6 +157,19 @@ namespace MiniAudioEx.Core
 
         private void Disconnect()
         {
+            if (networkStream != null)
+            {
+                try
+                {
+                    networkStream.Close();
+                }
+                catch
+                {
+                }
+                networkStream.Dispose();
+                networkStream = null;
+            }
+
             if (socket != null)
             {
                 try
@@ -197,8 +209,26 @@ namespace MiniAudioEx.Core
                 Uri uri = new Uri(url);
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-                int port = uri.Port == -1 ? 80 : uri.Port;
+                int port = uri.Port;
+                if (port == -1)
+                {
+                    port = uri.Scheme == "https" ? 443 : 80;
+                }
+
                 socket.Connect(uri.Host, port);
+
+                NetworkStream rawStream = new NetworkStream(socket, true);
+
+                if (uri.Scheme == "https")
+                {
+                    SslStream sslStream = new SslStream(rawStream, false);
+                    sslStream.AuthenticateAsClient(uri.Host);
+                    networkStream = sslStream;
+                }
+                else
+                {
+                    networkStream = rawStream;
+                }
 
                 string request = "GET " + uri.PathAndQuery + " HTTP/1.1\r\n" +
                                  "Host: " + uri.Host + "\r\n" +
@@ -207,13 +237,17 @@ namespace MiniAudioEx.Core
                                  "Connection: close\r\n\r\n";
 
                 byte[] requestBytes = Encoding.UTF8.GetBytes(request);
-                socket.Send(requestBytes);
+                networkStream.Write(requestBytes, 0, requestBytes.Length);
+                networkStream.Flush();
 
                 Receive();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Connection error: " + ex.Message);
+                if (isRunning.Load())
+                {
+                    Console.WriteLine("Connection error: " + ex.Message);
+                }
                 isRunning.Store(false);
             }
         }
@@ -226,9 +260,9 @@ namespace MiniAudioEx.Core
 
             try
             {
-                while (isRunning.Load() && socket != null && socket.Connected)
+                while (isRunning.Load() && networkStream != null)
                 {
-                    int bytesRead = socket.Receive(buffer);
+                    int bytesRead = networkStream.Read(buffer, 0, buffer.Length);
                     if (bytesRead <= 0)
                     {
                         break;
@@ -260,18 +294,29 @@ namespace MiniAudioEx.Core
 
                     ProcessAudioData(buffer, 0, bytesRead);
 
-                    if (!audioInitialized && audioBuffer.Count > 32768)
+                    if (!audioInitialized && audioBuffer.Count >= bufferThreshold)
                     {
+                        // InitializeAudio will call OnDecoderRead, which needs to pull data.
                         if (!InitializeAudio())
                         {
                             break;
                         }
                     }
+                    else if (isBuffering && audioBuffer.Count >= bufferThreshold)
+                    {
+                        isBuffering = false;
+                    }
                 }
             }
-            catch (SocketException)
+            catch (Exception ex)
             {
-                isRunning.Store(false);
+                if (isRunning.Load())
+                {
+                    if (!(ex is IOException || ex is ObjectDisposedException || ex is SocketException))
+                    {
+                        Console.WriteLine("Receive error: " + ex.Message);
+                    }
+                }
             }
             finally
             {
@@ -289,7 +334,6 @@ namespace MiniAudioEx.Core
                 return false;
             }
 
-            // Check for HTTP 200 OK
             if (!lines[0].Contains("200"))
             {
                 Console.WriteLine("Server returned error: " + lines[0]);
@@ -315,6 +359,8 @@ namespace MiniAudioEx.Core
         {
             ma_decoder_config decoderConfig = MiniAudio.ma_decoder_config_init(ma_format.f32, 0, 0);
 
+            // Important: We are still in isBuffering = true here, but OnDecoderRead 
+            // now allows reading if audioInitialized is false.
             ma_result result = MiniAudio.ma_decoder_init(decoderReadProc, decoderSeekProc, IntPtr.Zero, ref decoderConfig, decoder);
 
             if (result != ma_result.success)
@@ -379,8 +425,15 @@ namespace MiniAudioEx.Core
 
         private ma_result OnDecoderRead(ma_decoder_ptr pDecoder, IntPtr pBufferOut, size_t bytesToRead, out size_t pBytesRead)
         {
-            int actualRead = audioBuffer.Read(pBufferOut, (int)bytesToRead.ToUInt32());
+            // Allow the decoder to read data during the initialization phase 
+            // even if isBuffering is true.
+            if (isBuffering && audioInitialized)
+            {
+                pBytesRead = 0;
+                return ma_result.success;
+            }
 
+            int actualRead = audioBuffer.Read(pBufferOut, (int)bytesToRead.ToUInt32());
             pBytesRead = actualRead;
 
             if (actualRead > 0)
@@ -390,6 +443,10 @@ namespace MiniAudioEx.Core
             
             if (isRunning.Load())
             {
+                if (audioInitialized)
+                {
+                    isBuffering = true;
+                }
                 return ma_result.success;
             }
 
