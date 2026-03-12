@@ -55,3 +55,48 @@ namespace Example
 	}
 }
 ```
+
+# Playing from an online stream
+```csharp
+using System;
+using System.Collections.Generic;
+using MiniAudioEx.Core;
+
+namespace Example
+{
+	class Program
+	{
+		static void Main(string[] args)
+		{
+            using(var stream = new AudioStream())
+			{
+				stream.Connected += OnConnected;
+				stream.Disconnected += OnDisconnected;
+				stream.MetadataReceived += OnMetaDataReceived;
+
+				stream.Play("http://ice1.somafm.com/groovesalad-128-mp3");
+
+				Console.ReadLine();
+			}
+		}
+
+        static void OnConnected(Dictionary<string, string> headers)
+        {
+            foreach(var h in headers)
+            {
+                Console.WriteLine(h.Key + ": " + h.Value);
+            }
+        }
+
+        static void OnDisconnected(string reason)
+        {
+            Console.WriteLine("Stream disconnected: " + reason);
+        }
+
+        static void OnMetaDataReceived(string data)
+        {
+            Console.WriteLine("Meta data: " + data);
+        }
+	}
+}
+```
