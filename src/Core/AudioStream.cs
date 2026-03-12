@@ -55,15 +55,26 @@ using MiniAudioEx.Native;
 using MiniAudioEx.Utilities;
 using System.IO;
 using System.Net.Security;
-using System.Xml.Schema;
 
 namespace MiniAudioEx.Core
 {
+    public delegate void AudioStreamConnectedEvent();
+    public delegate void AudioStreamDisconnectedEvent(string reason);
+
     /// <summary>
     /// Experimental class for playing (ICY) internet streams.
     /// </summary>
-    public unsafe sealed class AudioStream : IDisposable
+    public sealed class AudioStream : IDisposable
     {
+        /// <summary>
+        /// Triggered when response headers are received. Is called from the network thread.
+        /// </summary>
+        public event AudioStreamConnectedEvent Connected;
+        /// <summary>
+        /// Triggered when an unexpected disconnection happens. Is called from the network thread.
+        /// </summary>
+        public event AudioStreamDisconnectedEvent Disconnected;
+
         private ma_device_ptr device;
         private ma_decoder_ptr decoder;
         private ma_decoder_read_proc decoderReadProc;
@@ -78,6 +89,7 @@ namespace MiniAudioEx.Core
         private bool audioInitialized;
         private bool isBuffering;
         private float volume;
+        private Dictionary<string,string> responseHeaders;
         private const int bufferCapacity = 1024 * 128;
         private const int bufferThreshold = 1024 * 64; 
 
@@ -87,9 +99,12 @@ namespace MiniAudioEx.Core
             set => volume = Math.Max(value, 0.0f);
         }
 
+        public Dictionary<string,string> ResponseHeaders => responseHeaders;
+
         public AudioStream(AudioDevice playbackDevice = null)
         {
             this.playbackDevice = playbackDevice;
+            responseHeaders = new Dictionary<string, string>();
             isRunning = new AtomicBool();
             audioBuffer = new RingBuffer(bufferCapacity);
             decoder = new ma_decoder_ptr(true);
@@ -204,6 +219,9 @@ namespace MiniAudioEx.Core
 
         private void Connect(string url)
         {
+            string disconnectReason = "Unknown";
+            bool wasUnexpected = false;
+
             try
             {
                 Uri uri = new Uri(url);
@@ -246,9 +264,19 @@ namespace MiniAudioEx.Core
             {
                 if (isRunning.Load())
                 {
-                    Console.WriteLine("Connection error: " + ex.Message);
+                    disconnectReason = ex.Message;
+                    wasUnexpected = true;
                 }
+            }
+            finally
+            {
+                bool expectedStop = !isRunning.Load();
                 isRunning.Store(false);
+
+                if (wasUnexpected || (!expectedStop))
+                {
+                    Disconnected?.Invoke(disconnectReason);
+                }
             }
         }
 
@@ -279,8 +307,10 @@ namespace MiniAudioEx.Core
                                 break;
                             }
 
-                            string header = Encoding.UTF8.GetString(headerCollector.ToArray());
-                            Console.WriteLine(header);
+                            Connected?.Invoke();
+
+                            //string header = Encoding.UTF8.GetString(headerCollector.ToArray());
+                            //Console.WriteLine(header);
 
                             headerSkipped = true;
                             int remainingBytes = bytesRead - payloadOffset;
@@ -340,7 +370,11 @@ namespace MiniAudioEx.Core
                 return false;
             }
 
+            if(responseHeaders.Count > 0)
+                responseHeaders.Clear();
+
             bool isAudio = false;
+
             foreach (string line in lines)
             {
                 if (line.StartsWith("Content-Type:", StringComparison.OrdinalIgnoreCase))
@@ -350,15 +384,23 @@ namespace MiniAudioEx.Core
                         isAudio = true;
                     }
                 }
+
+                int separatorIndex = line.IndexOf(':');
+                if (separatorIndex != -1)
+                {
+                    string key = line.Substring(0, separatorIndex).Trim();
+                    string value = line.Substring(separatorIndex + 1).Trim();
+                    responseHeaders[key] = value;
+                }
             }
 
             return isAudio;
         }
 
-        private bool InitializeAudio()
+        private unsafe bool InitializeAudio()
         {
             ma_decoder_config decoderConfig = MiniAudio.ma_decoder_config_init(ma_format.f32, 0, 0);
-
+            
             // Important: We are still in isBuffering = true here, but OnDecoderRead 
             // now allows reading if audioInitialized is false.
             ma_result result = MiniAudio.ma_decoder_init(decoderReadProc, decoderSeekProc, IntPtr.Zero, ref decoderConfig, decoder);
@@ -458,7 +500,7 @@ namespace MiniAudioEx.Core
             return ma_result.success;
         }
 
-        private void OnDeviceData(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
+        private unsafe void OnDeviceData(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
         {
             ma_device* devicePtr = pDevice.Get();
 
