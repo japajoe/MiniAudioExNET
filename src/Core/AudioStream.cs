@@ -58,8 +58,9 @@ using System.Net.Security;
 
 namespace MiniAudioEx.Core
 {
-    public delegate void AudioStreamConnectedEvent();
+    public delegate void AudioStreamConnectedEvent(Dictionary<string,string> headers);
     public delegate void AudioStreamDisconnectedEvent(string reason);
+    public delegate void AudioStreamMetadataEvent(string metadata);
 
     /// <summary>
     /// Experimental class for playing (ICY) internet streams.
@@ -68,12 +69,16 @@ namespace MiniAudioEx.Core
     {
         /// <summary>
         /// Triggered when response headers are received. Is called from the network thread.
-        /// </summary>
+        /// </summary>   
         public event AudioStreamConnectedEvent Connected;
         /// <summary>
         /// Triggered when an unexpected disconnection happens. Is called from the network thread.
         /// </summary>
         public event AudioStreamDisconnectedEvent Disconnected;
+        /// <summary>
+        /// Triggered when a new song starts. Is called from the network thread.
+        /// </summary>
+        public event AudioStreamMetadataEvent MetadataReceived;
 
         private ma_device_ptr device;
         private ma_decoder_ptr decoder;
@@ -89,7 +94,8 @@ namespace MiniAudioEx.Core
         private bool audioInitialized;
         private bool isBuffering;
         private float volume;
-        private Dictionary<string,string> responseHeaders;
+        private int metaInterval;
+        private int bytesUntilMeta;
         private const int bufferCapacity = 1024 * 128;
         private const int bufferThreshold = 1024 * 64; 
 
@@ -99,12 +105,9 @@ namespace MiniAudioEx.Core
             set => volume = Math.Max(value, 0.0f);
         }
 
-        public Dictionary<string,string> ResponseHeaders => responseHeaders;
-
         public AudioStream(AudioDevice playbackDevice = null)
         {
             this.playbackDevice = playbackDevice;
-            responseHeaders = new Dictionary<string, string>();
             isRunning = new AtomicBool();
             audioBuffer = new RingBuffer(bufferCapacity);
             decoder = new ma_decoder_ptr(true);
@@ -115,6 +118,8 @@ namespace MiniAudioEx.Core
             volume = 1.0f;
             audioInitialized = false;
             isBuffering = true;
+            metaInterval = 0;
+            bytesUntilMeta = 0;
         }
 
         public void Play(string url)
@@ -127,6 +132,7 @@ namespace MiniAudioEx.Core
             audioBuffer.Reset();
             audioInitialized = false;
             isBuffering = true;
+            metaInterval = 0;
             isRunning.Store(true);
 
             connectionThread = new Thread(() =>
@@ -251,7 +257,7 @@ namespace MiniAudioEx.Core
                 string request = "GET " + uri.PathAndQuery + " HTTP/1.1\r\n" +
                                  "Host: " + uri.Host + "\r\n" +
                                  "User-Agent: MiniAudioEx/1.0\r\n" +
-                                 "Icy-MetaData: 0\r\n" +
+                                 "Icy-MetaData: 1\r\n" +
                                  "Connection: close\r\n\r\n";
 
                 byte[] requestBytes = Encoding.UTF8.GetBytes(request);
@@ -307,26 +313,22 @@ namespace MiniAudioEx.Core
                                 break;
                             }
 
-                            Connected?.Invoke();
-
-                            //string header = Encoding.UTF8.GetString(headerCollector.ToArray());
-                            //Console.WriteLine(header);
-
                             headerSkipped = true;
                             int remainingBytes = bytesRead - payloadOffset;
                             if (remainingBytes > 0)
                             {
-                                ProcessAudioData(buffer, payloadOffset, remainingBytes);
+                                byte[] remainingData = new byte[remainingBytes];
+                                Buffer.BlockCopy(buffer, payloadOffset, remainingData, 0, remainingBytes);
+                                ProcessStreamData(remainingData, remainingBytes);
                             }
                         }
                         continue;
                     }
 
-                    ProcessAudioData(buffer, 0, bytesRead);
+                    ProcessStreamData(buffer, bytesRead);
 
                     if (!audioInitialized && audioBuffer.Count >= bufferThreshold)
                     {
-                        // InitializeAudio will call OnDecoderRead, which needs to pull data.
                         if (!InitializeAudio())
                         {
                             break;
@@ -354,6 +356,63 @@ namespace MiniAudioEx.Core
             }
         }
 
+        private void ProcessStreamData(byte[] data, int length)
+        {
+            if (metaInterval <= 0)
+            {
+                audioBuffer.Write(data, 0, length);
+                return;
+            }
+
+            int offset = 0;
+            while (offset < length)
+            {
+                if (bytesUntilMeta > 0)
+                {
+                    int toWrite = Math.Min(bytesUntilMeta, length - offset);
+                    audioBuffer.Write(data, offset, toWrite);
+                    bytesUntilMeta -= toWrite;
+                    offset += toWrite;
+                }
+                else
+                {
+                    // Read meta length byte
+                    int lengthByte = data[offset];
+                    offset++;
+
+                    if (lengthByte > 0)
+                    {
+                        int metaLength = lengthByte * 16;
+                        byte[] metaBuffer = new byte[metaLength];
+                        int metaRead = 0;
+
+                        // Metadata might span across network packets
+                        while (metaRead < metaLength)
+                        {
+                            if (offset < length)
+                            {
+                                metaBuffer[metaRead++] = data[offset++];
+                            }
+                            else
+                            {
+                                int r = networkStream.Read(metaBuffer, metaRead, metaLength - metaRead);
+                                if (r <= 0)
+                                {
+                                    break;
+                                }
+                                metaRead += r;
+                            }
+                        }
+
+                        string metaString = Encoding.UTF8.GetString(metaBuffer).TrimEnd('\0');
+                        MetadataReceived?.Invoke(metaString);
+                    }
+
+                    bytesUntilMeta = metaInterval;
+                }
+            }
+        }
+
         private bool ValidateHeader(List<byte> headerBytes)
         {
             string headerText = Encoding.UTF8.GetString(headerBytes.ToArray());
@@ -370,29 +429,39 @@ namespace MiniAudioEx.Core
                 return false;
             }
 
-            if(responseHeaders.Count > 0)
-                responseHeaders.Clear();
-
             bool isAudio = false;
+
+            Dictionary<string,string> responseHeaders = new Dictionary<string, string>();
 
             foreach (string line in lines)
             {
-                if (line.StartsWith("Content-Type:", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (line.Contains("audio/") || line.Contains("application/octet-stream"))
-                    {
-                        isAudio = true;
-                    }
-                }
-
                 int separatorIndex = line.IndexOf(':');
                 if (separatorIndex != -1)
                 {
                     string key = line.Substring(0, separatorIndex).Trim();
                     string value = line.Substring(separatorIndex + 1).Trim();
                     responseHeaders[key] = value;
+
+                    if (key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (value.Contains("audio/") || value.Contains("application/octet-stream"))
+                        {
+                            isAudio = true;
+                        }
+                    }
+
+                    if (key.Equals("icy-metaint", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (int.TryParse(value, out int interval))
+                        {
+                            metaInterval = interval;
+                            bytesUntilMeta = metaInterval;
+                        }
+                    }
                 }
             }
+
+            Connected?.Invoke(responseHeaders);
 
             return isAudio;
         }
@@ -400,9 +469,6 @@ namespace MiniAudioEx.Core
         private unsafe bool InitializeAudio()
         {
             ma_decoder_config decoderConfig = MiniAudio.ma_decoder_config_init(ma_format.f32, 0, 0);
-            
-            // Important: We are still in isBuffering = true here, but OnDecoderRead 
-            // now allows reading if audioInitialized is false.
             ma_result result = MiniAudio.ma_decoder_init(decoderReadProc, decoderSeekProc, IntPtr.Zero, ref decoderConfig, decoder);
 
             if (result != ma_result.success)
@@ -460,15 +526,8 @@ namespace MiniAudioEx.Core
             return -1;
         }
 
-        private void ProcessAudioData(byte[] buffer, int offset, int count)
-        {
-            audioBuffer.Write(buffer, offset, count);
-        }
-
         private ma_result OnDecoderRead(ma_decoder_ptr pDecoder, IntPtr pBufferOut, size_t bytesToRead, out size_t pBytesRead)
         {
-            // Allow the decoder to read data during the initialization phase 
-            // even if isBuffering is true.
             if (isBuffering && audioInitialized)
             {
                 pBytesRead = 0;
