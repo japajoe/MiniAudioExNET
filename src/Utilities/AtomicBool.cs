@@ -46,63 +46,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-using MiniAudioEx.Native;
+using System.Threading;
 
-namespace MiniAudioEx.Core
+namespace MiniAudioEx.Utilities
 {
-    public enum AudioDeviceType
+    public struct AtomicBool
     {
-        Capture,
-        Playback    
-    }
+        private int value;
 
-    public sealed class AudioDevice
-    {
-        public ma_device_info info;
-        public bool IsDefault => info.isDefault > 0;
-        public string Name => info.GetName();
-
-        public static AudioDevice[] GetDevices(AudioDeviceType deviceType)
+        public AtomicBool()
         {
-            ma_context_ptr context = new ma_context_ptr(true);
+            value = 0;
+        }
 
-            if (MiniAudio.ma_context_init(null, context) != ma_result.success)
-            {
-                context.Free();
-                throw new Exception("Can not obtain devices, failed to create audio context");
-            }
+        public bool Load()
+        {
+            return Interlocked.CompareExchange(ref value, 0, 0) == 1;
+        }
 
-            if (MiniAudio.ma_context_get_devices(context, out ma_device_info[] playbackDevices, out ma_device_info[] captureDevices) != ma_result.success)
-            {
-                context.Free();
-                throw new Exception("Failed to get devices");
-            }
-
-            context.Free();
-
-            AudioDevice[] devices = null;
-
-            if(deviceType == AudioDeviceType.Capture)
-            {
-                devices = new AudioDevice[captureDevices.Length];
-                for(int i = 0; i < captureDevices.Length; i++)
-                {
-                    devices[i] = new AudioDevice();
-                    devices[i].info = captureDevices[i];
-                }                
-            }
-            else
-            {
-                devices = new AudioDevice[playbackDevices.Length];
-                for(int i = 0; i < playbackDevices.Length; i++)
-                {
-                    devices[i] = new AudioDevice();
-                    devices[i].info = playbackDevices[i];
-                }
-            }
-
-            return devices;
+        public void Store(bool value)
+        {
+            Interlocked.Exchange(ref this.value, value ? 1 : 0);
         }
     }
 }

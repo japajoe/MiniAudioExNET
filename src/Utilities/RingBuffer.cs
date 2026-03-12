@@ -47,62 +47,104 @@
 // SOFTWARE.
 
 using System;
-using MiniAudioEx.Native;
 
-namespace MiniAudioEx.Core
+namespace MiniAudioEx.Utilities
 {
-    public enum AudioDeviceType
+    public class RingBuffer
     {
-        Capture,
-        Playback    
-    }
+        private byte[] buffer;
+        private int readIndex;
+        private int writeIndex;
+        private int count;
+        private int mask;
+        private object lockObject = new object();
 
-    public sealed class AudioDevice
-    {
-        public ma_device_info info;
-        public bool IsDefault => info.isDefault > 0;
-        public string Name => info.GetName();
-
-        public static AudioDevice[] GetDevices(AudioDeviceType deviceType)
+        public int Count
         {
-            ma_context_ptr context = new ma_context_ptr(true);
-
-            if (MiniAudio.ma_context_init(null, context) != ma_result.success)
+            get
             {
-                context.Free();
-                throw new Exception("Can not obtain devices, failed to create audio context");
-            }
-
-            if (MiniAudio.ma_context_get_devices(context, out ma_device_info[] playbackDevices, out ma_device_info[] captureDevices) != ma_result.success)
-            {
-                context.Free();
-                throw new Exception("Failed to get devices");
-            }
-
-            context.Free();
-
-            AudioDevice[] devices = null;
-
-            if(deviceType == AudioDeviceType.Capture)
-            {
-                devices = new AudioDevice[captureDevices.Length];
-                for(int i = 0; i < captureDevices.Length; i++)
+                lock (lockObject)
                 {
-                    devices[i] = new AudioDevice();
-                    devices[i].info = captureDevices[i];
-                }                
-            }
-            else
-            {
-                devices = new AudioDevice[playbackDevices.Length];
-                for(int i = 0; i < playbackDevices.Length; i++)
-                {
-                    devices[i] = new AudioDevice();
-                    devices[i].info = playbackDevices[i];
+                    return count;
                 }
             }
+        }
 
-            return devices;
+        public RingBuffer(int size)
+        {
+            // Ensure size is a power of two for bitwise masking
+            int actualSize = 1;
+            while (actualSize < size)
+            {
+                actualSize <<= 1;
+            }
+
+            buffer = new byte[actualSize];
+            mask = actualSize - 1;
+        }
+
+        public void Reset()
+        {
+            lock (lockObject)
+            {
+                readIndex = 0;
+                writeIndex = 0;
+                count = 0;
+            }
+        }
+
+        public void Write(byte[] data, int offset, int length)
+        {
+            lock (lockObject)
+            {
+                int freeSpace = buffer.Length - count;
+                int bytesToWrite = Math.Min(length, freeSpace);
+
+                if (bytesToWrite <= 0)
+                {
+                    return;
+                }
+
+                int firstPart = Math.Min(bytesToWrite, buffer.Length - writeIndex);
+                Buffer.BlockCopy(data, offset, buffer, writeIndex, firstPart);
+
+                int secondPart = bytesToWrite - firstPart;
+                if (secondPart > 0)
+                {
+                    Buffer.BlockCopy(data, offset + firstPart, buffer, 0, secondPart);
+                }
+
+                writeIndex = (writeIndex + bytesToWrite) & mask;
+                count += bytesToWrite;
+            }
+        }
+
+        public int Read(IntPtr destination, int length)
+        {
+            lock (lockObject)
+            {
+                int bytesToRead = Math.Min(length, count);
+
+                if (bytesToRead <= 0)
+                {
+                    return 0;
+                }
+
+                int firstPart = Math.Min(bytesToRead, buffer.Length - readIndex);
+                System.Runtime.InteropServices.Marshal.Copy(buffer, readIndex, destination, firstPart);
+
+                int secondPart = bytesToRead - firstPart;
+                if (secondPart > 0)
+                {
+                    IntPtr secondDest = new IntPtr(destination.ToInt64() + firstPart);
+                    System.Runtime.InteropServices.Marshal.Copy(buffer, 0, secondDest, secondPart);
+                }
+
+                readIndex = (readIndex + bytesToRead) & mask;
+                count -= bytesToRead;
+
+                return bytesToRead;
+            }
         }
     }
 }
