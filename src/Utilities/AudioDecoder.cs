@@ -49,7 +49,6 @@
 using System;
 using System.IO;
 using MiniAudioEx.Native;
-using MiniAudioEx.Core.StandardAPI;
 
 namespace MiniAudioEx.Utilities
 {

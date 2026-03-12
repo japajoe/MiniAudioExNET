@@ -344,10 +344,10 @@ namespace MiniAudioEx.Core.StandardAPI
             }
             set
             {
-                var p = MiniAudioNative.ma_sound_group_get_position(soundGroup);
-                previousPosition.x = p.x;
-                previousPosition.y = p.y;
-                previousPosition.z = p.z;
+                var previous = MiniAudioNative.ma_sound_group_get_position(soundGroup);
+                previousPosition.x = previous.x;
+                previousPosition.y = previous.y;
+                previousPosition.z = previous.z;
                 MiniAudioNative.ma_sound_group_set_position(soundGroup, value.x, value.y, value.z);
             }
         }
