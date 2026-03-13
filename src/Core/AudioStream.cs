@@ -55,6 +55,7 @@ using MiniAudioEx.Native;
 using MiniAudioEx.Utilities;
 using System.IO;
 using System.Net.Security;
+using System.Text.RegularExpressions;
 
 namespace MiniAudioEx.Core
 {
@@ -176,6 +177,19 @@ namespace MiniAudioEx.Core
             }
         }
 
+        public string GetTitle(string metadata)
+        {
+            var match = Regex.Match(metadata, @"StreamTitle='(.*?)';", RegexOptions.Singleline);
+
+            if (match.Success)
+            {
+                string title = match.Groups[1].Value.Replace("\\'", "'"); 
+                return title.Trim();
+            }
+
+            return string.Empty;
+        }
+
         private void Disconnect()
         {
             if (networkStream != null)
@@ -254,8 +268,15 @@ namespace MiniAudioEx.Core
                     networkStream = rawStream;
                 }
 
+                string hostHeader = uri.Host;
+                
+                if (!uri.IsDefaultPort)
+                {
+                    hostHeader = uri.Host + ":" + uri.Port;
+                }
+
                 string request = "GET " + uri.PathAndQuery + " HTTP/1.1\r\n" +
-                                 "Host: " + uri.Host + "\r\n" +
+                                 "Host: " + hostHeader + "\r\n" +
                                  "User-Agent: MiniAudioEx/1.0\r\n" +
                                  "Icy-MetaData: 1\r\n" +
                                  "Connection: close\r\n\r\n";

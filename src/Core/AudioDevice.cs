@@ -75,10 +75,12 @@ namespace MiniAudioEx.Core
 
             if (MiniAudio.ma_context_get_devices(context, out ma_device_info[] playbackDevices, out ma_device_info[] captureDevices) != ma_result.success)
             {
+                MiniAudio.ma_context_uninit(context);
                 context.Free();
                 throw new Exception("Failed to get devices");
             }
 
+            MiniAudio.ma_context_uninit(context);
             context.Free();
 
             AudioDevice[] devices = null;
@@ -90,7 +92,7 @@ namespace MiniAudioEx.Core
                 {
                     devices[i] = new AudioDevice();
                     devices[i].info = captureDevices[i];
-                }                
+                }
             }
             else
             {
@@ -101,6 +103,7 @@ namespace MiniAudioEx.Core
                     devices[i].info = playbackDevices[i];
                 }
             }
+
 
             return devices;
         }
