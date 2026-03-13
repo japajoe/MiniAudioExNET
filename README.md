@@ -13,6 +13,7 @@ A .NET wrapper for MiniAudioEx. MiniAudioEx is a modified version of MiniAudio, 
 - Utilities for audio generation.
 - Effects processing, including reverb/delay/phaser/filters etc.
 - Capture audio from a microphone or a playback device.
+- Play internet streams (ICY protocol).
 - Exposes many native miniaudio API calls.
 
 # Note
@@ -31,8 +32,11 @@ If you find something is missing from the API, please open an issue. This librar
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 3.2.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 3.2.1
 ```
+
+# Changes in 3.2.1
+- Added `AudioStream` for playing internet streams with ICY protocol.
 
 # Changes in 3.2.0
 - Default to using wide strings when loading sounds on Windows.
