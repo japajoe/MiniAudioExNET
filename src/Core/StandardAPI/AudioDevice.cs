@@ -27,10 +27,12 @@ namespace MiniAudioEx.Core.StandardAPI
 
             if (MiniAudioNative.ma_context_get_devices(context, out ma_device_info[] playbackDevices, out ma_device_info[] captureDevices) != ma_result.success)
             {
+                MiniAudioNative.ma_context_uninit(context);
                 context.Free();
                 throw new Exception("Failed to get devices");
             }
 
+            MiniAudioNative.ma_context_uninit(context);
             context.Free();
 
             AudioDevice[] devices = null;
