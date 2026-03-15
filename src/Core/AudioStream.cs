@@ -98,7 +98,15 @@ namespace MiniAudioEx.Core
         private int metaInterval;
         private int bytesUntilMeta;
         private const int bufferCapacity = 1024 * 128;
-        private const int bufferThreshold = 1024 * 64; 
+        private const int bufferThreshold = 1024 * 64;
+
+        public bool IsPlaying
+        {
+            get
+            {
+                return isRunning.Load();
+            }
+        }
 
         public float Volume
         {

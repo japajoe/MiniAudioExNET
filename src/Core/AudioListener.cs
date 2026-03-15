@@ -87,7 +87,7 @@ namespace MiniAudioEx.Core
                 previousPosition.x = previous.x;
                 previousPosition.y = previous.y;
                 previousPosition.z = previous.z;
-                MiniAudio.ma_engine_listener_set_position(context.Engine, 0, value.x, value.y, value.z);
+                MiniAudio.ma_engine_listener_set_position(context.Engine, index, value.x, value.y, value.z);
             }
         }
 
