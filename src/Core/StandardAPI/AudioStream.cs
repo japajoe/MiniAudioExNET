@@ -245,30 +245,52 @@ namespace MiniAudioEx.Core.StandardAPI
             }
         }
 
+        private bool TryParseURL(string url, out string host, out string hostHeader, out string pathAndQuery, out int port, out bool isHttps)
+        {
+            host = hostHeader = pathAndQuery = string.Empty;
+            port = 0;
+            isHttps = false;
+
+            // Handle "icy://" prefix which is common in Icecast but not a standard .NET scheme
+            if (url.StartsWith("icy://", StringComparison.OrdinalIgnoreCase))
+                url = "http://" + url.Substring(6);
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+                return false; 
+
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                return false;
+
+            host = uri.Host;
+            port = uri.Port;
+            pathAndQuery = uri.PathAndQuery;
+            isHttps = uri.Scheme == Uri.UriSchemeHttps;
+            hostHeader = uri.IsDefaultPort ? uri.Host : $"{uri.Host}:{uri.Port}";
+
+            return true;
+        }
+
         private void Connect(string url)
         {
+            if(!TryParseURL(url, out string host, out string hostHeader, out string pathAndQuery, out int port, out bool isHttps))
+                throw new Exception("Failed to parse URL");
+
             string disconnectReason = "Unknown";
             bool wasUnexpected = false;
 
             try
             {
-                Uri uri = new Uri(url);
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-                int port = uri.Port;
-                if (port == -1)
-                {
-                    port = uri.Scheme == "https" ? 443 : 80;
-                }
 
-                socket.Connect(uri.Host, port);
+                socket.Connect(host, port);
 
                 NetworkStream rawStream = new NetworkStream(socket, true);
 
-                if (uri.Scheme == "https")
+                if (isHttps)
                 {
                     SslStream sslStream = new SslStream(rawStream, false);
-                    sslStream.AuthenticateAsClient(uri.Host);
+                    sslStream.AuthenticateAsClient(host);
                     networkStream = sslStream;
                 }
                 else
@@ -276,14 +298,7 @@ namespace MiniAudioEx.Core.StandardAPI
                     networkStream = rawStream;
                 }
 
-                string hostHeader = uri.Host;
-                
-                if (!uri.IsDefaultPort)
-                {
-                    hostHeader = uri.Host + ":" + uri.Port;
-                }
-
-                string request = "GET " + uri.PathAndQuery + " HTTP/1.1\r\n" +
+                string request = "GET " + pathAndQuery + " HTTP/1.1\r\n" +
                                  "Host: " + hostHeader + "\r\n" +
                                  "User-Agent: MiniAudioEx/1.0\r\n" +
                                  "Icy-MetaData: 1\r\n" +
