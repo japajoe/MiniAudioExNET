@@ -245,7 +245,7 @@ namespace MiniAudioEx.Core
             }
         }
 
-private bool TryParseURL(string url, out string host, out string hostHeader, out string pathAndQuery, out int port, out bool isHttps)
+        private bool TryParseURL(string url, out string host, out string hostHeader, out string pathAndQuery, out int port, out bool isHttps)
         {
             host = hostHeader = pathAndQuery = string.Empty;
             port = 0;
