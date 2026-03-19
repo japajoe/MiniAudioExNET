@@ -49,6 +49,7 @@
 using System;
 using System.Collections.Generic;
 using MiniAudioEx.Native;
+using static MiniAudioEx.Native.MiniAudio;
 
 namespace MiniAudioEx.Core
 {   
@@ -76,6 +77,7 @@ namespace MiniAudioEx.Core
         private List<AudioSource> sources;
         private float deltaTime;
         private DateTime lastUpdateTime;
+        private UInt64 ticks;
         private static AudioContext current;
 
         public ma_context_ptr Context => context;
@@ -83,6 +85,7 @@ namespace MiniAudioEx.Core
         public UInt32 Channels => channels;
         public UInt32 SampleRate => sampleRate;
         public float DeltaTime => deltaTime;
+        public UInt64 Ticks => ticks;
 
         public AudioContext(UInt32 sampleRate = 44100, UInt32 channels = 2, UInt32 periodSizeInFrames = 2048, AudioDevice audioDevice = null)
         {
@@ -93,6 +96,7 @@ namespace MiniAudioEx.Core
             sources = new List<AudioSource>();
             deltaTime = 0.0f;
             lastUpdateTime = DateTime.Now;
+            ticks = 0;
         }
 
         public void Create()
@@ -104,7 +108,7 @@ namespace MiniAudioEx.Core
             resourceManager = new ma_resource_manager_ptr(true);
             deviceDataProc = OnDeviceData;
 
-            if (MiniAudio.ma_log_init(log) != ma_result.success)
+            if (ma_log_init(log) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to initialize log");
@@ -114,22 +118,22 @@ namespace MiniAudioEx.Core
             onLog = OnLog;
 			logCallback.SetLogCallback(onLog);
 			
-            if (MiniAudio.ma_log_register_callback(log, logCallback) != ma_result.success)
+            if (ma_log_register_callback(log, logCallback) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to initialize log callback");
             }
 
-            ma_context_config contextConfig = MiniAudio.ma_context_config_init();
+            ma_context_config contextConfig = ma_context_config_init();
             contextConfig.pLog = log;
 
-            if (MiniAudio.ma_context_init(null, ref contextConfig, context) != ma_result.success)
+            if (ma_context_init(null, ref contextConfig, context) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to create context");
             }
 
-            ma_device_config deviceConfig = MiniAudio.ma_device_config_init(ma_device_type.playback);
+            ma_device_config deviceConfig = ma_device_config_init(ma_device_type.playback);
             deviceConfig.playback.format = ma_format.f32;
             deviceConfig.playback.channels = channels;
             deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
@@ -139,7 +143,7 @@ namespace MiniAudioEx.Core
 
             if(audioDevice == null)
             {
-                if (MiniAudio.ma_context_get_devices(context, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos) != ma_result.success)
+                if (ma_context_get_devices(context, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos) != ma_result.success)
                 {
                     Dispose();
                     throw new Exception("Failed to get devices");
@@ -168,7 +172,7 @@ namespace MiniAudioEx.Core
                 }
             }
 
-            if (MiniAudio.ma_device_init(context, ref deviceConfig, device) != ma_result.success)
+            if (ma_device_init(context, ref deviceConfig, device) != ma_result.success)
             {
                 deviceConfig.playback.pDeviceID.Free();
                 Dispose();
@@ -178,13 +182,13 @@ namespace MiniAudioEx.Core
             deviceConfig.playback.pDeviceID.Free();
 
             ma_decoding_backend_vtable_ptr[] vtables = {
-                MiniAudio.ma_libvorbis_get_decoding_backend_ptr()
+                ma_libvorbis_get_decoding_backend_ptr()
             };
 
-            ma_resource_manager_config resourceManagerConfig = MiniAudio.ma_resource_manager_config_init();
+            ma_resource_manager_config resourceManagerConfig = ma_resource_manager_config_init();
             resourceManagerConfig.SetCustomDecodingBackendVTables(vtables);
 
-            if (MiniAudio.ma_resource_manager_init(ref resourceManagerConfig, resourceManager) != ma_result.success)
+            if (ma_resource_manager_init(ref resourceManagerConfig, resourceManager) != ma_result.success)
             {
                 resourceManagerConfig.FreeCustomDecodingBackendVTables();
                 Dispose();
@@ -193,12 +197,12 @@ namespace MiniAudioEx.Core
 
             resourceManagerConfig.FreeCustomDecodingBackendVTables();
 
-            ma_engine_config engineConfig = MiniAudio.ma_engine_config_init();
-            engineConfig.listenerCount = MiniAudio.MA_ENGINE_MAX_LISTENERS;
+            ma_engine_config engineConfig = ma_engine_config_init();
+            engineConfig.listenerCount = MA_ENGINE_MAX_LISTENERS;
             engineConfig.pDevice = device;
             engineConfig.pResourceManager = resourceManager;
 
-            if (MiniAudio.ma_engine_init(ref engineConfig, engine) != ma_result.success)
+            if (ma_engine_init(ref engineConfig, engine) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to initialize ma_engine");
@@ -209,7 +213,7 @@ namespace MiniAudioEx.Core
                 device.Get()->pUserData = engine.pointer;
             }
 
-            if (MiniAudio.ma_device_start(device) != ma_result.success)
+            if (ma_device_start(device) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to start ma_device");
@@ -246,11 +250,11 @@ namespace MiniAudioEx.Core
 
         public void Dispose()
         {
-			MiniAudio.ma_engine_uninit(engine);
-			MiniAudio.ma_device_uninit(device);
-			MiniAudio.ma_context_uninit(context);
-			MiniAudio.ma_resource_manager_uninit(resourceManager);
-            MiniAudio.ma_log_uninit(log);
+			ma_engine_uninit(engine);
+			ma_device_uninit(device);
+			ma_context_uninit(context);
+			ma_resource_manager_uninit(resourceManager);
+            ma_log_uninit(log);
 
 			engine.Free();
 			context.Free();
@@ -273,6 +277,8 @@ namespace MiniAudioEx.Core
 
             for(int i = 0; i < sources.Count; i++)
                 sources[i].Update();
+
+            ticks++;
         }
 
 		private unsafe void OnDeviceData(ma_device_ptr pDevice, IntPtr pOutput, IntPtr pInput, UInt32 frameCount)
@@ -284,7 +290,7 @@ namespace MiniAudioEx.Core
 
             ma_engine_ptr pEngine = new ma_engine_ptr(device->pUserData);
 
-            MiniAudio.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount);
+            ma_engine_read_pcm_frames(pEngine, pOutput, frameCount);
 		}
 
 		private void OnLog(IntPtr pUserData, UInt32 level, IntPtr pMessage)

@@ -49,6 +49,7 @@
 using System;
 using MiniAudioEx.Native;
 using MiniAudioEx.Utilities;
+using static MiniAudioEx.Native.MiniAudio;
 
 namespace MiniAudioEx.Core
 {
@@ -71,7 +72,7 @@ namespace MiniAudioEx.Core
                 if(device.pointer == IntPtr.Zero)
                     return false;
                 
-                return MiniAudio.ma_device_is_started(device) > 0;
+                return ma_device_is_started(device) > 0;
             }
         }
 
@@ -82,14 +83,14 @@ namespace MiniAudioEx.Core
 
             context = new ma_context_ptr(true);
 
-            ma_context_config contextConfig = MiniAudio.ma_context_config_init();
+            ma_context_config contextConfig = ma_context_config_init();
             UInt32 deviceCount = 0;
             ma_backend nullBackend = ma_backend.nill;
             ma_backend*[] backendLists = { null, &nullBackend };
             
             foreach (var backendList in backendLists)
             {
-                ma_result result = MiniAudio.ma_context_init(backendList, 1, &contextConfig, context);
+                ma_result result = ma_context_init(backendList, 1, &contextConfig, context);
 
                 if(result != ma_result.success)
                 {
@@ -97,11 +98,11 @@ namespace MiniAudioEx.Core
                     throw new Exception("Failed to initialize the audio capture context: " + result);
                 }
 
-                result = MiniAudio.ma_context_get_devices(context, null, null, null, &deviceCount);
+                result = ma_context_get_devices(context, null, null, null, &deviceCount);
 
                 if(result != ma_result.success)
                 {
-                    MiniAudio.ma_context_uninit(context);
+                    ma_context_uninit(context);
                     context.Free();
                     throw new Exception("Failed to get audio capture devices: " + result);
                 }
@@ -112,7 +113,7 @@ namespace MiniAudioEx.Core
                 if (backendList == null)
                     Console.WriteLine("No audio capture devices available on the system");
 
-                MiniAudio.ma_context_uninit(context);
+                ma_context_uninit(context);
             }
 
             if (deviceCount == 0)
@@ -129,16 +130,16 @@ namespace MiniAudioEx.Core
         {
             if(device.pointer != IntPtr.Zero)
             {
-                if(MiniAudio.ma_device_is_started(device) > 0)
+                if(ma_device_is_started(device) > 0)
                 {
                     Stop();
                     OnDestroy();
                 }
             }
 
-            MiniAudio.ma_device_stop(device);
-            MiniAudio.ma_device_uninit(device);
-            MiniAudio.ma_context_uninit(context);
+            ma_device_stop(device);
+            ma_device_uninit(device);
+            ma_context_uninit(context);
             device.Free();
             context.Free();
         }
@@ -161,7 +162,7 @@ namespace MiniAudioEx.Core
 
             dataProc = OnDeviceData;
 
-            ma_device_config captureDeviceConfig = MiniAudio.ma_device_config_init(ma_device_type.capture);
+            ma_device_config captureDeviceConfig = ma_device_config_init(ma_device_type.capture);
             
             fixed(ma_device_id *deviceId = &captureDevice.id)
             {
@@ -171,12 +172,12 @@ namespace MiniAudioEx.Core
                 captureDeviceConfig.sampleRate = sampleRate;
                 captureDeviceConfig.SetDataCallback(dataProc);
 
-                ma_result result = MiniAudio.ma_device_init(context, ref captureDeviceConfig, device);
+                ma_result result = ma_device_init(context, ref captureDeviceConfig, device);
 
                 if(result != ma_result.success)
                 {
                     Console.WriteLine("Failed to initialize device: " + result);
-                    MiniAudio.ma_context_uninit(context);
+                    ma_context_uninit(context);
                     context.Free();
                     device.Free();
                     return false;
@@ -199,14 +200,14 @@ namespace MiniAudioEx.Core
         public bool Start()
         {
             if(OnStart())
-                return MiniAudio.ma_device_start(device) == ma_result.success;
+                return ma_device_start(device) == ma_result.success;
             return false;
         }
 
         public void Stop()
         {
             OnStop();
-            MiniAudio.ma_device_stop(device);
+            ma_device_stop(device);
         }
 
         protected virtual bool OnStart()

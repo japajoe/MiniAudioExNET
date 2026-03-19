@@ -49,6 +49,7 @@
 using System;
 using System.Runtime.InteropServices;
 using MiniAudioEx.Native;
+using static MiniAudioEx.Native.MiniAudio;
 
 namespace MiniAudioEx.Core
 {
@@ -107,9 +108,9 @@ namespace MiniAudioEx.Core
             ma_result result = ma_result.success;
             
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                result = MiniAudio.ma_sound_init_from_file_w(context.Engine, filePath, flags, default, default, sound);
+                result = ma_sound_init_from_file_w(context.Engine, filePath, flags, default, default, sound);
             else
-                result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, default, default, sound);
+                result = ma_sound_init_from_file(context.Engine, filePath, flags, default, default, sound);
 
             if (result != ma_result.success)
             {
@@ -117,7 +118,7 @@ namespace MiniAudioEx.Core
                 throw new Exception("Failed to initialize AudioClip: " + result);
             }
 
-            MiniAudio.ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
+            ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
 
             hashCode = (UInt64)filePath.GetHashCode();
         }
@@ -152,7 +153,7 @@ namespace MiniAudioEx.Core
             Marshal.Copy(data, 0, dataHandle, data.Length);
 
             ma_sound_flags flags = ma_sound_flags.decode;
-            ma_result result = MiniAudio.ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, default, default, sound);
+            ma_result result = ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, default, default, sound);
 
             if (result != ma_result.success)
             {
@@ -160,7 +161,7 @@ namespace MiniAudioEx.Core
                 throw new Exception("Failed to initialize AudioClip: " + result);
             }
 
-            MiniAudio.ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
+            ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
 
             hashCode = GetHashCode(data, data.Length);
         }
@@ -187,8 +188,8 @@ namespace MiniAudioEx.Core
                 return false;
             }
 
-            MiniAudio.ma_sound_stop(other.sound);
-            MiniAudio.ma_sound_uninit(other.sound);
+            ma_sound_stop(other.sound);
+            ma_sound_uninit(other.sound);
 
             other.streamFromDisk = streamFromDisk;
             other.dataLength = dataLength;
@@ -202,16 +203,16 @@ namespace MiniAudioEx.Core
             if(flags == ma_sound_flags.stream)
             {
                 if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    result = MiniAudio.ma_sound_init_from_file_w(context.Engine, filePath, flags, group, default, other.sound);
+                    result = ma_sound_init_from_file_w(context.Engine, filePath, flags, group, default, other.sound);
                 else
-                    result = MiniAudio.ma_sound_init_from_file(context.Engine, filePath, flags, group, default, other.sound);
+                    result = ma_sound_init_from_file(context.Engine, filePath, flags, group, default, other.sound);
             }
             else
             {
                 if(dataHandle == IntPtr.Zero)
-                    result = MiniAudio.ma_sound_init_copy(context.Engine, sound, flags, group, other.sound);
+                    result = ma_sound_init_copy(context.Engine, sound, flags, group, other.sound);
                 else
-                    result = MiniAudio.ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, group, default, other.sound);
+                    result = ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, group, default, other.sound);
             }
             
             return result == ma_result.success;
@@ -221,7 +222,7 @@ namespace MiniAudioEx.Core
         {
             if(sound.pointer != IntPtr.Zero)
             {
-                MiniAudio.ma_sound_uninit(sound);
+                ma_sound_uninit(sound);
                 sound.Free();
             }
 

@@ -56,6 +56,7 @@ using MiniAudioEx.Utilities;
 using System.IO;
 using System.Net.Security;
 using System.Text.RegularExpressions;
+using static MiniAudioEx.Native.MiniAudio;
 
 namespace MiniAudioEx.Core
 {
@@ -238,9 +239,9 @@ namespace MiniAudioEx.Core
         {
             if (audioInitialized)
             {
-                MiniAudio.ma_device_stop(device);
-                MiniAudio.ma_device_uninit(device);
-                MiniAudio.ma_decoder_uninit(decoder);
+                ma_device_stop(device);
+                ma_device_uninit(device);
+                ma_decoder_uninit(decoder);
                 audioInitialized = false;
             }
         }
@@ -512,8 +513,8 @@ namespace MiniAudioEx.Core
 
         private unsafe bool InitializeAudio()
         {
-            ma_decoder_config decoderConfig = MiniAudio.ma_decoder_config_init(ma_format.f32, 0, 0);
-            ma_result result = MiniAudio.ma_decoder_init(decoderReadProc, decoderSeekProc, IntPtr.Zero, ref decoderConfig, decoder);
+            ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format.f32, 0, 0);
+            ma_result result = ma_decoder_init(decoderReadProc, decoderSeekProc, IntPtr.Zero, ref decoderConfig, decoder);
 
             if (result != ma_result.success)
             {
@@ -521,7 +522,7 @@ namespace MiniAudioEx.Core
                 return false;
             }
 
-            ma_device_config deviceConfig = MiniAudio.ma_device_config_init(ma_device_type.playback);
+            ma_device_config deviceConfig = ma_device_config_init(ma_device_type.playback);
             deviceConfig.playback.format = decoder.Get()->outputFormat;
             deviceConfig.playback.channels = decoder.Get()->outputChannels;
             deviceConfig.sampleRate = decoder.Get()->outputSampleRate;
@@ -532,23 +533,23 @@ namespace MiniAudioEx.Core
                 fixed(ma_device_id *deviceId = &playbackDevice.info.id)
                 {
                     deviceConfig.playback.pDeviceID = new ma_device_id_ptr(new IntPtr(deviceId));
-                    result = MiniAudio.ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
+                    result = ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
                 }
             }
             else
             {
-                result = MiniAudio.ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
+                result = ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
             }
 
             if (result != ma_result.success)
             {
                 Console.WriteLine("Failed to create device");
-                MiniAudio.ma_decoder_uninit(decoder);
+                ma_decoder_uninit(decoder);
                 return false;
             }
 
             audioInitialized = true;
-            MiniAudio.ma_device_start(device);
+            ma_device_start(device);
             return true;
         }
 
@@ -612,7 +613,7 @@ namespace MiniAudioEx.Core
                 return;
             }
 
-            if (MiniAudio.ma_decoder_read_pcm_frames(decoder, pOutput, frameCount, IntPtr.Zero) == ma_result.success)
+            if (ma_decoder_read_pcm_frames(decoder, pOutput, frameCount, IntPtr.Zero) == ma_result.success)
             {
                 if (volume == 1.0f)
                 {
