@@ -97,11 +97,13 @@ namespace MiniAudioEx.Core
         {
             public AudioClip clip;
             public bool atEnd;
+            public bool isLoaded;
 
             public Sound()
             {
                 clip = new AudioClip();
                 atEnd = false;
+                isLoaded = false;
             }
         }
 
@@ -128,6 +130,8 @@ namespace MiniAudioEx.Core
             {
                 for (int i = 0; i < sounds.Count; i++)
                 {
+                    if(!sounds[i].isLoaded)
+                        continue;
                     if (MiniAudio.ma_sound_is_playing(sounds[i].clip.Sound) > 0)
                         return true;
                 }
@@ -594,12 +598,14 @@ namespace MiniAudioEx.Core
                 {
                     for(int i = 0; i < sounds.Count; i++)
                     {
-                        clip.CopyTo(sounds[i].clip, group);
+                        if(clip.CopyTo(sounds[i].clip, group))
+                            sounds[i].isLoaded = true;
                     }
                 }
                 else
                 {
-                    clip.CopyTo(sounds[0].clip, group);
+                    if(clip.CopyTo(sounds[0].clip, group))
+                        sounds[0].isLoaded = true;
                 }
             }
         }
