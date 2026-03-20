@@ -71,6 +71,7 @@ namespace MiniAudioEx.Core.StandardAPI
         private static UInt32 channels = 2;
         private static DateTime lastUpdateTime;
         private static float deltaTime;
+        private static UInt64 ticks = 0;
 
         public static event DeviceDataEvent DataProcess;
 
@@ -79,6 +80,14 @@ namespace MiniAudioEx.Core.StandardAPI
             get
             {
                 return audioContext;
+            }
+        }
+
+        public static UInt64 Ticks
+        {
+            get
+            {
+                return ticks;
             }
         }
 
@@ -214,6 +223,7 @@ namespace MiniAudioEx.Core.StandardAPI
             }
 
             lastUpdateTime = currentTime;
+            ticks++;
         }
 
         /// <summary>

@@ -58,6 +58,8 @@ namespace MiniAudioEx.Core.StandardAPI
     {
         private IntPtr handle;
         private Vector3f previousPosition;
+        private Vector3f currentVelocity;
+        private UInt64 lastTick;
 
         /// <summary>
         /// A handle to the native ma_audio_listener instance.
@@ -143,6 +145,32 @@ namespace MiniAudioEx.Core.StandardAPI
         }
 
         /// <summary>
+        /// Gets the the velocity based on the current position and the previous position.
+        /// </summary>
+        /// <returns></returns>
+        public Vector3f CurrentVelocity
+        {
+            get
+            {
+                if (lastTick != AudioContext.Ticks)
+                {
+                    float deltaTime = AudioContext.DeltaTime;
+                    Vector3f currentPosition = Position;
+
+                    if (deltaTime > 0.0001f)
+                        currentVelocity = (currentPosition - previousPosition) / deltaTime;
+                    else
+                        currentVelocity = Vector3f.Zero;
+
+                    previousPosition = currentPosition;
+                    lastTick = AudioContext.Ticks;
+                }
+
+                return currentVelocity;
+            }
+        }
+
+        /// <summary>
         /// The up direction of the world. By default this is 0,1,0.
         /// </summary>
         /// <value></value>
@@ -163,10 +191,12 @@ namespace MiniAudioEx.Core.StandardAPI
         public AudioListener()
         {
             handle = MiniAudioExNative.ma_ex_audio_listener_init(AudioContext.NativeContext);
+            previousPosition = new Vector3f(0, 0, 0);
+            currentVelocity = new Vector3f(0, 0, 0);
+            lastTick = 0;
 
             if(handle != IntPtr.Zero)
             {
-                previousPosition = new Vector3f(0, 0, 0);
                 AudioContext.Add(this);
             }
         }
@@ -178,20 +208,6 @@ namespace MiniAudioEx.Core.StandardAPI
                 MiniAudioExNative.ma_ex_audio_listener_uninit(handle);
                 handle = IntPtr.Zero;
             }
-        }
-
-        /// <summary>
-        /// Calculates the velocity based on the current position and the previous position.
-        /// </summary>
-        /// <returns></returns>
-        public Vector3f GetCalculatedVelocity()
-        {
-            float deltaTime = AudioContext.DeltaTime;
-            Vector3f currentPosition = Position;
-            float dx = currentPosition.x - previousPosition.x;
-            float dy = currentPosition.y - previousPosition.y;
-            float dz = currentPosition.z - previousPosition.z;
-            return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
         }
 
         public void Dispose()

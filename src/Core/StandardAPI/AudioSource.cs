@@ -87,12 +87,14 @@ namespace MiniAudioEx.Core.StandardAPI
         private ma_sound_group_ptr soundGroup;
         private ma_effect_node_ptr effectNode;
         private Vector3f previousPosition;
+        private Vector3f currentVelocity;
         private ma_effect_node_process_proc onEffectNodeProcess;
         private ma_procedural_data_source_proc proceduralProcessCallback;
         private ConcurrentList<IAudioEffect> effects;
         private ConcurrentList<IAudioGenerator> generators;
         private AudioBuffer outputBuffer;
         private int currentIndex;
+        private UInt64 lastTick;
         private readonly int MAX_SOURCES;
 
         /// <summary>
@@ -344,10 +346,6 @@ namespace MiniAudioEx.Core.StandardAPI
             }
             set
             {
-                var previous = MiniAudioNative.ma_sound_group_get_position(soundGroup);
-                previousPosition.x = previous.x;
-                previousPosition.y = previous.y;
-                previousPosition.z = previous.z;
                 MiniAudioNative.ma_sound_group_set_position(soundGroup, value.x, value.y, value.z);
             }
         }
@@ -387,6 +385,32 @@ namespace MiniAudioEx.Core.StandardAPI
         }
 
         /// <summary>
+        /// Gets the the velocity based on the current position and the previous position.
+        /// </summary>
+        /// <returns></returns>
+        public Vector3f CurrentVelocity
+        {
+            get
+            {
+                if (lastTick != AudioContext.Ticks)
+                {
+                    float deltaTime = AudioContext.DeltaTime;
+                    Vector3f currentPosition = Position;
+
+                    if (deltaTime > 0.0001f)
+                        currentVelocity = (currentPosition - previousPosition) / deltaTime;
+                    else
+                        currentVelocity = Vector3f.Zero;
+
+                    previousPosition = currentPosition;
+                    lastTick = AudioContext.Ticks;
+                }
+
+                return currentVelocity;
+            }
+        }
+
+        /// <summary>
         /// Indicates whether the source is playing audio or not.
         /// </summary>
         /// <value></value>
@@ -415,6 +439,7 @@ namespace MiniAudioEx.Core.StandardAPI
             MAX_SOURCES = maxSources;
 
             previousPosition = new Vector3f(0, 0, 0);
+            currentVelocity = new Vector3f(0, 0, 0);
             sources = new List<SourceInfo>();
             effects = new ConcurrentList<IAudioEffect>();
             generators = new ConcurrentList<IAudioGenerator>();
@@ -452,6 +477,8 @@ namespace MiniAudioEx.Core.StandardAPI
                     MiniAudioNative.ma_node_attach_output_bus(new ma_node_ptr(soundGroup.pointer), 0, new ma_node_ptr(effectNode.pointer), 0);
                 }
             }
+
+            lastTick = 0;
         }
 
         internal void Destroy()
@@ -672,20 +699,6 @@ namespace MiniAudioEx.Core.StandardAPI
             {
                 generators.Remove(targets);
             }
-        }
-
-        /// <summary>
-        /// Calculates the velocity based on the current position and the previous position.
-        /// </summary>
-        /// <returns></returns>
-        public Vector3f GetCalculatedVelocity()
-        {
-            float deltaTime = AudioContext.DeltaTime;
-            Vector3f currentPosition = Position;
-            float dx = currentPosition.x - previousPosition.x;
-            float dy = currentPosition.y - previousPosition.y;
-            float dz = currentPosition.z - previousPosition.z;
-            return new Vector3f(dx / deltaTime, dy / deltaTime, dz / deltaTime);
         }
 
         /// <summary>
