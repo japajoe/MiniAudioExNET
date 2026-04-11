@@ -341,6 +341,51 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			MiniAudioNative.ma_sound_set_attenuation_model(handle, attenuationModel);
 		}
 
+		public float GetMinDistance()
+		{
+			return MiniAudioNative.ma_sound_get_min_distance(handle);
+		}
+
+		public void SetMinDistance(float minDistance)
+		{
+			MiniAudioNative.ma_sound_set_min_distance(handle, minDistance);
+		}
+
+		public float GetMaxDistance()
+		{
+			return MiniAudioNative.ma_sound_get_max_distance(handle);
+		}
+
+		public void SetMaxDistance(float maxDistance)
+		{
+			MiniAudioNative.ma_sound_set_max_distance(handle, maxDistance);
+		}
+
+		public float GetRollOff()
+		{
+			return MiniAudioNative.ma_sound_get_rolloff(handle);
+		}
+
+		public void SetRollOff(float rolloff)
+		{
+			MiniAudioNative.ma_sound_set_rolloff(handle, rolloff);
+		}
+
+		public ma_result GetLengthInSeconds(out float length)
+		{
+			return MiniAudioNative.ma_sound_get_length_in_seconds(handle, out length);
+		}
+
+		public ma_result GetLengthInPCMFrames(out UInt64 length)
+		{
+			return MiniAudioNative.ma_sound_get_length_in_pcm_frames(handle, out length);
+		}
+
+		public ma_result GetDataFormat(out ma_format pFormat, out UInt32 pChannels, out UInt32 pSampleRate, byte pChannelMap, UInt64 channelMapCap)
+		{
+			return MiniAudioNative.ma_sound_get_data_format(handle, out pFormat, out pChannels, out pSampleRate, pChannelMap, new UIntPtr(channelMapCap));
+		}
+
 		public ma_result SetEndCallback(ma_sound_end_proc callback, IntPtr pUserData)
 		{
 			return MiniAudioNative.ma_sound_set_end_callback(handle, callback, pUserData);
