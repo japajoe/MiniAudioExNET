@@ -1,8 +1,6 @@
 # MiniAudioExNET-dev
 This is a development branch for MiniAudioExNET. The goal for the future is to greatly simplify the native library, and implement as much as possible in C#. This was previously not feasible because I did not expose any MiniAudio API calls but this has changed.
 
-What does this practically mean? No more StandardAPI/AdvancedAPI. You either use the classes in the `MiniAudioEx.Core` namespace or you are on your own and use whatever is in `MiniAudioEx.Native`. The AdvancedAPI was a novel idea but I think having too many options is counterproductive, it also takes significantly more time to maintain everything. That said, the AudioSource based functionality isn't going anywhere, I am just rewriting it and ultimately it will work almost the same as before.
-
 # For those interested to try it out
 ```csharp
 using System;
