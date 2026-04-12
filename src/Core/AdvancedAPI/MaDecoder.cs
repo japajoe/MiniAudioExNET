@@ -112,6 +112,23 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			return MiniAudioNative.ma_decoder_init_file(filePath, ref config, handle);
 		}
 
+		public ma_result InitializeFromFileW(string filePath)
+		{
+			ma_decoder_config config = MiniAudioNative.ma_decoder_config_init_default();
+			return InitializeFromFileW(filePath, config);
+		}
+
+		public ma_result InitializeFromFileW(string filePath, ma_decoder_config config)
+		{
+			if (handle.pointer == IntPtr.Zero)
+				return ma_result.error;
+
+			if (isLoaded)
+				Unload();
+
+			return MiniAudioNative.ma_decoder_init_file_w(filePath, ref config, handle);
+		}
+
 		public ma_result IntializeFromMemory(IntPtr pData, UInt64 dataSize)
 		{
 			ma_decoder_config config = MiniAudioNative.ma_decoder_config_init_default();
@@ -152,6 +169,16 @@ namespace MiniAudioEx.Core.AdvancedAPI
 		public ma_result GetAvailableFrames(out UInt64 availableFrames)
 		{
 			return MiniAudioNative.ma_decoder_get_available_frames(handle, out availableFrames);
+		}
+
+		public ma_result DecodeFile(string pFilePath, ma_decoder_config pConfig, ref UInt64 pFrameCountOut, IntPtr ppPCMFramesOut)
+		{
+			return MiniAudioNative.ma_decode_file(pFilePath, ref pConfig, ref pFrameCountOut, ppPCMFramesOut);
+		}
+
+		public ma_result DecodeMemory(IntPtr pData, UInt64 dataSize, ma_decoder_config pConfig, ref UInt64 pFrameCountOut, IntPtr ppPCMFramesOut)
+		{
+			return MiniAudioNative.ma_decode_memory(pData, new UIntPtr(dataSize), ref pConfig, ref pFrameCountOut, ppPCMFramesOut);
 		}
 
 		private void Unload()
