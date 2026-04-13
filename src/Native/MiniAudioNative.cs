@@ -5026,6 +5026,9 @@ namespace MiniAudioEx.Native
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_result ma_node_graph_set_time(ma_node_graph_ptr pNodeGraph, ma_uint64 globalTime);
 
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UInt32 ma_node_graph_get_processing_size_in_frames(ma_node_graph_ptr pNodeGraph);
+
         // ma_node
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern ma_node_config ma_node_config_init();

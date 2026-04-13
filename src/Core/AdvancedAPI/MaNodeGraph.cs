@@ -108,5 +108,25 @@ namespace MiniAudioEx.Core.AdvancedAPI
 			else
 				SetTime(localTime);
 		}
+
+		public UInt32 GetChannels()
+		{
+			return MiniAudioNative.ma_node_graph_get_channels(handle);
+		}
+
+		public UInt32 GetProcessingSizeInFrames()
+		{
+			return MiniAudioNative.ma_node_graph_get_processing_size_in_frames(handle);
+		}
+
+		public ma_node_ptr GetEndPoint()
+		{
+			return MiniAudioNative.ma_node_graph_get_endpoint(handle);
+		}
+
+		public ma_result ReadPCMFrames(IntPtr pFramesOut, ulong frameCount, IntPtr pFramesRead)
+		{
+			return MiniAudioNative.ma_node_graph_read_pcm_frames(handle, pFramesOut, frameCount, pFramesRead);
+		}
 	}
 }
