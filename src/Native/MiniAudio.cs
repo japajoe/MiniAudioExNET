@@ -63,6 +63,7 @@ namespace MiniAudioEx.Native
     using ma_int64 = Int64;
     using ma_uint64 = UInt64;
     using ma_handle = IntPtr;
+    using ma_vfs = IntPtr;
     using ma_vfs_file = IntPtr;
     using ma_spinlock = UInt32;
 
@@ -177,6 +178,21 @@ namespace MiniAudioEx.Native
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ma_effect_node_process_proc(ma_node_ptr pNode, IntPtr ppFramesIn, IntPtr pFrameCountIn, IntPtr ppFramesOut, IntPtr pFrameCountOut);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_encoder_write_proc(ma_encoder_ptr pEncoder, IntPtr pBufferIn, size_t bytesToWrite, out size_t pBytesWritten);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_encoder_seek_proc(ma_encoder_ptr pEncoder, ma_int64 offset, ma_seek_origin origin);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_encoder_init_proc(ma_encoder_ptr pEncoder);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ma_encoder_uninit_proc(ma_encoder_ptr pEncoder);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate ma_result ma_encoder_write_pcm_frames_proc(ma_encoder_ptr pEncoder, IntPtr pFramesIn, ma_uint64 frameCount, out ma_uint64 pFramesWritten);
 
     // ma_enums
     public enum ma_result
@@ -481,6 +497,7 @@ namespace MiniAudioEx.Native
         device_descriptor,
         device_info,
         effect_node,
+        encoder,
         engine,
         fader,
         fence,
@@ -919,7 +936,7 @@ namespace MiniAudioEx.Native
 		}
 	}
 
-    //
+    [StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_decoding_backend_vtable_ptr
 	{
 		public IntPtr pointer;
@@ -952,6 +969,40 @@ namespace MiniAudioEx.Native
             return (ma_decoding_backend_vtable*)pointer;
 		}
 	}
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_encoder_ptr
+    {
+		public IntPtr pointer;
+		public ma_encoder_ptr() { }
+		public ma_encoder_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_encoder_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudio.ma_allocate_type(ma_allocation_type.encoder);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudio.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_encoder* Get()
+		{
+            return (ma_encoder*)pointer;
+		}
+    }
 
 	[StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_device_ptr
@@ -3203,6 +3254,65 @@ namespace MiniAudioEx.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_encoder_config
+    {
+        public ma_encoding_format encodingFormat;
+        public ma_format format;
+        public ma_uint32 channels;
+        public ma_uint32 sampleRate;
+        public ma_allocation_callbacks allocationCallbacks;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_encoder
+    {
+        public ma_encoder_config config;
+        public IntPtr onWrite;
+        public IntPtr onSeek;
+        public IntPtr onInit;
+        public IntPtr onUninit;
+        public IntPtr onWritePCMFrames;
+        public IntPtr pUserData;
+        public IntPtr pInternalEncoder;
+        public ma_encoder_vfs_data data;
+
+        public void SetWriteProc(ma_encoder_write_proc callback)
+        {
+            onWrite = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetSeekProc(ma_encoder_seek_proc callback)
+        {
+            onSeek = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetInitProc(ma_encoder_init_proc callback)
+        {
+            onInit = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetUninitProc(ma_encoder_uninit_proc callback)
+        {
+            onUninit = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetWritePCMFramesProc(ma_encoder_write_pcm_frames_proc callback)
+        {
+            onWritePCMFrames = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct ma_encoder_vfs_data
+        {    
+            [FieldOffset(0)]
+            public ma_vfs pVFS;    
+            
+            [FieldOffset(0)]
+            public ma_vfs_file file;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct ma_data_source_vtable
     {
         public IntPtr onRead;
@@ -5374,6 +5484,36 @@ namespace MiniAudioEx.Native
 
         [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
         public static extern size_t ma_channel_map_to_string(ma_channel_ptr pChannelMap, ma_uint32 channels, IntPtr pBufferOut, size_t bufferCap);
+
+        // ma_encoder
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_encoder_config ma_encoder_config_init(ma_encoding_format encodingFormat, ma_format format, ma_uint32 channels, ma_uint32 sampleRate);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        private static extern ma_result ma_encoder_init(IntPtr onWrite, IntPtr onSeek, IntPtr pUserData, ref ma_encoder_config pConfig, ma_encoder_ptr pEncoder);
+
+        public static ma_result ma_encoder_init(ma_encoder_write_proc onWrite, ma_encoder_seek_proc onSeek, IntPtr pUserData, ref ma_encoder_config pConfig, ma_encoder_ptr pEncoder)
+        {
+            return ma_encoder_init(MarshalHelper.GetFunctionPointerForDelegate(onWrite), MarshalHelper.GetFunctionPointerForDelegate(onWrite), pUserData, ref pConfig, pEncoder);
+        }
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_encoder_init_vfs(ma_vfs pVFS, string pFilePath, ref ma_encoder_config pConfig, ma_encoder_ptr pEncoder);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_encoder_init_vfs_w(ma_vfs pVFS, [MarshalAs(UnmanagedType.LPWStr)] string pFilePath, ref ma_encoder_config pConfig, ma_encoder_ptr pEncoder);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_encoder_init_file(string pFilePath, ref ma_encoder_config pConfig, ma_encoder_ptr pEncoder);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_encoder_init_file_w([MarshalAs(UnmanagedType.LPWStr)] string pFilePath, ref ma_encoder_config pConfig, ma_encoder_ptr pEncoder);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ma_encoder_uninit(ma_encoder_ptr pEncoder);
+
+        [DllImport(LIB_MINIAUDIO_EX, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ma_result ma_encoder_write_pcm_frames(ma_encoder_ptr pEncoder, IntPtr pFramesIn, ma_uint64 frameCount, out ma_uint64 pFramesWritten);
     }
 
     public static class MarshalHelper
