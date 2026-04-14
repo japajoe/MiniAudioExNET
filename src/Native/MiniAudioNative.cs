@@ -937,40 +937,6 @@ namespace MiniAudioEx.Native
 	}
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct ma_encoder_ptr
-    {
-		public IntPtr pointer;
-		public ma_encoder_ptr() { }
-		public ma_encoder_ptr(IntPtr handle)
-		{
-			pointer = handle;
-		}
-		public ma_encoder_ptr(bool allocate)
-		{
-			if (allocate)
-				Allocate();
-		}
-		public bool Allocate()
-		{
-			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.encoder);
-			return pointer != IntPtr.Zero;
-		}
-		public void Free()
-		{
-			if (pointer != IntPtr.Zero)
-			{
-				MiniAudioNative.ma_deallocate_type(pointer);
-				pointer = IntPtr.Zero;
-			}
-		}
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ma_decoder* Get()
-		{
-            return (ma_decoder*)pointer;
-		}
-    }
-
-    //
 	public unsafe struct ma_decoding_backend_vtable_ptr
 	{
 		public IntPtr pointer;
@@ -1003,6 +969,40 @@ namespace MiniAudioEx.Native
             return (ma_decoding_backend_vtable*)pointer;
 		}
 	}
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ma_encoder_ptr
+    {
+		public IntPtr pointer;
+		public ma_encoder_ptr() { }
+		public ma_encoder_ptr(IntPtr handle)
+		{
+			pointer = handle;
+		}
+		public ma_encoder_ptr(bool allocate)
+		{
+			if (allocate)
+				Allocate();
+		}
+		public bool Allocate()
+		{
+			pointer = MiniAudioNative.ma_allocate_type(ma_allocation_type.encoder);
+			return pointer != IntPtr.Zero;
+		}
+		public void Free()
+		{
+			if (pointer != IntPtr.Zero)
+			{
+				MiniAudioNative.ma_deallocate_type(pointer);
+				pointer = IntPtr.Zero;
+			}
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ma_encoder* Get()
+		{
+            return (ma_encoder*)pointer;
+		}
+    }
 
 	[StructLayout(LayoutKind.Sequential)]
 	public unsafe struct ma_device_ptr
@@ -3271,7 +3271,7 @@ namespace MiniAudioEx.Native
         public IntPtr onSeek;
         public IntPtr onInit;
         public IntPtr onUninit;
-        public ma_encoder_write_pcm_frames_proc onWritePCMFrames;
+        public IntPtr onWritePCMFrames;
         public IntPtr pUserData;
         public IntPtr pInternalEncoder;
         public ma_encoder_vfs_data data;
@@ -3294,6 +3294,11 @@ namespace MiniAudioEx.Native
         public void SetUninitProc(ma_encoder_uninit_proc callback)
         {
             onUninit = MarshalHelper.GetFunctionPointerForDelegate(callback);
+        }
+
+        public void SetWritePCMFramesProc(ma_encoder_write_pcm_frames_proc callback)
+        {
+            onWritePCMFrames = MarshalHelper.GetFunctionPointerForDelegate(callback);
         }
 
         [StructLayout(LayoutKind.Explicit)]
