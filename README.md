@@ -45,7 +45,7 @@ dotnet add package JAJ.Packages.MiniAudioEx --version 3.2.1
 - Added `ClipperEffect`.
 
 # Changes in 3.1.1
-- Fix for `ma_sound_init_from_file_w`: path marshal incorrectly
+- Fix for `ma_sound_init_from_file_w`: path marshal incorrectly.
 
 # Changes in 3.1.0
 - Updated miniaudio to 0.11.25.
@@ -74,7 +74,7 @@ dotnet add package JAJ.Packages.MiniAudioEx --version 3.2.1
 
 # Changes in 2.6.2
 - Fixed bug with stopping/continuing an audio source.
-- Added `DistortionEffect`
+- Added `DistortionEffect`.
 
 # Changes in 2.6.1
 - Manual polling to see if playback of an `AudioSource` ended.
