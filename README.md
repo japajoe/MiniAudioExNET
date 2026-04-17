@@ -32,8 +32,13 @@ If you find something is missing from the API, please open an issue. This librar
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 3.2.1
+dotnet add package JAJ.Packages.MiniAudioEx --version 3.3.0
 ```
+
+# Changes in 3.3.0
+- Applied 16 KB page size fix for android.
+- Corrected some more functions taking wide strings.
+- Added `ma_encoder`.
 
 # Changes in 3.2.1
 - Added `AudioStream` for playing internet streams with ICY protocol.
