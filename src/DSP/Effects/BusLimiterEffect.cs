@@ -52,14 +52,50 @@ using MiniAudioEx.Native;
 namespace MiniAudioEx.DSP.Effects
 {
     /// <summary>
-    /// Adapts <see cref="BusLimiter"/> to the <see cref="IAudioEffect"/> processing interface.
+    /// A channel-linked peak limiter effect for interleaved 32-bit floating-point PCM data.
     /// </summary>
+    /// <remarks>
+    /// Process one effect instance from one audio thread. Look-ahead delays the
+    /// signal by the configured number of frames. <see cref="OnDestroy"/> resets
+    /// delayed samples and gain reduction.
+    /// </remarks>
+    /// <example>
+    /// Add the limiter to an audio source's effect chain:
+    /// <code>
+    /// BusLimiterEffect limiter = new BusLimiterEffect(sampleRate, channels);
+    /// source.AddEffect(limiter);
+    /// </code>
+    /// </example>
     public sealed class BusLimiterEffect : IAudioEffect
     {
-        /// <summary>Gets the limiter used by this effect.</summary>
-        public BusLimiter Limiter { get; }
+        private readonly BusLimiter limiter;
 
-        /// <summary>Creates a channel-linked limiter effect.</summary>
+        /// <summary>Gets the sample rate this limiter was created for.</summary>
+        public UInt32 SampleRate => limiter.SampleRate;
+
+        /// <summary>Gets the number of interleaved channels this limiter processes.</summary>
+        public UInt32 Channels => limiter.Channels;
+
+        /// <summary>Gets the configured look-ahead duration in milliseconds.</summary>
+        public float LookAheadMilliseconds => limiter.LookAheadMilliseconds;
+
+        /// <summary>Gets the actual look-ahead duration in PCM frames.</summary>
+        public Int32 LookAheadFrames => limiter.LookAheadFrames;
+
+        /// <summary>Gets the output ceiling in decibels relative to full scale.</summary>
+        public float CeilingDB => limiter.CeilingDB;
+
+        /// <summary>Gets the release time in milliseconds.</summary>
+        public float ReleaseMilliseconds => limiter.ReleaseMilliseconds;
+
+        /// <summary>
+        /// Creates a bus limiter effect for interleaved 32-bit floating-point PCM data.
+        /// </summary>
+        /// <param name="sampleRate">The PCM sample rate.</param>
+        /// <param name="channels">The number of interleaved channels.</param>
+        /// <param name="lookAheadMilliseconds">Look-ahead in milliseconds. Use 0 for zero latency.</param>
+        /// <param name="ceilingDB">The maximum sample peak in dBFS. Must not be greater than 0.</param>
+        /// <param name="releaseMilliseconds">The gain recovery time constant in milliseconds.</param>
         public BusLimiterEffect(
             UInt32 sampleRate,
             UInt32 channels,
@@ -67,7 +103,7 @@ namespace MiniAudioEx.DSP.Effects
             float ceilingDB = -1.0f,
             float releaseMilliseconds = 100.0f)
         {
-            Limiter = new BusLimiter(
+            limiter = new BusLimiter(
                 sampleRate,
                 channels,
                 lookAheadMilliseconds,
@@ -75,6 +111,11 @@ namespace MiniAudioEx.DSP.Effects
                 releaseMilliseconds);
         }
 
+        /// <inheritdoc />
+        /// <exception cref="ArgumentException">
+        /// The processing channel count does not match <see cref="Channels"/>, or
+        /// the output buffer does not have enough frames.
+        /// </exception>
         public void OnProcess(
             NativeArray<float> framesIn,
             UInt32 frameCountIn,
@@ -82,19 +123,20 @@ namespace MiniAudioEx.DSP.Effects
             ref UInt32 frameCountOut,
             UInt32 channels)
         {
-            if (channels != Limiter.Channels)
+            if (channels != limiter.Channels)
                 throw new ArgumentException("The processing channel count must match the limiter channel count.", nameof(channels));
             if (frameCountIn > frameCountOut)
                 throw new ArgumentException("The output buffer does not have enough frames.", nameof(frameCountOut));
 
             framesIn.CopyTo(framesOut);
-            Limiter.Process(framesOut.Pointer, frameCountIn);
+            limiter.Process(framesOut.Pointer, frameCountIn);
             frameCountOut = frameCountIn;
         }
 
+        /// <inheritdoc />
         public void OnDestroy()
         {
-            Limiter.Reset();
+            limiter.Reset();
         }
     }
 }
