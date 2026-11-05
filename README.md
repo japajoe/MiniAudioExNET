@@ -34,8 +34,11 @@ If you find something is missing from the API, please open an issue. This librar
 
 # Installation
 ```
-dotnet add package JAJ.Packages.MiniAudioEx --version 4.0.0
+dotnet add package JAJ.Packages.MiniAudioEx --version 4.0.1
 ```
+
+# Changes in 4.0.1
+- Fix method in `MaDecoder` to get length in PCM frames.
 
 # Changes in 4.0.0
 - Update miniaudio to 0.11.26.
