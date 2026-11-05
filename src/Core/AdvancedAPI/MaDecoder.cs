@@ -163,7 +163,7 @@ namespace MiniAudioEx.Core.AdvancedAPI
 
 		public ma_result GetLengthInPCMFrames(out UInt64 length)
 		{
-			return MiniAudioNative.ma_decoder_get_cursor_in_pcm_frames(handle, out length);
+			return MiniAudioNative.ma_decoder_get_length_in_pcm_frames(handle, out length);
 		}
 
 		public ma_result GetAvailableFrames(out UInt64 availableFrames)
